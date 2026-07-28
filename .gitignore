@@ -1,0 +1,43 @@
+# Durable analysis code and Slurm scripts belong in Git.
+# Generated products stay on the Pathfinder remote root or in ignored paths.
+# Note: the remote root is shared Lustre scratch and is subject to purge —
+# nothing here is a backup of the remote, and the remote is not a backup of this.
+
+# macOS metadata
+.DS_Store
+**/.DS_Store
+
+# Python caches and notebook checkpoints
+__pycache__/
+**/__pycache__/
+*.py[cod]
+.ipynb_checkpoints/
+**/.ipynb_checkpoints/
+
+# Generated figures and rasters
+*.png
+*.jpg
+*.jpeg
+*.pdf
+*.tif
+*.tiff
+
+# Model output and large binary data
+*.nc
+*.nc4
+*.h5
+*.hdf5
+*.zarr/
+
+# Slurm logs and job output
+*.log
+*.out
+*.err
+slurm-*.out
+
+# Generated tabular and report artifacts
+*.csv
+report_datasets.json
+**/results/
+**/results_v2/
+outputs/

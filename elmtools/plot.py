@@ -139,6 +139,7 @@ def plot_2d_map(
     add_gridlines: bool = False,
     set_extent: bool = True,
     file_mode: int | None = 0o644,
+    norm=None,
 ) -> None:
     """
     Plot a single 2-D pcolormesh map on a lat/lon grid.
@@ -180,6 +181,9 @@ def plot_2d_map(
     file_mode : int, optional
         ``os.chmod`` permission applied to the output file (default ``0o644``).
         Pass ``None`` to skip.
+    norm : matplotlib.colors.Normalize, optional
+        Custom normalization (e.g. ``BoundaryNorm`` for a quantile color
+        scale). When given, it takes precedence over *vmin*/*vmax*.
 
     Example
     -------
@@ -188,6 +192,8 @@ def plot_2d_map(
     """
     cbar_label = f"{var_name} ({units})" if units else var_name
     use_cartopy = add_states or add_coastlines or add_borders or add_gridlines or set_extent
+    if norm is not None:
+        vmin, vmax = None, None
 
     cartopy_ok = False
     if use_cartopy:
@@ -201,7 +207,7 @@ def plot_2d_map(
     if cartopy_ok:
         fig = plt.figure(figsize=figsize)
         ax = fig.add_subplot(1, 1, 1, projection=ccrs.PlateCarree())
-        mesh = ax.pcolormesh(lon, lat, arr, vmin=vmin, vmax=vmax,
+        mesh = ax.pcolormesh(lon, lat, arr, vmin=vmin, vmax=vmax, norm=norm,
                              cmap=cmap, shading="auto",
                              transform=ccrs.PlateCarree())
         if add_coastlines:
@@ -225,7 +231,7 @@ def plot_2d_map(
         ax.set_title(title)
     else:
         fig, ax = plt.subplots(figsize=figsize)
-        mesh = ax.pcolormesh(lon, lat, arr, vmin=vmin, vmax=vmax,
+        mesh = ax.pcolormesh(lon, lat, arr, vmin=vmin, vmax=vmax, norm=norm,
                              cmap=cmap, shading="auto")
         plt.colorbar(mesh, ax=ax, label=cbar_label)
         ax.set_xlabel("Longitude")

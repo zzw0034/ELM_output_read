@@ -4,12 +4,24 @@ High-res "showcase" carbon maps for the completed SEUS historical run
 LUH2-harvest-downscaling fix + human-population-density fix applied — the
 only Southeast-hires case that ran to completion).
 
-Produces five maps for a "best high-res capability" slide:
+Produces six maps for a "best high-res capability" slide:
   - GPP, 2014-2023 10-year mean annual total     [gC/m^2/year]
   - NPP, 2014-2023 10-year mean annual total     [gC/m^2/year]
+  - Aboveground biomass (TOTVEGC_ABG), 2014-2023 mean (same years as GPP/NPP) [kgC/m^2]
   - Soil organic C, 0-30 cm, end-of-run (Dec 2023) snapshot   [kgC/m^2]
   - Soil organic C, 0-100 cm, end-of-run (Dec 2023) snapshot  [kgC/m^2]
   - Soil organic C, full profile, end-of-run (Dec 2023) snapshot  [kgC/m^2]
+
+Biomass caveat
+--------------
+TOTVEGC_ABG is a pool that integrates decades of wood-harvest disturbance
+history, and that history comes from LUH2 at native 0.25 deg resolution --
+even after harvfix's area-conservative downscaling to 4km, adjacent 0.25 deg
+LUH2 cells can carry different cumulative harvest amounts, which shows up as
+patch boundaries in this panel that align with the 0.25 deg grid (verified
+by overlay), unlike GPP/NPP which are smooth at 4km. So some of this panel's
+apparent spatial detail reflects the coarser harvest forcing, not genuinely
+resolved 4km heterogeneity.
 
 Time labeling
 -------------
@@ -45,7 +57,8 @@ import sys
 import numpy as np
 import xarray as xr
 import matplotlib.pyplot as plt
-from matplotlib.colors import LinearSegmentedColormap
+from matplotlib.colors import LinearSegmentedColormap, BoundaryNorm
+from scipy.ndimage import gaussian_filter
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", ".."))
 from elmtools.io import find_h0_files
@@ -77,6 +90,9 @@ BRBG_NO_WHITE = LinearSegmentedColormap.from_list(
     N=256,
 )
 SOC_VMIN, SOC_VMAX = 0, 20
+
+# 0.25 deg / ~0.0417 deg native spacing =~ 6 grid cells
+BIOMASS_SMOOTH_SIGMA_CELLS = 1.5
 
 
 # ── Helpers ──────────────────────────────────────────────────────────────
@@ -112,6 +128,56 @@ def annual_total_flux_map(ds: xr.Dataset, var: str) -> xr.DataArray:
     return yearly_total
 
 
+def annual_mean_pool_map(ds: xr.Dataset, var: str) -> xr.DataArray:
+    """Pool/state variable, monthly records -> per-calendar-year mean, dims
+    (year, lat, lon). Plain time-mean (no day-weighting -- not a flux)."""
+    da = shift_time_back_one_month(ds)[var]
+    true_years = np.array([t.year for t in da["time"].values])
+    yearly = []
+    for yr in np.unique(true_years):
+        yr_mean = da.isel(time=np.where(true_years == yr)[0]).mean(dim="time", skipna=True)
+        yearly.append(yr_mean.assign_coords(year=int(yr)))
+    return xr.concat(yearly, dim="year")
+
+
+def quantile_boundary_norm(data: np.ndarray, n_levels: int = 50) -> BoundaryNorm:
+    """Equal-population (quantile) color bins -- see
+    plot_biomass_soc_comparison.py's copy of this function for the full
+    rationale (concentrates color steps where the data actually is, without
+    n_levels so small that a real gentle gradient collapses into one flat,
+    hard-edged bin)."""
+    finite = data[np.isfinite(data)]
+    edges = np.unique(np.quantile(finite, np.linspace(0, 1, n_levels + 1)))
+    return BoundaryNorm(edges, ncolors=256)
+
+
+def smooth_for_display(arr: np.ndarray, sigma: float) -> np.ndarray:
+    """Gaussian-smooth a lat/lon map for display only, NaN-aware.
+
+    TOTVEGC_ABG carries visible patch boundaries that align with the 0.25 deg
+    LUH2 wood-harvest grid (adjacent coarse cells can have different
+    cumulative harvest history -- see module docstring). This softens those
+    sharp edges into gradual transitions for this one figure; it does not
+    touch the underlying data used anywhere else (ELM_biomass_soc_for_
+    comparison.nc, the *_2023 SoilC panels, etc).
+
+    Uses normalized convolution (smooth the data with NaNs set to 0, smooth
+    a 0/1 valid-data mask the same way, divide) so land/ocean edges don't
+    bleed NaN into valid cells or get pulled toward zero.
+    """
+    valid = np.isfinite(arr)
+    filled = np.where(valid, arr, 0.0)
+    weight = valid.astype(float)
+
+    smoothed_vals = gaussian_filter(filled, sigma=sigma)
+    smoothed_weight = gaussian_filter(weight, sigma=sigma)
+
+    with np.errstate(invalid="ignore", divide="ignore"):
+        out = smoothed_vals / smoothed_weight
+    out[smoothed_weight < 0.5] = np.nan  # don't extrapolate far past the coast
+    return out
+
+
 def soilc_0_30cm(ds_last: xr.Dataset, dzsoi: xr.DataArray) -> np.ndarray:
     """Integrate SOIL1-4C_vr (gC/m^3) over the 0-0.30 m interval using each
     layer's exact overlap with that interval, from DZSOI's cumulative depth.
@@ -139,7 +205,7 @@ def main():
     assert len(files) == YEAR_MAX - YEAR_MIN + 1, "expected one h0 file per year"
 
     # ---- GPP / NPP: 10-year mean annual total ----------------------------
-    ds_flux = load_yearly_vars(files, ["GPP", "NPP"])
+    ds_flux = load_yearly_vars(files, ["GPP", "NPP", "TOTVEGC_ABG"])
     lat = ds_flux["lat"].values
     lon = ds_flux["lon"].values
 
@@ -149,6 +215,14 @@ def main():
 
     gpp_10yr = gpp_yearly.mean(dim="year", skipna=True).values
     npp_10yr = npp_yearly.mean(dim="year", skipna=True).values
+
+    # ---- Biomass: same 2014-2023 years as GPP/NPP ------------------------
+    biomass_yearly = annual_mean_pool_map(ds_flux, "TOTVEGC_ABG")  # gC/m^2
+    biomass_10yr_kgC = biomass_yearly.mean(dim="year", skipna=True).values / 1000.0
+    # display-only smoothing to soften the 0.25 deg LUH2 harvest-grid patch
+    # boundaries (see module docstring / smooth_for_display docstring)
+    biomass_10yr_kgC_smoothed = smooth_for_display(biomass_10yr_kgC, BIOMASS_SMOOTH_SIGMA_CELLS)
+    biomass_norm = quantile_boundary_norm(biomass_10yr_kgC_smoothed, n_levels=50)
 
     # ---- Soil C: end-of-run (Dec 2023) snapshot ---------------------------
     last_file = files[-1]  # 2023-02-01 file: records true Jan-Dec 2023 after shift
@@ -195,6 +269,12 @@ def main():
             "fname": f"NPP_{YEAR_MIN}-{YEAR_MAX}mean",
         },
         {
+            "data": biomass_10yr_kgC_smoothed, "var": "Biomass", "label": "Aboveground biomass (TOTVEGC_ABG)",
+            "title": f"Aboveground biomass — {YEAR_MIN}-{YEAR_MAX} mean",
+            "units": "kgC/m^2", "cmap": "viridis", "norm": biomass_norm,
+            "fname": f"Biomass_{YEAR_MIN}-{YEAR_MAX}mean",
+        },
+        {
             "data": soilc_030_kgC, "var": "SoilC_0-30cm", "label": "Soil organic C (0-30 cm)",
             "title": "Soil organic C, 0-30 cm — end of run (Dec 2023)",
             "units": "kgC/m^2", "cmap": BRBG_NO_WHITE, "vmin": SOC_VMIN, "vmax": SOC_VMAX,
@@ -229,6 +309,7 @@ def main():
             cmap=p["cmap"],
             vmin=p.get("vmin"),
             vmax=p.get("vmax"),
+            norm=p.get("norm"),
             figsize=(10, 6),
             units=p["units"],
             add_coastlines=True,

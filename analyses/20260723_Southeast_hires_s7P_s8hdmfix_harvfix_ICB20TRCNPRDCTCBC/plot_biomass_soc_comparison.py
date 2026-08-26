@@ -152,8 +152,8 @@ def main():
 
     make_comparison_figure(
         panels=[
-            {"data": elm_biomass, "title": "ELM Mean (2014-2020)", "cmap": "YlGn", "norm": biomass_norm},
-            {"data": esacci, "title": "ESACCI Mean (2014-2020)", "cmap": "YlGn", "norm": biomass_norm},
+            {"data": elm_biomass, "title": "ELM Mean (2014-2020)", "cmap": "viridis", "norm": biomass_norm},
+            {"data": esacci, "title": "ESACCI Mean (2014-2020)", "cmap": "viridis", "norm": biomass_norm},
         ],
         cbar_label="Biomass (kg C m$^{-2}$)",
         out_path=os.path.join(OUT_DIR, "Biomass_comparison_harvfix.png"),

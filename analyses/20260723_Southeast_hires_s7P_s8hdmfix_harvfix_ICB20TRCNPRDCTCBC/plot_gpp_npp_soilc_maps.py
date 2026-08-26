@@ -42,7 +42,7 @@ import numpy as np
 import xarray as xr
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", ".."))
-from elmtools.io import find_h0_files, open_elm_dataset
+from elmtools.io import find_h0_files
 from elmtools.process import (
     flux_to_monthly,
     aggregate_monthly_to_yearly,
@@ -64,6 +64,19 @@ SOIL_POOL_VARS = ["SOIL1C_vr", "SOIL2C_vr", "SOIL3C_vr", "SOIL4C_vr"]
 
 
 # ── Helpers ──────────────────────────────────────────────────────────────
+
+def load_yearly_vars(files: list[str], varnames: list[str]) -> xr.Dataset:
+    """Open each year's h0 file, keep only *varnames* (+ time), and concat
+    along time. Deliberately avoids xr.open_mfdataset: the project's conda
+    env (make_surfdata_pf) has no dask, and the selected variables are small
+    enough (a handful of MB per file) to just load and concat directly."""
+    per_var = {v: [] for v in varnames}
+    for f in files:
+        with xr.open_dataset(f, decode_times=True) as ds:
+            for v in varnames:
+                per_var[v].append(ds[v].load())
+    return xr.Dataset({v: xr.concat(das, dim="time") for v, das in per_var.items()})
+
 
 def shift_time_back_one_month(ds: xr.Dataset) -> xr.Dataset:
     """Relabel h0 records from 'stamped on 1st of following month' to the
@@ -110,7 +123,7 @@ def main():
     assert len(files) == YEAR_MAX - YEAR_MIN + 1, "expected one h0 file per year"
 
     # ---- GPP / NPP: 10-year mean annual total ----------------------------
-    ds_flux = open_elm_dataset(files, vars_to_read=["GPP", "NPP"])
+    ds_flux = load_yearly_vars(files, ["GPP", "NPP"])
     lat = ds_flux["lat"].values
     lon = ds_flux["lon"].values
 
@@ -120,7 +133,6 @@ def main():
 
     gpp_10yr = gpp_yearly.mean(dim="year", skipna=True).values
     npp_10yr = npp_yearly.mean(dim="year", skipna=True).values
-    ds_flux.close()
 
     # ---- Soil C: end-of-run (Dec 2023) snapshot ---------------------------
     last_file = files[-1]  # 2023-02-01 file: records true Jan-Dec 2023 after shift

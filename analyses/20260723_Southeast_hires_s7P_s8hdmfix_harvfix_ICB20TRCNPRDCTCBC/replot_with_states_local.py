@@ -18,7 +18,7 @@ import sys
 import numpy as np
 import rioxarray as rxr
 import matplotlib.pyplot as plt
-from matplotlib.colors import LinearSegmentedColormap
+from matplotlib.colors import LinearSegmentedColormap, BoundaryNorm
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", ".."))
 from elmtools.plot import plot_2d_map
@@ -36,11 +36,24 @@ BRBG_NO_WHITE = LinearSegmentedColormap.from_list(
 )
 SOC_VMIN, SOC_VMAX = 0, 20
 
+
+def quantile_boundary_norm(data: np.ndarray, n_levels: int = 50) -> BoundaryNorm:
+    """Equal-population (quantile) color bins -- see
+    plot_biomass_soc_comparison.py / plot_gpp_npp_soilc_maps.py for the
+    rationale."""
+    finite = data[np.isfinite(data)]
+    edges = np.unique(np.quantile(finite, np.linspace(0, 1, n_levels + 1)))
+    return BoundaryNorm(edges, ncolors=256)
+
+
 PANELS = [
     {"fname": "GPP_2014-2023mean", "label": "GPP", "units": "gC/m^2/year", "cmap": "YlGn",
      "title": "GPP — 2014-2023 mean annual total"},
     {"fname": "NPP_2014-2023mean", "label": "NPP", "units": "gC/m^2/year", "cmap": "YlGn",
      "title": "NPP — 2014-2023 mean annual total"},
+    {"fname": "Biomass_2014-2023mean", "label": "Aboveground biomass (TOTVEGC_ABG)", "units": "kgC/m^2",
+     "cmap": "viridis", "quantile_norm": True,
+     "title": "Aboveground biomass — 2014-2023 mean"},
     {"fname": "SoilC_0-30cm_2023", "label": "Soil organic C (0-30 cm)", "units": "kgC/m^2",
      "cmap": BRBG_NO_WHITE, "vmin": SOC_VMIN, "vmax": SOC_VMAX,
      "title": "Soil organic C, 0-30 cm — end of run (Dec 2023)"},
@@ -64,6 +77,8 @@ def main():
         if nodata is not None:
             arr = np.where(arr == nodata, np.nan, arr)
 
+        norm = quantile_boundary_norm(arr) if p.get("quantile_norm") else None
+
         png_path = os.path.join(OUT_DIR, f"{p['fname']}.png")
         plot_2d_map(
             arr, lat, lon,
@@ -73,6 +88,7 @@ def main():
             cmap=p["cmap"],
             vmin=p.get("vmin"),
             vmax=p.get("vmax"),
+            norm=norm,
             figsize=(10, 6),
             units=p["units"],
             add_coastlines=True,

@@ -57,12 +57,12 @@ PANELS = [
     {"fname": "Biomass_2014-2023mean_raw", "label": "Aboveground biomass (TOTVEGC_ABG)", "units": "kgC/m^2",
      "cmap": "viridis", "quantile_norm": True,
      "title": "Aboveground biomass — 2014-2023 mean (unsmoothed)"},
-    {"fname": "Biomass_1850", "label": "Aboveground biomass (TOTVEGC_ABG)", "units": "kgC/m^2",
-     "cmap": "viridis", "quantile_norm": True,
-     "title": "Aboveground biomass — 1850"},
-    {"fname": "Biomass_2000", "label": "Aboveground biomass (TOTVEGC_ABG)", "units": "kgC/m^2",
-     "cmap": "viridis", "quantile_norm": True,
-     "title": "Aboveground biomass — 2000"},
+    *[
+        {"fname": f"Biomass_{yr}", "label": "Aboveground biomass (TOTVEGC_ABG)", "units": "kgC/m^2",
+         "cmap": "viridis", "quantile_norm": True,
+         "title": f"Aboveground biomass — {yr}"}
+        for yr in [1850, 1870, 1890, 1910, 1930, 1950, 1970, 1990, 2000, 2010]
+    ],
     {"fname": "SoilC_0-30cm_2023", "label": "Soil organic C (0-30 cm)", "units": "kgC/m^2",
      "cmap": BRBG_NO_WHITE, "vmin": SOC_VMIN, "vmax": SOC_VMAX,
      "title": "Soil organic C, 0-30 cm — end of run (Dec 2023)"},

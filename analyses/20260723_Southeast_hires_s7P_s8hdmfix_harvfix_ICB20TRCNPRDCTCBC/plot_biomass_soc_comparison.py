@@ -88,7 +88,7 @@ def load_hwsd_soc():
     return crop(ds[var])
 
 
-def panel(ax, da, title, cmap, vmin, vmax, show_ylabel):
+def panel(ax, da, title, cmap, vmin, vmax):
     lon = da["lon"].values
     lat = da["lat"].values
     mesh = ax.pcolormesh(
@@ -96,13 +96,9 @@ def panel(ax, da, title, cmap, vmin, vmax, show_ylabel):
         shading="auto", transform=ccrs.PlateCarree(),
     )
     ax.coastlines(resolution="10m", linewidth=0.8)
-    ax.add_feature(cfeature.STATES, linewidth=0.5, edgecolor="black")
     ax.add_feature(cfeature.BORDERS, linewidth=0.5)
     ax.set_extent([LON_MIN, LON_MAX, LAT_MIN, LAT_MAX], crs=ccrs.PlateCarree())
-    gl = ax.gridlines(draw_labels=True, linewidth=0.3, color="gray", alpha=0.5, linestyle="--")
-    gl.top_labels = False
-    gl.right_labels = False
-    gl.left_labels = show_ylabel
+    ax.gridlines(draw_labels=False, linewidth=0.3, color="gray", alpha=0.5, linestyle="--")
     ax.set_title(title)
     return mesh
 
@@ -115,8 +111,8 @@ def make_comparison_figure(panels, cbar_label, out_path, figsize):
     if len(panels) == 1:
         axes = [axes]
     mesh = None
-    for i, (ax, p) in enumerate(zip(axes, panels)):
-        mesh = panel(ax, p["data"], p["title"], p["cmap"], p["vmin"], p["vmax"], show_ylabel=(i == 0))
+    for ax, p in zip(axes, panels):
+        mesh = panel(ax, p["data"], p["title"], p["cmap"], p["vmin"], p["vmax"])
     fig.colorbar(mesh, ax=axes, label=cbar_label, pad=0.02, shrink=0.85, extend="both")
     fig.savefig(out_path, dpi=200, bbox_inches="tight")
     plt.close(fig)
@@ -138,7 +134,7 @@ def main():
 
     make_comparison_figure(
         panels=[
-            {"data": elm_biomass, "title": "ELM (harvfix) Mean (2014-2020)", "cmap": "YlGn", "vmin": vmin, "vmax": vmax},
+            {"data": elm_biomass, "title": "ELM Mean (2014-2020)", "cmap": "YlGn", "vmin": vmin, "vmax": vmax},
             {"data": esacci, "title": "ESACCI Mean (2014-2020)", "cmap": "YlGn", "vmin": vmin, "vmax": vmax},
         ],
         cbar_label="Biomass (kg C m$^{-2}$)",
@@ -149,7 +145,7 @@ def main():
     # ---- SOC comparison: fixed 0-20 scale, BrBG-no-white, like plot_SOC.R ----
     make_comparison_figure(
         panels=[
-            {"data": elm_soc, "title": "ELM (harvfix) Mean SOC (2000-2020) (0-100cm)", "cmap": BRBG_NO_WHITE, "vmin": 0, "vmax": 20},
+            {"data": elm_soc, "title": "ELM Mean SOC (2000-2020) (0-100cm)", "cmap": BRBG_NO_WHITE, "vmin": 0, "vmax": 20},
             {"data": soilgrids, "title": "SoilGrids SOC (0-100cm)", "cmap": BRBG_NO_WHITE, "vmin": 0, "vmax": 20},
             {"data": hwsd, "title": "HWSD SOC (0-100cm)", "cmap": BRBG_NO_WHITE, "vmin": 0, "vmax": 20},
         ],

@@ -4,10 +4,11 @@ High-res "showcase" carbon maps for the completed SEUS historical run
 LUH2-harvest-downscaling fix + human-population-density fix applied — the
 only Southeast-hires case that ran to completion).
 
-Produces four maps for a "best high-res capability" slide:
+Produces five maps for a "best high-res capability" slide:
   - GPP, 2014-2023 10-year mean annual total     [gC/m^2/year]
   - NPP, 2014-2023 10-year mean annual total     [gC/m^2/year]
   - Soil organic C, 0-30 cm, end-of-run (Dec 2023) snapshot   [kgC/m^2]
+  - Soil organic C, 0-100 cm, end-of-run (Dec 2023) snapshot  [kgC/m^2]
   - Soil organic C, full profile, end-of-run (Dec 2023) snapshot  [kgC/m^2]
 
 Time labeling
@@ -27,8 +28,11 @@ as ELM's "Time_constant_3Dvars". The 0-30 cm integral uses the exact
 per-layer overlap with the [0, 0.3 m] interval from DZSOI's own cumulative
 depth (layers 1-5 fully included, layer 6 partially — verified against this
 run's actual layer thicknesses), so it does not depend on assuming a fixed
-number of layers. The full-profile panel uses TOTSOMC as-is (the model's own
-full-column integral).
+number of layers. The 0-100 cm panel uses TOTSOMC_1m as-is (the model's own
+0-1 m integral). The full-profile panel uses TOTSOMC as-is (the model's own
+full-column integral, over all 15 levdcmp layers -- this run's DZSOI puts
+the bottom of layer 15 at ~42.1 m, the nominal depth of ELM's 15-layer soil
+column, though most SOM is concentrated far above that).
 
 Usage
 -----
@@ -157,6 +161,9 @@ def main():
     totsomc_full_gC = dec2023["TOTSOMC"].values           # gC/m^2, model's own full-profile integral
     soilc_full_kgC = totsomc_full_gC / 1000.0
 
+    totsomc_1m_gC = dec2023["TOTSOMC_1m"].values           # gC/m^2, model's own 0-100cm integral
+    soilc_1m_kgC = totsomc_1m_gC / 1000.0
+
     first_file = find_h0_files(RUN_DIR, year_min=1850, year_max=1850)[0]
     ds_static = xr.open_dataset(first_file, decode_times=True)
     dzsoi = ds_static["DZSOI"]                             # (levgrnd, lat, lon), m
@@ -169,6 +176,7 @@ def main():
     if landmask is not None:
         land_nan = np.where(landmask == 1, 1.0, np.nan)
         soilc_full_kgC = soilc_full_kgC * land_nan
+        soilc_1m_kgC = soilc_1m_kgC * land_nan
         soilc_030_kgC = soilc_030_kgC * land_nan
     ds_soil.close()
 
@@ -191,6 +199,12 @@ def main():
             "title": "Soil organic C, 0-30 cm — end of run (Dec 2023)",
             "units": "kgC/m^2", "cmap": BRBG_NO_WHITE, "vmin": SOC_VMIN, "vmax": SOC_VMAX,
             "fname": "SoilC_0-30cm_2023",
+        },
+        {
+            "data": soilc_1m_kgC, "var": "SoilC_0-100cm", "label": "Soil organic C (0-100 cm)",
+            "title": "Soil organic C, 0-100 cm — end of run (Dec 2023)",
+            "units": "kgC/m^2", "cmap": BRBG_NO_WHITE, "vmin": SOC_VMIN, "vmax": SOC_VMAX,
+            "fname": "SoilC_0-100cm_2023",
         },
         {
             "data": soilc_full_kgC, "var": "SoilC_fullprofile", "label": "Soil organic C (full profile)",

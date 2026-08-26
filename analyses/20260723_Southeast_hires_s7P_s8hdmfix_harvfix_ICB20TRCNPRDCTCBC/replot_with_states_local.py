@@ -17,22 +17,36 @@ import sys
 
 import numpy as np
 import rioxarray as rxr
+import matplotlib.pyplot as plt
+from matplotlib.colors import LinearSegmentedColormap
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", ".."))
 from elmtools.plot import plot_2d_map
 
 OUT_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "outputs")
-CASE = "20260723_Southeast_hires_s7P_s8hdmfix_harvfix_ICB20TRCNPRDCTCBC"
+
+# Same brown-teal, white-dropped BrBG scheme + fixed 0-20 kgC/m^2 scale used
+# in wildfires/ELM_results4CCSImidmeet/plot_SOC.R and
+# plot_biomass_soc_comparison.py's SOC_comparison_harvfix.png, so the SoilC
+# panels here read consistently with that figure.
+BRBG_NO_WHITE = LinearSegmentedColormap.from_list(
+    "BrBG_no_white",
+    [c for i, c in enumerate(plt.get_cmap("BrBG")(np.linspace(0, 1, 9))) if i != 4],
+    N=256,
+)
+SOC_VMIN, SOC_VMAX = 0, 20
 
 PANELS = [
     {"fname": "GPP_2014-2023mean", "label": "GPP", "units": "gC/m^2/year", "cmap": "YlGn",
-     "title": f"GPP — 2014-2023 mean annual total\n{CASE}"},
+     "title": "GPP — 2014-2023 mean annual total"},
     {"fname": "NPP_2014-2023mean", "label": "NPP", "units": "gC/m^2/year", "cmap": "YlGn",
-     "title": f"NPP — 2014-2023 mean annual total\n{CASE}"},
-    {"fname": "SoilC_0-30cm_2023", "label": "Soil organic C (0-30 cm)", "units": "kgC/m^2", "cmap": "YlOrBr",
-     "title": f"Soil organic C, 0-30 cm — end of run (Dec 2023)\n{CASE}"},
-    {"fname": "SoilC_fullprofile_2023", "label": "Soil organic C (full profile)", "units": "kgC/m^2", "cmap": "YlOrBr",
-     "title": f"Soil organic C, full profile — end of run (Dec 2023)\n{CASE}"},
+     "title": "NPP — 2014-2023 mean annual total"},
+    {"fname": "SoilC_0-30cm_2023", "label": "Soil organic C (0-30 cm)", "units": "kgC/m^2",
+     "cmap": BRBG_NO_WHITE, "vmin": SOC_VMIN, "vmax": SOC_VMAX,
+     "title": "Soil organic C, 0-30 cm — end of run (Dec 2023)"},
+    {"fname": "SoilC_fullprofile_2023", "label": "Soil organic C (full profile)", "units": "kgC/m^2",
+     "cmap": BRBG_NO_WHITE, "vmin": SOC_VMIN, "vmax": SOC_VMAX,
+     "title": "Soil organic C, full profile — end of run (Dec 2023)"},
 ]
 
 
@@ -54,6 +68,8 @@ def main():
             title=p["title"],
             outfile=png_path,
             cmap=p["cmap"],
+            vmin=p.get("vmin"),
+            vmax=p.get("vmax"),
             figsize=(10, 6),
             units=p["units"],
             add_coastlines=True,

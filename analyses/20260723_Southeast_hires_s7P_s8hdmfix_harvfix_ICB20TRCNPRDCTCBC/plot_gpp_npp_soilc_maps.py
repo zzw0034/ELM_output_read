@@ -254,6 +254,14 @@ def main():
     biomass_1850_norm = quantile_boundary_norm(biomass_1850_kgC, n_levels=50)
     ds_static.close()
 
+    # ---- Biomass, 2000: 150 years in -- harvest has had time to accumulate
+    year2000_file = find_h0_files(RUN_DIR, year_min=2000, year_max=2000)[0]
+    ds_2000 = xr.open_dataset(year2000_file, decode_times=True)
+    biomass_2000_yearly = annual_mean_pool_map(ds_2000, "TOTVEGC_ABG")  # gC/m^2
+    biomass_2000_kgC = biomass_2000_yearly.isel(year=0).values / 1000.0
+    biomass_2000_norm = quantile_boundary_norm(biomass_2000_kgC, n_levels=50)
+    ds_2000.close()
+
     # mask non-land with landmask from the soil dataset
     landmask = ds_soil["landmask"].values if "landmask" in ds_soil else None
     if landmask is not None:
@@ -288,6 +296,12 @@ def main():
             "title": "Aboveground biomass — 1850",
             "units": "kgC/m^2", "cmap": "viridis", "norm": biomass_1850_norm,
             "fname": "Biomass_1850",
+        },
+        {
+            "data": biomass_2000_kgC, "var": "Biomass_2000", "label": "Aboveground biomass (TOTVEGC_ABG)",
+            "title": "Aboveground biomass — 2000",
+            "units": "kgC/m^2", "cmap": "viridis", "norm": biomass_2000_norm,
+            "fname": "Biomass_2000",
         },
         {
             "data": soilc_030_kgC, "var": "SoilC_0-30cm", "label": "Soil organic C (0-30 cm)",

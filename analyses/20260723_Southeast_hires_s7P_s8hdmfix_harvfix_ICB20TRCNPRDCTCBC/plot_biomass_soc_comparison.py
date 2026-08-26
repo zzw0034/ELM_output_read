@@ -88,7 +88,7 @@ def load_hwsd_soc():
     return crop(ds[var])
 
 
-def quantile_boundary_norm(data: np.ndarray, n_levels: int = 12) -> BoundaryNorm:
+def quantile_boundary_norm(data: np.ndarray, n_levels: int = 50) -> BoundaryNorm:
     """Bin edges at equal *population* (quantile) steps rather than equal
     value steps. Most biomass pixels sit in a narrow low-to-mid range with a
     long high tail, so an equal-value scale spends most of its color range
@@ -96,7 +96,15 @@ def quantile_boundary_norm(data: np.ndarray, n_levels: int = 12) -> BoundaryNorm
     shade. Equal-population bins instead give the densely-populated range
     its fair share of distinct colors, so the pixel-to-pixel texture (the
     thing high-res actually buys you) becomes visible instead of washed
-    out."""
+    out.
+
+    n_levels needs to be large enough that each bin's own value range is
+    narrow -- at n_levels=12 a bin can be wide enough to swallow a whole
+    real (but gentle) spatial gradient, which then renders as one flat,
+    sharp-edged patch ("big squares"), most visible where the underlying
+    field is smooth (e.g. the north GA/AL plateau). 50 keeps individual
+    bins narrow enough that this doesn't happen, while still concentrating
+    color steps where the data actually is."""
     finite = data[np.isfinite(data)]
     edges = np.unique(np.quantile(finite, np.linspace(0, 1, n_levels + 1)))
     return BoundaryNorm(edges, ncolors=256)
@@ -148,7 +156,7 @@ def main():
     # land in a narrow band and get nearly the same color. Quantile bins
     # fix that -- see quantile_boundary_norm().
     combined = np.concatenate([elm_biomass.values.ravel(), esacci.values.ravel()])
-    biomass_norm = quantile_boundary_norm(combined, n_levels=12)
+    biomass_norm = quantile_boundary_norm(combined, n_levels=50)
 
     make_comparison_figure(
         panels=[

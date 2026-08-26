@@ -24,7 +24,7 @@ import rioxarray as rxr
 import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
-from matplotlib.colors import LinearSegmentedColormap
+from matplotlib.colors import LinearSegmentedColormap, BoundaryNorm
 import cartopy.crs as ccrs
 import cartopy.feature as cfeature
 
@@ -88,11 +88,25 @@ def load_hwsd_soc():
     return crop(ds[var])
 
 
-def panel(ax, da, title, cmap, vmin, vmax):
+def quantile_boundary_norm(data: np.ndarray, n_levels: int = 12) -> BoundaryNorm:
+    """Bin edges at equal *population* (quantile) steps rather than equal
+    value steps. Most biomass pixels sit in a narrow low-to-mid range with a
+    long high tail, so an equal-value scale spends most of its color range
+    on the rare high pixels and leaves the bulk of the map looking like one
+    shade. Equal-population bins instead give the densely-populated range
+    its fair share of distinct colors, so the pixel-to-pixel texture (the
+    thing high-res actually buys you) becomes visible instead of washed
+    out."""
+    finite = data[np.isfinite(data)]
+    edges = np.unique(np.quantile(finite, np.linspace(0, 1, n_levels + 1)))
+    return BoundaryNorm(edges, ncolors=256)
+
+
+def panel(ax, da, title, cmap, vmin=None, vmax=None, norm=None):
     lon = da["lon"].values
     lat = da["lat"].values
     mesh = ax.pcolormesh(
-        lon, lat, da.values, vmin=vmin, vmax=vmax, cmap=cmap,
+        lon, lat, da.values, vmin=vmin, vmax=vmax, norm=norm, cmap=cmap,
         shading="auto", transform=ccrs.PlateCarree(),
     )
     ax.coastlines(resolution="10m", linewidth=0.8)
@@ -103,7 +117,7 @@ def panel(ax, da, title, cmap, vmin, vmax):
     return mesh
 
 
-def make_comparison_figure(panels, cbar_label, out_path, figsize):
+def make_comparison_figure(panels, cbar_label, out_path, figsize, extend="both"):
     fig, axes = plt.subplots(
         1, len(panels), figsize=figsize,
         subplot_kw={"projection": ccrs.PlateCarree()},
@@ -112,8 +126,9 @@ def make_comparison_figure(panels, cbar_label, out_path, figsize):
         axes = [axes]
     mesh = None
     for ax, p in zip(axes, panels):
-        mesh = panel(ax, p["data"], p["title"], p["cmap"], p["vmin"], p["vmax"])
-    fig.colorbar(mesh, ax=axes, label=cbar_label, pad=0.02, shrink=0.85, extend="both")
+        mesh = panel(ax, p["data"], p["title"], p["cmap"],
+                     vmin=p.get("vmin"), vmax=p.get("vmax"), norm=p.get("norm"))
+    fig.colorbar(mesh, ax=axes, label=cbar_label, pad=0.02, shrink=0.85, extend=extend)
     fig.savefig(out_path, dpi=200, bbox_inches="tight")
     plt.close(fig)
     print(f"Saved: {out_path}")
@@ -127,19 +142,23 @@ def main():
     soilgrids = load_soilgrids_soc()
     hwsd = load_hwsd_soc()
 
-    # ---- Biomass comparison: shared 1st-99th pct color scale, like plot_Biomass.R ----
+    # ---- Biomass comparison: shared quantile (equal-population) color scale ----
+    # Equal-value scales (e.g. a plain 1st-99th pct linear stretch) bury the
+    # fine spatial texture high-res is supposed to show, because most pixels
+    # land in a narrow band and get nearly the same color. Quantile bins
+    # fix that -- see quantile_boundary_norm().
     combined = np.concatenate([elm_biomass.values.ravel(), esacci.values.ravel()])
-    combined = combined[np.isfinite(combined)]
-    vmin, vmax = np.percentile(combined, [1, 99])
+    biomass_norm = quantile_boundary_norm(combined, n_levels=12)
 
     make_comparison_figure(
         panels=[
-            {"data": elm_biomass, "title": "ELM Mean (2014-2020)", "cmap": "YlGn", "vmin": vmin, "vmax": vmax},
-            {"data": esacci, "title": "ESACCI Mean (2014-2020)", "cmap": "YlGn", "vmin": vmin, "vmax": vmax},
+            {"data": elm_biomass, "title": "ELM Mean (2014-2020)", "cmap": "YlGn", "norm": biomass_norm},
+            {"data": esacci, "title": "ESACCI Mean (2014-2020)", "cmap": "YlGn", "norm": biomass_norm},
         ],
         cbar_label="Biomass (kg C m$^{-2}$)",
         out_path=os.path.join(OUT_DIR, "Biomass_comparison_harvfix.png"),
         figsize=(12, 6),
+        extend="neither",
     )
 
     # ---- SOC comparison: fixed 0-20 scale, BrBG-no-white, like plot_SOC.R ----

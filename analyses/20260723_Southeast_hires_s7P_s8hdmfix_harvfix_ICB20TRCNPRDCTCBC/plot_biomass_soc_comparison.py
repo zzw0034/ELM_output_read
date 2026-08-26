@@ -27,7 +27,6 @@ import matplotlib.pyplot as plt
 from matplotlib.colors import LinearSegmentedColormap, BoundaryNorm
 import cartopy.crs as ccrs
 import cartopy.feature as cfeature
-from scipy.ndimage import gaussian_filter
 
 # ── Paths ────────────────────────────────────────────────────────────────
 CASE = "20260723_Southeast_hires_s7P_s8hdmfix_harvfix_ICB20TRCNPRDCTCBC"
@@ -45,9 +44,6 @@ ESACCI_COMBINE_YEARS = [2014, 2015, 2016, 2017, 2018, 2019, 2020]
 
 LON_MIN, LON_MAX = -95.5, -73.5
 LAT_MIN, LAT_MAX = 24.5, 38.0
-
-# 0.25 deg / ~0.0417 deg native spacing =~ 6 grid cells
-BIOMASS_SMOOTH_SIGMA_CELLS = 1.5
 
 BRBG_NO_WHITE = LinearSegmentedColormap.from_list(
     "BrBG_no_white",
@@ -90,25 +86,6 @@ def load_hwsd_soc():
     ds = xr.open_dataset(HWSD_NC)
     var = list(ds.data_vars)[0]
     return crop(ds[var])
-
-
-def smooth_for_display(arr: np.ndarray, sigma: float) -> np.ndarray:
-    """Gaussian-smooth a lat/lon map for display only, NaN-aware -- see
-    plot_gpp_npp_soilc_maps.py's copy of this function for the full
-    rationale (softens the 0.25 deg LUH2 harvest-grid patch boundaries in
-    TOTVEGC_ABG). Uses normalized convolution so land/ocean edges don't
-    bleed NaN into valid cells or get pulled toward zero."""
-    valid = np.isfinite(arr)
-    filled = np.where(valid, arr, 0.0)
-    weight = valid.astype(float)
-
-    smoothed_vals = gaussian_filter(filled, sigma=sigma)
-    smoothed_weight = gaussian_filter(weight, sigma=sigma)
-
-    with np.errstate(invalid="ignore", divide="ignore"):
-        out = smoothed_vals / smoothed_weight
-    out[smoothed_weight < 0.5] = np.nan
-    return out
 
 
 def quantile_boundary_norm(data: np.ndarray, n_levels: int = 50) -> BoundaryNorm:
@@ -169,12 +146,6 @@ def make_comparison_figure(panels, cbar_label, out_path, figsize, extend="both")
 
 def main():
     elm_biomass, elm_soc = load_elm()
-    # display-only smoothing to soften the 0.25 deg LUH2 harvest-grid patch
-    # boundaries in TOTVEGC_ABG (ESACCI is observational and has no such
-    # artifact, so it is left as-is)
-    elm_biomass = elm_biomass.copy(
-        data=smooth_for_display(elm_biomass.values, BIOMASS_SMOOTH_SIGMA_CELLS)
-    )
     esacci = load_esacci_biomass()
     soilgrids = load_soilgrids_soc()
     hwsd = load_hwsd_soc()

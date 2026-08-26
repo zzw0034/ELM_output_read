@@ -4,10 +4,13 @@ High-res "showcase" carbon maps for the completed SEUS historical run
 LUH2-harvest-downscaling fix + human-population-density fix applied — the
 only Southeast-hires case that ran to completion).
 
-Produces six maps for a "best high-res capability" slide:
+Produces seven maps for a "best high-res capability" slide:
   - GPP, 2014-2023 10-year mean annual total     [gC/m^2/year]
   - NPP, 2014-2023 10-year mean annual total     [gC/m^2/year]
   - Aboveground biomass (TOTVEGC_ABG), 2014-2023 mean (same years as GPP/NPP) [kgC/m^2]
+  - Aboveground biomass (TOTVEGC_ABG), 1850 (run's first year -- little
+    accumulated harvest yet, so the 0.25 deg block pattern below should be
+    much weaker than in the 2014-2023 panel)                [kgC/m^2]
   - Soil organic C, 0-30 cm, end-of-run (Dec 2023) snapshot   [kgC/m^2]
   - Soil organic C, 0-100 cm, end-of-run (Dec 2023) snapshot  [kgC/m^2]
   - Soil organic C, full profile, end-of-run (Dec 2023) snapshot  [kgC/m^2]
@@ -243,6 +246,12 @@ def main():
     dzsoi = ds_static["DZSOI"]                             # (levgrnd, lat, lon), m
     soilc_030_gC = soilc_0_30cm(dec2023, dzsoi)
     soilc_030_kgC = soilc_030_gC / 1000.0
+
+    # ---- Biomass, 1850: run's first year, before decades of harvest could
+    # accumulate into the 0.25 deg LUH2 block pattern (see module docstring)
+    biomass_1850_yearly = annual_mean_pool_map(ds_static, "TOTVEGC_ABG")  # gC/m^2, dims (year=1, lat, lon)
+    biomass_1850_kgC = biomass_1850_yearly.isel(year=0).values / 1000.0
+    biomass_1850_norm = quantile_boundary_norm(biomass_1850_kgC, n_levels=50)
     ds_static.close()
 
     # mask non-land with landmask from the soil dataset
@@ -273,6 +282,12 @@ def main():
             "title": f"Aboveground biomass — {YEAR_MIN}-{YEAR_MAX} mean",
             "units": "kgC/m^2", "cmap": "viridis", "norm": biomass_norm,
             "fname": f"Biomass_{YEAR_MIN}-{YEAR_MAX}mean",
+        },
+        {
+            "data": biomass_1850_kgC, "var": "Biomass_1850", "label": "Aboveground biomass (TOTVEGC_ABG)",
+            "title": "Aboveground biomass — 1850",
+            "units": "kgC/m^2", "cmap": "viridis", "norm": biomass_1850_norm,
+            "fname": "Biomass_1850",
         },
         {
             "data": soilc_030_kgC, "var": "SoilC_0-30cm", "label": "Soil organic C (0-30 cm)",

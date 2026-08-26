@@ -140,6 +140,7 @@ def plot_2d_map(
     set_extent: bool = True,
     file_mode: int | None = 0o644,
     norm=None,
+    cbar_location: str = "right",
 ) -> None:
     """
     Plot a single 2-D pcolormesh map on a lat/lon grid.
@@ -184,6 +185,9 @@ def plot_2d_map(
     norm : matplotlib.colors.Normalize, optional
         Custom normalization (e.g. ``BoundaryNorm`` for a quantile color
         scale). When given, it takes precedence over *vmin*/*vmax*.
+    cbar_location : {"right", "bottom", "left", "top"}
+        Where to place the colorbar (default ``"right"``); ``"bottom"``
+        gives a horizontal bar under the map.
 
     Example
     -------
@@ -227,13 +231,15 @@ def plot_2d_map(
                               color="gray", alpha=0.5, linestyle="--")
             gl.top_labels = False
             gl.right_labels = False
-        plt.colorbar(mesh, ax=ax, label=cbar_label, pad=0.02, shrink=0.85)
+        cbar_pad = 0.08 if cbar_location in ("bottom", "top") else 0.02
+        plt.colorbar(mesh, ax=ax, label=cbar_label, pad=cbar_pad, shrink=0.85,
+                     location=cbar_location)
         ax.set_title(title)
     else:
         fig, ax = plt.subplots(figsize=figsize)
         mesh = ax.pcolormesh(lon, lat, arr, vmin=vmin, vmax=vmax, norm=norm,
                              cmap=cmap, shading="auto")
-        plt.colorbar(mesh, ax=ax, label=cbar_label)
+        plt.colorbar(mesh, ax=ax, label=cbar_label, location=cbar_location)
         ax.set_xlabel("Longitude")
         ax.set_ylabel("Latitude")
         ax.set_title(title)

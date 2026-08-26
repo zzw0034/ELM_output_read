@@ -105,6 +105,7 @@ def main():
             add_borders=True,
             add_gridlines=True,
             set_extent=True,
+            cbar_location="bottom",
         )
 
 

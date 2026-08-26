@@ -4,16 +4,21 @@ High-res "showcase" carbon maps for the completed SEUS historical run
 LUH2-harvest-downscaling fix + human-population-density fix applied — the
 only Southeast-hires case that ran to completion).
 
-Produces seven maps for a "best high-res capability" slide:
+Produces, for a "best high-res capability" slide:
   - GPP, 2014-2023 10-year mean annual total     [gC/m^2/year]
   - NPP, 2014-2023 10-year mean annual total     [gC/m^2/year]
-  - Aboveground biomass (TOTVEGC_ABG), 2014-2023 mean (same years as GPP/NPP) [kgC/m^2]
-  - Aboveground biomass (TOTVEGC_ABG), 1850 (run's first year -- little
-    accumulated harvest yet, so the 0.25 deg block pattern below should be
-    much weaker than in the 2014-2023 panel)                [kgC/m^2]
+  - Aboveground biomass (TOTVEGC_ABG), 2014-2023 mean, smoothed and
+    unsmoothed (same years as GPP/NPP)                        [kgC/m^2]
+  - Aboveground biomass (TOTVEGC_ABG) single-year snapshots, unsmoothed:
+    1850 (run's first year) plus every 20 years through 2010, and 2000
+    -- watch the 0.25 deg block pattern (see caveat below) build up
+    over the run                                               [kgC/m^2]
   - Soil organic C, 0-30 cm, end-of-run (Dec 2023) snapshot   [kgC/m^2]
   - Soil organic C, 0-100 cm, end-of-run (Dec 2023) snapshot  [kgC/m^2]
   - Soil organic C, full profile, end-of-run (Dec 2023) snapshot  [kgC/m^2]
+
+All single-panel maps use a horizontal colorbar under the plot
+(cbar_location="bottom").
 
 Biomass caveat
 --------------
@@ -97,6 +102,10 @@ SOC_VMIN, SOC_VMAX = 0, 20
 # 0.25 deg / ~0.0417 deg native spacing =~ 6 grid cells
 BIOMASS_SMOOTH_SIGMA_CELLS = 1.5
 
+# every 20 years from 1850 (run start) through 2010; 1850 is handled
+# separately below since its file is already opened for DZSOI/soilc_030
+BIOMASS_20YR_YEARS = [1870, 1890, 1910, 1930, 1950, 1970, 1990, 2010]
+
 
 # ── Helpers ──────────────────────────────────────────────────────────────
 
@@ -141,6 +150,16 @@ def annual_mean_pool_map(ds: xr.Dataset, var: str) -> xr.DataArray:
         yr_mean = da.isel(time=np.where(true_years == yr)[0]).mean(dim="time", skipna=True)
         yearly.append(yr_mean.assign_coords(year=int(yr)))
     return xr.concat(yearly, dim="year")
+
+
+def biomass_single_year_kgC(year: int) -> np.ndarray:
+    """Open that year's h0 file, compute TOTVEGC_ABG's annual mean, return
+    kgC/m^2. Unsmoothed -- see module docstring for why this varies year
+    to year with the 0.25 deg LUH2 block pattern."""
+    f = find_h0_files(RUN_DIR, year_min=year, year_max=year)[0]
+    with xr.open_dataset(f, decode_times=True) as ds:
+        yearly = annual_mean_pool_map(ds, "TOTVEGC_ABG")  # gC/m^2, dims (year=1, lat, lon)
+        return yearly.isel(year=0).values / 1000.0
 
 
 def quantile_boundary_norm(data: np.ndarray, n_levels: int = 50) -> BoundaryNorm:
@@ -259,12 +278,20 @@ def main():
     ds_static.close()
 
     # ---- Biomass, 2000: 150 years in -- harvest has had time to accumulate
-    year2000_file = find_h0_files(RUN_DIR, year_min=2000, year_max=2000)[0]
-    ds_2000 = xr.open_dataset(year2000_file, decode_times=True)
-    biomass_2000_yearly = annual_mean_pool_map(ds_2000, "TOTVEGC_ABG")  # gC/m^2
-    biomass_2000_kgC = biomass_2000_yearly.isel(year=0).values / 1000.0
+    biomass_2000_kgC = biomass_single_year_kgC(2000)
     biomass_2000_norm = quantile_boundary_norm(biomass_2000_kgC, n_levels=50)
-    ds_2000.close()
+
+    # ---- Biomass, every 20 years from 1850-2010: watch the block pattern
+    # build up over the run (see module docstring)
+    biomass_20yr_panels = []
+    for yr in BIOMASS_20YR_YEARS:
+        d = biomass_single_year_kgC(yr)
+        biomass_20yr_panels.append({
+            "data": d, "var": f"Biomass_{yr}", "label": "Aboveground biomass (TOTVEGC_ABG)",
+            "title": f"Aboveground biomass — {yr}",
+            "units": "kgC/m^2", "cmap": "viridis", "norm": quantile_boundary_norm(d, n_levels=50),
+            "fname": f"Biomass_{yr}",
+        })
 
     # mask non-land with landmask from the soil dataset
     landmask = ds_soil["landmask"].values if "landmask" in ds_soil else None
@@ -313,6 +340,7 @@ def main():
             "units": "kgC/m^2", "cmap": "viridis", "norm": biomass_2000_norm,
             "fname": "Biomass_2000",
         },
+        *biomass_20yr_panels,
         {
             "data": soilc_030_kgC, "var": "SoilC_0-30cm", "label": "Soil organic C (0-30 cm)",
             "title": "Soil organic C, 0-30 cm — end of run (Dec 2023)",
@@ -356,6 +384,7 @@ def main():
             add_borders=True,
             add_gridlines=True,
             set_extent=True,
+            cbar_location="bottom",
         )
         save_geotiff(lon, lat, d, tif_path)
 

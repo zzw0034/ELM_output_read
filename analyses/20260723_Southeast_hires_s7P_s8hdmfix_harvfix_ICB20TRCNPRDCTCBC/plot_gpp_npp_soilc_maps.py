@@ -226,6 +226,10 @@ def main():
     # boundaries (see module docstring / smooth_for_display docstring)
     biomass_10yr_kgC_smoothed = smooth_for_display(biomass_10yr_kgC, BIOMASS_SMOOTH_SIGMA_CELLS)
     biomass_norm = quantile_boundary_norm(biomass_10yr_kgC_smoothed, n_levels=50)
+    # unsmoothed version too, for a like-for-like series with the 1850/2000
+    # panels (which have no smoothing applied) showing the block pattern
+    # actually building up over the run
+    biomass_raw_norm = quantile_boundary_norm(biomass_10yr_kgC, n_levels=50)
 
     # ---- Soil C: end-of-run (Dec 2023) snapshot ---------------------------
     last_file = files[-1]  # 2023-02-01 file: records true Jan-Dec 2023 after shift
@@ -296,6 +300,12 @@ def main():
             "title": "Aboveground biomass — 1850",
             "units": "kgC/m^2", "cmap": "viridis", "norm": biomass_1850_norm,
             "fname": "Biomass_1850",
+        },
+        {
+            "data": biomass_10yr_kgC, "var": "Biomass_2014-2023_raw", "label": "Aboveground biomass (TOTVEGC_ABG)",
+            "title": f"Aboveground biomass — {YEAR_MIN}-{YEAR_MAX} mean (unsmoothed)",
+            "units": "kgC/m^2", "cmap": "viridis", "norm": biomass_raw_norm,
+            "fname": f"Biomass_{YEAR_MIN}-{YEAR_MAX}mean_raw",
         },
         {
             "data": biomass_2000_kgC, "var": "Biomass_2000", "label": "Aboveground biomass (TOTVEGC_ABG)",

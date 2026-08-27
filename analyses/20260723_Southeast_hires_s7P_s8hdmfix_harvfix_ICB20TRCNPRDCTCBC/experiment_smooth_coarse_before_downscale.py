@@ -84,6 +84,18 @@ def quantile_boundary_norm(data, n_levels=50):
     return BoundaryNorm(edges, ncolors=256)
 
 
+def panel(ax, arr, lat, lon, title, norm):
+    mesh = ax.pcolormesh(lon, lat, arr, cmap="OrRd", norm=norm, shading="auto",
+                         transform=ccrs.PlateCarree())
+    ax.coastlines(resolution="10m", linewidth=0.8)
+    ax.add_feature(cfeature.STATES, linewidth=0.5, edgecolor="black")
+    ax.add_feature(cfeature.BORDERS, linewidth=0.5)
+    ax.set_extent([LON_MIN, LON_MAX, LAT_MIN, LAT_MAX], crs=ccrs.PlateCarree())
+    ax.gridlines(draw_labels=False, linewidth=0.3, color="gray", alpha=0.5, linestyle="--")
+    ax.set_title(title)
+    return mesh
+
+
 def main():
     coarse, clat, clon = load_tif(f"LUH2source_AnnualHarvest_{YEAR}.tif")
     fine, flat, flon = load_tif(f"AnnualHarvest_{YEAR}.tif")
@@ -131,19 +143,26 @@ def main():
     print(f"Smoothed-then-downsc.: mean={np.nanmean(new_field):.5f}  max={np.nanmax(new_field):.5f}  sum={np.nansum(new_field):.2f}")
     print(f"Coarse total (0.25deg): sum={np.nansum(coarse):.2f}   coarse-smoothed sum={np.nansum(coarse_smoothed):.2f}")
 
-    # ---- plot: original vs smoothed-input result --------------------------
-    fig, axes = plt.subplots(1, 2, figsize=(13, 6), subplot_kw={"projection": ccrs.PlateCarree()})
+    # ---- plot A: coarse (0.25 deg) BEFORE vs AFTER smoothing, no downscaling ----
+    fig0, axes0 = plt.subplots(1, 2, figsize=(13, 6), subplot_kw={"projection": ccrs.PlateCarree()})
 
-    def panel(ax, arr, lat, lon, title, norm):
-        mesh = ax.pcolormesh(lon, lat, arr, cmap="OrRd", norm=norm, shading="auto",
-                             transform=ccrs.PlateCarree())
-        ax.coastlines(resolution="10m", linewidth=0.8)
-        ax.add_feature(cfeature.STATES, linewidth=0.5, edgecolor="black")
-        ax.add_feature(cfeature.BORDERS, linewidth=0.5)
-        ax.set_extent([LON_MIN, LON_MAX, LAT_MIN, LAT_MAX], crs=ccrs.PlateCarree())
-        ax.gridlines(draw_labels=False, linewidth=0.3, color="gray", alpha=0.5, linestyle="--")
-        ax.set_title(title)
-        return mesh
+    mesh0a = panel(axes0[0], coarse, clat, clon,
+                   f"LUH2 source, native 0.25° ({YEAR})",
+                   quantile_boundary_norm(coarse))
+    fig0.colorbar(mesh0a, ax=axes0[0], label="Harvest (unitless)", orientation="horizontal", pad=0.05, shrink=0.9)
+
+    mesh0b = panel(axes0[1], coarse_smoothed, clat, clon,
+                   f"Smoothed 0.25° F_coarse, NOT downscaled ({YEAR})",
+                   quantile_boundary_norm(coarse_smoothed))
+    fig0.colorbar(mesh0b, ax=axes0[1], label="Harvest (unitless)", orientation="horizontal", pad=0.05, shrink=0.9)
+
+    out_path0 = os.path.join(OUT_DIR, f"Option1_CoarseOnly_SmoothedVsRaw_{YEAR}.png")
+    fig0.savefig(out_path0, dpi=200, bbox_inches="tight")
+    plt.close(fig0)
+    print(f"Saved: {out_path0}")
+
+    # ---- plot B: original vs smoothed-input result (downscaled to 4km) ----
+    fig, axes = plt.subplots(1, 2, figsize=(13, 6), subplot_kw={"projection": ccrs.PlateCarree()})
 
     mesh1 = panel(axes[0], fine, flat, flon,
                   f"Current: downscaled from raw 0.25° F_coarse ({YEAR})",

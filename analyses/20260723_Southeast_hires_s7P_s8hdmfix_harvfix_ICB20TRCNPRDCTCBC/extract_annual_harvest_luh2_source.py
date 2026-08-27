@@ -66,11 +66,18 @@ def main():
         ti = cal_year - LUH2_YEAR0
 
         total = np.zeros((lat_raw.size, lon.size), dtype=np.float64)
+        valid = np.ones((lat_raw.size, lon.size), dtype=bool)
         for v in HARVEST_VARS:
             # netCDF4 auto-masks via the file's "missing_value" attribute
-            # (verified: returns a MaskedArray); fill masked (ocean/non-land)
-            # cells with 0 harvest.
-            total += np.ma.filled(f.variables[v][ti, :, :], 0.0)
+            # (verified: returns a MaskedArray). Track which cells LUH2
+            # actually defines (land) vs. masks out (ocean/non-land) --
+            # filling masked cells with a bare 0 would make genuine ocean
+            # indistinguishable from real "land with zero harvest" later,
+            # which matters for e.g. normalized-convolution smoothing.
+            raw = f.variables[v][ti, :, :]
+            valid &= ~np.ma.getmaskarray(raw)
+            total += np.ma.filled(raw, 0.0)
+        total[~valid] = np.nan
 
         # lat_raw_idx already lists rows in ascending-lat order (see above)
         total_crop = total[np.ix_(lat_raw_idx, lon_idx)]

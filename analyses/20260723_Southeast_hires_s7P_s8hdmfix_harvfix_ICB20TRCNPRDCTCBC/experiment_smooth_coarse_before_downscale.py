@@ -97,9 +97,15 @@ def panel(ax, arr, lat, lon, title, norm):
 
 
 def main():
-    coarse, clat, clon = load_tif(f"LUH2source_AnnualHarvest_{YEAR}.tif")
+    coarse_raw, clat, clon = load_tif(f"LUH2source_AnnualHarvest_{YEAR}.tif")
     fine, flat, flon = load_tif(f"AnnualHarvest_{YEAR}.tif")
-    coarse = np.nan_to_num(coarse, nan=0.0)
+    # coarse_raw now has real NaN at ocean/non-LUH2-land cells (fixed in
+    # extract_annual_harvest_luh2_source.py -- previously those were
+    # silently filled with 0, indistinguishable from real "land, zero
+    # harvest"). Keep both: the 0-filled version for lookups/interpolators
+    # that can't take NaN, and the NaN version for the smoothing step,
+    # where the distinction actually matters.
+    coarse = np.nan_to_num(coarse_raw, nan=0.0)
 
     # ---- step 2: recover local shape S = D / F_coarse_at_fine_cell --------
     coarse_at_fine_interp = RegularGridInterpolator(
@@ -125,9 +131,15 @@ def main():
     S = np.clip(S, None, s_hi)
 
     # ---- step 3: smooth F_coarse on the coarse grid, then upsample --------
-    coarse_smoothed = gaussian_filter(coarse, sigma=COARSE_SMOOTH_SIGMA_CELLS)
+    # Normalized convolution (not a plain gaussian_filter on a 0-filled
+    # array): ocean is real NaN here, so it's excluded from both the
+    # numerator and the normalizing weight, instead of being averaged in
+    # as a false "zero-harvest land neighbor" that would drag down coastal
+    # cells. See normalized_conv_fill() docstring.
+    coarse_smoothed = normalized_conv_fill(coarse_raw, sigma=COARSE_SMOOTH_SIGMA_CELLS)
+    coarse_smoothed_filled = np.nan_to_num(coarse_smoothed, nan=0.0)
     smooth_interp = RegularGridInterpolator(
-        (clat, clon), coarse_smoothed, method="linear", bounds_error=False, fill_value=0.0
+        (clat, clon), coarse_smoothed_filled, method="linear", bounds_error=False, fill_value=0.0
     )
     coarse_smoothed_at_fine = smooth_interp(pts).reshape(fine.shape)
 
@@ -146,9 +158,9 @@ def main():
     # ---- plot A: coarse (0.25 deg) BEFORE vs AFTER smoothing, no downscaling ----
     fig0, axes0 = plt.subplots(1, 2, figsize=(13, 6), subplot_kw={"projection": ccrs.PlateCarree()})
 
-    mesh0a = panel(axes0[0], coarse, clat, clon,
+    mesh0a = panel(axes0[0], coarse_raw, clat, clon,
                    f"LUH2 source, native 0.25° ({YEAR})",
-                   quantile_boundary_norm(coarse))
+                   quantile_boundary_norm(coarse_raw))
     fig0.colorbar(mesh0a, ax=axes0[0], label="Harvest (unitless)", orientation="horizontal", pad=0.05, shrink=0.9)
 
     mesh0b = panel(axes0[1], coarse_smoothed, clat, clon,
@@ -182,9 +194,9 @@ def main():
     # ---- plot C: all four stages together, 2x2 --------------------------
     fig2, axes2 = plt.subplots(2, 2, figsize=(14, 12), subplot_kw={"projection": ccrs.PlateCarree()})
 
-    mesh_a = panel(axes2[0, 0], coarse, clat, clon,
+    mesh_a = panel(axes2[0, 0], coarse_raw, clat, clon,
                    f"1) LUH2 source, native 0.25° ({YEAR})",
-                   quantile_boundary_norm(coarse))
+                   quantile_boundary_norm(coarse_raw))
     fig2.colorbar(mesh_a, ax=axes2[0, 0], label="Harvest (unitless)", orientation="horizontal", pad=0.05, shrink=0.9)
 
     mesh_b = panel(axes2[0, 1], coarse_smoothed, clat, clon,

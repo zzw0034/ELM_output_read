@@ -179,6 +179,34 @@ def main():
     plt.close(fig)
     print(f"Saved: {out_path}")
 
+    # ---- plot C: all four stages together, 2x2 --------------------------
+    fig2, axes2 = plt.subplots(2, 2, figsize=(14, 12), subplot_kw={"projection": ccrs.PlateCarree()})
+
+    mesh_a = panel(axes2[0, 0], coarse, clat, clon,
+                   f"1) LUH2 source, native 0.25° ({YEAR})",
+                   quantile_boundary_norm(coarse))
+    fig2.colorbar(mesh_a, ax=axes2[0, 0], label="Harvest (unitless)", orientation="horizontal", pad=0.05, shrink=0.9)
+
+    mesh_b = panel(axes2[0, 1], coarse_smoothed, clat, clon,
+                   f"2) Smoothed, still 0.25° (not downscaled) ({YEAR})",
+                   quantile_boundary_norm(coarse_smoothed))
+    fig2.colorbar(mesh_b, ax=axes2[0, 1], label="Harvest (unitless)", orientation="horizontal", pad=0.05, shrink=0.9)
+
+    mesh_c = panel(axes2[1, 0], new_field, flat, flon,
+                   f"3) Smoothed, then downscaled to 4km ({YEAR})",
+                   quantile_boundary_norm(new_field))
+    fig2.colorbar(mesh_c, ax=axes2[1, 0], label="Harvest (unitless)", orientation="horizontal", pad=0.05, shrink=0.9)
+
+    mesh_d = panel(axes2[1, 1], fine, flat, flon,
+                   f"4) Current 4km (from raw 0.25°, no smoothing) ({YEAR})",
+                   quantile_boundary_norm(fine))
+    fig2.colorbar(mesh_d, ax=axes2[1, 1], label="Harvest (unitless)", orientation="horizontal", pad=0.05, shrink=0.9)
+
+    out_path2 = os.path.join(OUT_DIR, f"Option1_FourPanel_{YEAR}.png")
+    fig2.savefig(out_path2, dpi=200, bbox_inches="tight")
+    plt.close(fig2)
+    print(f"Saved: {out_path2}")
+
 
 if __name__ == "__main__":
     main()

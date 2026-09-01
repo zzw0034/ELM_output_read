@@ -12,6 +12,8 @@ aggregate_monthly_to_yearly(da, ...)     : monthly → yearly (sum or mean)
 time_coord_minus_one_year(tc)            : shift time coordinate back by one year (h0 date fix)
 subtract_month_cftime(t)                 : subtract one month from a cftime object
 detect_flux_scale_from_bounds(ds, ...)   : auto-detect monthly/yearly averaging → (seconds, units_str)
+soil_layer_interfaces(zsoi)              : derive layer bottom-interface depths [m] from node depths
+integrate_soil_profile_to_depth(da, ...) : vertically-resolved density var -> integral to a given depth
 """
 
 import numpy as np
@@ -431,6 +433,86 @@ def time_coord_minus_one_year(time_coord: xr.DataArray) -> np.ndarray:
         )
     # numpy datetime64: subtract 365 days as approximation
     return tvals - np.timedelta64(365, "D")
+
+
+# ---------------------------------------------------------------------------
+# Soil depth integration
+# ---------------------------------------------------------------------------
+
+def soil_layer_interfaces(zsoi: np.ndarray) -> np.ndarray:
+    """
+    Derive soil layer bottom-interface depths [m] from layer node (center)
+    depths, using ELM/CLM's standard recursive formula (matches
+    ``iniTimeConst.F90``): interior interfaces are the midpoint between
+    adjacent node depths, and the deepest interface is extrapolated from the
+    deepest layer's own half-thickness. The ground surface (top interface of
+    layer 0) is implicitly 0.
+
+    Parameters
+    ----------
+    zsoi : np.ndarray  shape (nlev,)
+        Node depths [m], e.g. the ``levgrnd``/``levdcmp`` coordinate values.
+
+    Returns
+    -------
+    np.ndarray  shape (nlev,)
+        ``zisoi[j]`` is the depth of the bottom of layer *j*.
+
+    Example
+    -------
+    >>> zisoi = soil_layer_interfaces(ds["levdcmp"].values)
+    >>> zisoi[4]   # bottom of the 5th layer, e.g. ~0.289 m on the standard 15-level grid
+    """
+    n = len(zsoi)
+    zisoi = np.zeros(n)
+    for j in range(n - 1):
+        zisoi[j] = 0.5 * (zsoi[j] + zsoi[j + 1])
+    zisoi[n - 1] = zsoi[n - 1] + 0.5 * (zsoi[n - 1] - zisoi[n - 2])
+    return zisoi
+
+
+def integrate_soil_profile_to_depth(
+    da: xr.DataArray,
+    zsoi: np.ndarray,
+    depth_m: float,
+    lev_dim: str = "levdcmp",
+) -> xr.DataArray:
+    """
+    Integrate a vertically-resolved soil density variable (units X/m^3, e.g.
+    ``SOIL1C_vr`` in gC/m^3) down to *depth_m*, returning X/m^2 with
+    *lev_dim* removed.
+
+    Layer thicknesses are derived from *zsoi* via :func:`soil_layer_interfaces`.
+    A layer that straddles *depth_m* is weighted by only the fraction of its
+    thickness lying above *depth_m*, so the result is exact for any cutoff
+    depth, not just one that happens to land on a layer boundary.
+
+    Parameters
+    ----------
+    da : xr.DataArray
+        Must have a *lev_dim* dimension matching *zsoi* in length.
+    zsoi : np.ndarray  shape (nlev,)
+        Node (center) depths [m] for *lev_dim* (e.g. ``ds["levdcmp"].values``).
+    depth_m : float
+        Cutoff depth in meters (e.g. ``0.3`` for 0-30 cm).
+    lev_dim : str
+        Name of the vertical dimension to integrate over (default ``"levdcmp"``).
+
+    Returns
+    -------
+    xr.DataArray
+        Same as *da* but with *lev_dim* summed away.
+
+    Example
+    -------
+    >>> soc_vr = ds["SOIL1C_vr"] + ds["SOIL2C_vr"] + ds["SOIL3C_vr"] + ds["SOIL4C_vr"]
+    >>> soc_30cm = integrate_soil_profile_to_depth(soc_vr, ds["levdcmp"].values, 0.3)
+    """
+    zisoi = soil_layer_interfaces(np.asarray(zsoi))
+    ztop = np.concatenate([[0.0], zisoi[:-1]])
+    w = np.clip(np.minimum(zisoi, depth_m) - np.minimum(ztop, depth_m), 0.0, None)
+    weights = xr.DataArray(w, dims=[lev_dim], coords={lev_dim: da[lev_dim]})
+    return (da * weights).sum(dim=lev_dim, skipna=True)
 
 
 def subtract_month_cftime(t) -> object:

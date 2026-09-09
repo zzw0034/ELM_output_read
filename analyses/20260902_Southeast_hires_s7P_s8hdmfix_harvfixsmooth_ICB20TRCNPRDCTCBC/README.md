@@ -59,3 +59,42 @@ longer jumps preferentially at coarse-grid boundaries.
 
 `outputs/` is git-ignored. The remote root is Lustre scratch and is purgeable,
 so nothing there is a backup.
+
+## Finding (job 522178, 2026-09-09)
+
+**The rectangles in Biomass_2010 are gone.** `BiomassBeforeAfterZoom_2010.png`
+is the clearest evidence: over Mississippi/Alabama/Georgia the old run shows
+hard-edged plateaus snapped to the drawn 0.25° gridlines, and the new run shows
+organic texture with no rectangles. The after-minus-before panel is itself made
+of 0.25° blocks, up to about ±1.5 kgC/m², so the change is exactly the block
+pattern being removed rather than a general shift. Domain-wide, biomass differs
+between the two runs by 4.8% of its mean.
+
+A residual coarse-grid imprint remains, and it starts in the forcing. Block
+index over the zoom box, where 1850 biomass sits at 0.93 because the surface
+dataset carries a little 6-cell structure of its own:
+
+| Field | harvfix | harvfixsmooth |
+|---|---|---|
+| Annual wood harvest 2010 | 2.375 | 1.748 |
+| Biomass 2010 | 1.193 | 1.124 |
+| Biomass 1850 (baseline, identical in both runs) | 0.932 | 0.932 |
+
+So smoothing removed roughly a quarter of the biomass field's excess over
+baseline, and the harvest forcing still jumps preferentially on the 0.25° grid.
+`AnnualHarvestBeforeAfterZoom_2010.png` shows why: the smoothed forcing no
+longer has single-cell rectangles, but it still holds coarse plateaus. If the
+remaining imprint matters, the next lever is the forcing, not the model.
+
+Read the domain-wide column of `blockiness_metric_2010.txt` with care. The
+index is decisive for the forcing, whose blocks cover the whole domain, and
+only weakly sensitive for biomass, whose blocks cover a fraction of it and
+compete with genuine 4 km heterogeneity in the same step statistics. The
+domain-wide biomass index barely moves (1.030 → 1.034) even though the zoom
+box and the figures both show a clear improvement.
+
+Only biomass ever accumulates the imprint. Over the zoom box, GPP, NPP and
+0–30 cm SOC hold a block index between 0.90 and 1.02 in every year from 1850 to
+2023, while biomass climbs from 0.93 in 1850 to about 1.13 by 2023 as harvest
+history builds up. That is expected: biomass is the pool that integrates
+decades of wood-harvest disturbance, and the other three are not.

@@ -93,6 +93,12 @@ compete with genuine 4 km heterogeneity in the same step statistics. The
 domain-wide biomass index barely moves (1.030 → 1.034) even though the zoom
 box and the figures both show a clear improvement.
 
+**A separate and larger problem surfaced from these same figures.** The pale
+areas in Georgia and Florida are not missing data and not a colour artifact:
+the pine PFT is dead on 9% of pine patches, burned out during the AD spin-up,
+which ran with human population density stuck at zero. Florida's biomass is 17%
+low because of it. See [PINE_DIEBACK_HDM_FIRE.md](PINE_DIEBACK_HDM_FIRE.md).
+
 Only biomass ever accumulates the imprint. Over the zoom box, GPP, NPP and
 0–30 cm SOC hold a block index between 0.90 and 1.02 in every year from 1850 to
 2023, while biomass climbs from 0.93 in 1850 to about 1.13 by 2023 as harvest

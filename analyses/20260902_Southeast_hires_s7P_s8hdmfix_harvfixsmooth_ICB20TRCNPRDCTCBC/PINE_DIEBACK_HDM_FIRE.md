@@ -54,6 +54,46 @@ cohorts), so ignition supply is not what differs. In ELM's fire
 parameterization population density drives both human ignition and fire
 *suppression*; at zero there is no suppression.
 
+### How firmly is fire established? Strongly implicated, not proven
+
+Two results qualify the attribution and should be quoted alongside it.
+
+**Fire is not merely a proxy for warm sandy sites.** Stratifying on temperature
+and sand and then splitting each stratum into fire terciles, the death rate
+still rises with fire in 7 of 8 strata, sometimes steeply:
+
+| stratum | n | low fire | mid fire | high fire |
+|---|---|---|---|---|
+| 14-17 C, sand 0-50% | 24083 | 0.0% | 0.7% | 11.5% |
+| 17-19 C, sand 50-70% | 5590 | 0.6% | 4.2% | 9.8% |
+| 17-19 C, sand 70-101% | 2911 | 9.6% | 17.8% | 12.8% |
+| 19-30 C, sand 50-70% | 874 | 0.0% | 3.8% | 61.9% |
+| 19-30 C, sand 70-101% | 6485 | 8.3% | 40.0% | 88.7% |
+
+Partial rank correlation of fire with death, controlling for temperature and
+sand, is 0.171 - real and independent.
+
+**But temperature is the stronger raw predictor**: rank correlation with death
+is 0.590 for temperature against 0.185 for fire and 0.286 for sand. That does
+not demote fire, because burned area in this model is itself driven by
+temperature and fuel moisture, so temperature plausibly acts largely *through*
+fire. It does mean the two pathways cannot be separated from output diagnostics
+alone.
+
+**And the same fire did not stop the oak.** Fire is a column-level flux shared
+by every PFT in the natural-vegetation column. In the very gridcells where pine
+went to zero, broadleaf deciduous temperate tree LAI rose monotonically through
+the whole AD phase - 1.78 at year 21, 2.16 at 41, 2.20 at 81, 2.29 at 201 - and
+its vegetation carbon went from 1310 to 2663 gC/m2 while the pine beside it
+collapsed. So fire alone is not lethal; it is lethal to an evergreen that
+carries its leaf fuel year-round and cannot re-leaf from storage each spring
+the way a deciduous tree does. That PFT asymmetry is inference from the
+behaviour, not something these diagnostics measure directly.
+
+**The decisive test** is a rerun: repeat a small region of the AD spin-up with
+the corrected HDM, or with fire disabled, and see whether the pine survives.
+Nothing in the existing output can settle it.
+
 The root cause is documented in the user's own note,
 `ELM_makeSurfdata/Make_surface_data/s8_update_hdm/HDM_high_resolution_cpl_bypass_fix_20260717.md`:
 the CPL_BYPASS HDM reader had the file dimensions **hardcoded to 720 x 360**,
@@ -75,6 +115,35 @@ dead (LAI < 0.5) back to healthy (LAI > 1.5). The dead fraction is 1.0% at AD
 year 21, 6.6% at 41, 8.9% at 81, and then locked at 9.0-9.1% through 441 years
 of corrected final spin-up and all 174 transient years. 97% of the deaths happen
 in the first 80 years of the AD phase, 63% of them between years 21 and 41.
+
+The reason is that a dead patch has nothing to photosynthesise with. Tracking
+the dead cohort's pine pools through both spin-ups:
+
+| stage | LEAFC | CPOOL | DEADSTEMC | TOTVEGC | GPP | NPP |
+|---|---|---|---|---|---|---|
+| AD 21 | 118.3 | 0 | 271 | 640 | 2.98e-05 | 1.11e-05 |
+| AD 41 | 38.7 | 57.1 | 106 | 295 | 9.86e-06 | 3.38e-06 |
+| AD 81 | 2.57 | 8.50 | 5.84 | 22.5 | 6.91e-07 | 1.88e-07 |
+| AD 201 | 0.137 | 0.729 | 0.119 | 1.18 | 4.16e-08 | 1.00e-08 |
+| CNP 1 | 0.148 | 0.894 | 1.34 | 3.11 | 0 | -2.81e-08 |
+| CNP 441 | 0.104 | 0.484 | 0.840 | 1.92 | 3.03e-08 | 6.69e-09 |
+| healthy pine, CNP 441 | 187.4 | 259.4 | 8900 | 12320 | 4.45e-05 | 1.61e-05 |
+
+GPP scales with leaf area, so at LAI ~0.001 the patch fixes 0.07% of what a
+healthy pine fixes. Its NPP is positive but is 0.21 gC/m2/yr; at that rate
+reaching the healthy stand's 12320 gC/m2 would take tens of thousands of years.
+And it is not even creeping upward: LEAFC *falls* from 0.148 at the start of the
+corrected final spin-up to 0.104 after 441 years, so leaf turnover and
+respiration consume the tiny gain. This is a stable fixed point at essentially
+zero, not slow recovery.
+
+Nothing can bootstrap it. ELM here runs with prescribed PFT areas and no
+dynamic vegetation, and there is no establishment or seed flux into an existing
+patch that has lost its carbon - the only seed terms come from land-cover-change
+transitions that change a patch's area. Growth is funded by photosynthesis from
+existing leaves, so once the leaves are gone the patch is in an absorbing state.
+Fixing HDM afterwards restores fire suppression but gives the pine nothing to
+grow back from.
 
 ## How much it costs
 

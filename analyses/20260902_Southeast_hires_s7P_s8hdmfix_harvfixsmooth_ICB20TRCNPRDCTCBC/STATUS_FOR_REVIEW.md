@@ -160,6 +160,61 @@ The failure mode is that nothing complains. `create_newcase` succeeds, the case
 builds, it runs 201 years, it writes files named `ad_spinup`, and only
 `spinup_state = 0` deep in `lnd_in` records that it was never an AD spin-up.
 
+## Why the missing AD wrecks the 0.5 degree carbon state, exactly
+
+Not "AD converges faster". The AD pools are deliberately **small** - accelerated
+turnover means a smaller steady-state stock - and the whole scheme depends on
+ELM multiplying them back up at the handoff. In
+`components/elm/src/data_types/ColumnDataType.F90` around line 3056:
+
+```fortran
+if (exit_spinup) then
+   m = decomp_cascade_con%spinup_factor(k)
+   if (decomp_cascade_con%spinup_factor(k) > 1) m = m / cnstate_vars%scalaravg_col(c,j)
+else if (enter_spinup) then
+   m = 1. / decomp_cascade_con%spinup_factor(k)
+```
+
+`exit_spinup` fires when a run with `spinup_state = 0` reads a restart written
+with `spinup_state = 1`. **The 0.5 degree restart said 0**, so it never fired.
+
+The handoff numbers show it plainly:
+
+| chain | TOTSOMC at end of "AD" | at start of final spin-up | ratio |
+|---|---|---|---|
+| 4 km | 697 | 15320 | **22x** |
+| 0.5 deg | 2060 | 2173 | 1.05x |
+
+So the 0.5 degree final spin-up began from a soil carbon state roughly seven
+times too low and spent 441 years crawling up from far below, ending at 6752
+against 4 km's 16960, still drifting 13.0% per century against 4 km's 0.8%.
+
+Note the tell: the 0.5 degree "AD" ended *higher* than the 4 km AD (2060 vs
+697), which looks healthier and is exactly backwards. An AD spin-up that ends
+with more soil carbon than a real one is a sign it was never accelerated.
+
+## Should fire be off during AD? No - the reference case has it on
+
+`20260519_Southeast_hires_ICB1850CNRDCTCBC_ad_spinup`, taken as the known-good
+configuration, has:
+
+- `ELM_BLDNML_OPTS ... -bgc_spinup on`, `spinup_state = 1`
+- `nyears_ad_carbon_only = 25`, `spinup_mortality_factor = 10` (both defaults)
+- **no `use_nofire`** - fire is on
+- `stream_fldfilename_popdens = .../elmforc.Li_20181205_mod_hist_SSP2_CMIP6_hdm_0.5x0.5_AVHRR_simyr1850-2100_c240906.nc`
+
+That last line is the whole story. The standard global population file is
+**720 x 360** - exactly the dimensions the old CPL_BYPASS reader had hardcoded.
+It worked. The reader only broke when the project switched to the custom
+high-resolution SEUS file `elmforc.Li_hdm_1_24x1_24_bilinear_SEUS_simyr1850-2100.nc`
+at 504 x 324 for the 2026-07-12 run, and the unchecked `nf90_get_var` return
+code turned that into a silent zero.
+
+So the correct fix for 4 km is not to disable fire in AD. It is to run AD with
+fire on and HDM actually read - which is exactly what job 522373 is doing. That
+restores the reference configuration rather than departing from it, and it makes
+the experiment a direct test rather than the half-test described below.
+
 ## Open questions for the reviewer
 
 1. **Is the phenology reading right?** Specifically: is there any pathway by
@@ -200,10 +255,12 @@ clone of the original 4 km AD spin-up, identical in every input, PE layout and
 namelist, differing only in that its E3SM source reads HDM correctly. RUNDIR and
 EXEROOT on scratch under the same case name.
 
-It tests whether removing the fire trigger saves the pine at 4 km. Note that it
-removes only the suppression half: the run is still an AD spin-up, so the fuel
-inflation and the tenfold fire mortality of `FireMod.F90` lines 586 and 983 are
-still active. A null result therefore would not clear fire, only HDM.
+It tests whether the 4 km AD spin-up run as intended - fire on, AD fuel and
+mortality amplification on, HDM actually read so suppression works - keeps its
+pine. That is the reference configuration of
+`20260519_Southeast_hires_ICB1850CNRDCTCBC_ad_spinup`, so this is a direct test
+of whether the HDM breakage alone accounts for the 4 km dieback, not a
+departure from the intended setup.
 
 First submission (522372) failed in 22 seconds on `GETFIL: FAILED to get
 /domain.nc`. `ATM_DOMAIN_PATH` and `LND_DOMAIN_PATH` are empty in this case

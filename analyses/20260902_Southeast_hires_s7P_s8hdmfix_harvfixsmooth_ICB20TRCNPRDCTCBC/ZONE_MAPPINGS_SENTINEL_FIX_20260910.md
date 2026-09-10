@@ -134,7 +134,45 @@ that, which is why detection now samples the middle and later record and
 discards any wholly-sentinel timestep as uninformative wherever it occurs. Worth
 remembering for anything else that scans these files.
 
-## 6. How to revert
+## 6. Verification performed
+
+All five directories were processed on 2026-09-10 and independently re-checked
+afterwards, not trusting the script's own reporting.
+
+| check | result |
+|---|---|
+| md5 of the five backups | all `cd20300f893cb80ed563d98aa67b1009`, i.e. the untouched original |
+| md5 of the five new tables | all `ba77418a23ffdd3da89d7252acf66b86`, identical to each other |
+| rows in each new table | 117,964 |
+| new rows still pointing at a sentinel | **0** |
+| new rows absent from the old table | 0 (nothing invented, only rows removed) |
+
+The decisive test replayed the model's own nearest-neighbour search over all
+75,920 land gridcells with the old and the new table:
+
+| | |
+|---|---|
+| cells whose forcing record changed | 193 |
+| of those, previously on a sentinel | 193 |
+| cells unchanged | 75,727 |
+| **cells still on a sentinel after the fix** | **0** |
+
+**A note on 193 against the 194 counted from model output.** About a dozen
+coastal cells sit *exactly* equidistant between a valid and a sentinel forcing
+point - the replay prints identical nearest and second-nearest distances, e.g.
+0.029228 degrees for both. This is the geometric consequence of the half-cell
+offset. Which point wins is then decided by floating-point detail: ELM compares
+`100*sqrt(...)` using `ldomain%latc/lonc` from the domain file, while the replay
+used squared distances and the history file's coordinate arrays. Ties fall
+differently, so the two counts disagree by one net cell while each is internally
+consistent.
+
+That ambiguity is precisely why removing the rows is more robust than tightening
+a distance criterion would be: with no sentinel rows left in the table, a tie
+cannot fall onto one no matter how it is broken. The final check confirms it -
+zero cells on sentinels, under either tie-breaking.
+
+## 7. How to revert
 
 ```bash
 cd <directory>
@@ -144,7 +182,7 @@ cp zone_mappings.txt.orig_before_sentinel_fix_20260910 zone_mappings.txt
 The script never deletes the backup, and if one already exists it is kept rather
 than overwritten, so the pristine original survives repeated invocations.
 
-## 7. How to verify the fix
+## 8. How to verify in a new run
 
 After a short run, count gridcells with `landmask == 1` and an annual-mean
 `FSDS < 1`. It should be **zero**; before the fix it was 194.
@@ -158,7 +196,7 @@ assert bad.sum() == 0
 This check is worth adding to the setup of any new case, and has been added to
 `elm_setup_and_run_guide.md`.
 
-## 8. Who is affected
+## 9. Who is affected
 
 The change is a strict improvement: coastal cells that produced zero now produce
 sensible carbon fluxes. It does change results, so:
@@ -168,7 +206,7 @@ sensible carbon fluxes. It does change results, so:
 - Anyone comparing runs across 2026-09-10 should not compare those 194 cells.
 - The other 75,726 cells are unaffected and remain directly comparable.
 
-## 9. Background
+## 10. Background
 
 This was found while investigating something else: in the SEUS 4 km historical
 simulations the evergreen PFTs - needleleaf evergreen temperate and broadleaf

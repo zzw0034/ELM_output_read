@@ -8,9 +8,43 @@ send out. [README.md](README.md) covers the every-20-years QC maps this
 directory was originally built for.
 
 Everything below is measured from model output or read out of the E3SM source.
-Inference is labelled as such. Section 7 lists what was claimed and then
+Inference is labelled as such. Section 8 lists what was claimed and then
 retracted, because several plausible explanations died on contact with data and
 knowing which ones matters for trusting the rest.
+
+## The story in six sentences
+
+The evergreen PFTs sit at near-zero leaf carbon on 9% of their patches at 4 km
+and 78% at 0.5 degrees, permanently, while every deciduous PFT beside them is
+healthy. The reason it is permanent and PFT-specific is structural:
+`CNEvergreenPhenology` sets `bgtr = 0` and has no onset event, so an evergreen's
+leaves come only from current allocation, which photosynthesis funds, which needs
+leaves - while the deciduous subroutines re-flush from storage every spring. What
+pushed patches into that trap differs by resolution and both causes were our own
+configuration: at 4 km, fire, because a hardcoded 720x360 dimension made the HDM
+reader fail silently and take the fire model's suppression term to zero; at 0.5
+degrees, nitrogen starvation, because the case labelled `ad_spinup` was built
+without `-bgc_spinup on` and never ran accelerated decomposition. A controlled
+rerun proved the 4 km diagnosis: fixing only the HDM reader cut the stranded
+fraction from 8.9% to 0.9%, helping the two evergreen PFTs and leaving all five
+deciduous ones untouched to the decimal. Both causes are now fixed, so the chains
+can be rebuilt - section 10 is the plan.
+
+## Where to look for what
+
+| you want | section |
+|---|---|
+| what the symptom looks like, with numbers | 1 |
+| the mechanism, from source | 2 |
+| why 4 km and 0.5 degrees failed for different reasons | 3 |
+| why the 0.5 degree chain is worse than the dieback alone | 4 |
+| the controlled experiment that proved the 4 km diagnosis | 5 |
+| why every timing statement here has a resolution limit | 6 |
+| what is still unexplained | 7 |
+| explanations advanced and then abandoned | 8 |
+| the cost of doing nothing | 9 |
+| **the rerun plan** | **10** |
+| how to reproduce any of it, and the traps | 11 |
 
 ---
 
@@ -255,6 +289,19 @@ resolution. It does here: the 4 km model grid is offset **half a cell** from the
 4 km forcing grid, so every cell takes a nearest neighbour and a coastal one can
 land on a point flagged as ocean. That claim in the guide has been corrected.
 
+**Fixed 2026-09-10.** The CPL_BYPASS reader picks the nearest `zone_mappings.txt`
+row and reads that record without checking it holds data, and 107,661 of the
+225,625 rows point at ocean sentinels. Those rows were deleted from all five
+mapping tables the 4 km chain uses - `cpl_bypass_full` and the four
+`future_clim/ssp*`. Only the broken cells change: a cell whose nearest point was
+already valid keeps it, because only farther-or-equal candidates were removed.
+Verified by replaying ELM's own nearest-neighbour search over all 75,920 land
+cells - 193 changed, 75,727 identical, **zero left on a sentinel**. Originals are
+preserved as `zone_mappings.txt.orig_before_sentinel_fix_20260910`, and the full
+record with the procedure and how to revert sits in the forcing directory as
+`ZONE_MAPPINGS_SENTINEL_FIX_20260910.md`. Script: `fix_zone_mappings.py`, in
+this directory and in the forcing directory.
+
 **Group B is the genuine residual**, 405 patches at the hot southern end of
 Florida with normal forcing. Below 26 N, 42.4% of pine patches are still
 stranded even with the fix - that is the trap still catching the most marginal
@@ -264,7 +311,46 @@ factors even once suppression works.
 So the real residual dieback is **0.6%, not 0.9%**, and it is concentrated in
 south Florida rather than spread across the domain.
 
-## 6. What is still open
+## 6. A limit on every timing statement above
+
+The spin-ups write `hist_nhtfrq = -175200, hist_mfilt = 1`: **one 20-year mean
+per file**, ten files for 200 years. The file stamped `0021` is not a year-21
+snapshot, it is the mean over years 1-20.
+
+Two consequences, and they were not carried into the timing claims carefully
+enough at first.
+
+**Collapse times are smeared and biased late.** Everything above phrased as "the
+stranded fraction at year 41" is really "the fraction whose *20-year mean* TLAI
+over years 21-40 fell below 0.5". A patch that collapsed in year 2 shows a low
+mean immediately; one that collapsed in year 18 still carries most of its peak
+in that window and may not be flagged at all. So the distribution of first-flagged
+windows is not the distribution of collapse times.
+
+**"They establish first and then fail" is weaker than stated.** It rests on the
+dying cohort's years-1-20 mean LAI being 1.126 against 1.581 for survivors. A
+mean of 1.126 is equally consistent with a steady 1.126 and with growing to 2.2
+by year 10 then collapsing to 0 by year 20. These cannot be distinguished at
+this output frequency.
+
+**What is not affected**: the end state (9.1% stranded), the PFT selectivity, the
+one-way behaviour over ~800 years, the source-level phenology mechanism, and the
+experiment of section 5 - control and experiment were measured identically, so
+the comparison holds.
+
+Ten points is also too coarse to judge AD convergence: it cannot distinguish
+monotonic approach from oscillation on a sub-20-year scale. The final spin-up is
+better at 23 points over 441 years, but has the same blind spot below 20 years.
+
+**Diagnostic run 522626 addresses this.**
+`20260910_ADdiag_annual_ICB1850CNRDCTCBC_ad_spinup` is a `--keepexe` clone of the
+original AD spin-up - so the *unfixed* HDM reader, where the collapse actually
+happens - running 30 years with `hist_nhtfrq = -8760, hist_mfilt = 30`, annual
+output, on 20 nodes of `parallel`. It also adds `LEAFN`, `FROOTN`, `LIVESTEMN`,
+`LIVECROOTN`, `XSMRPOOL`, `LEAFC_ALLOC`, `LEAFC_LOSS` and `LEAFC_TO_LITTER` to
+both tapes, which is what the open question below needs.
+
+## 7. What is still open
 
 **Why a stranded patch sits at break-even instead of recovering or collapsing.**
 It is not dead: LEAFC 0.092 gC/m2 with a *positive* NPP of 0.187 gC/m2/yr,
@@ -300,10 +386,13 @@ allocation would give a decay rate of -0.165/yr, a six-year collapse. The
 observed decay is ~1250 years, 200x slower. Something regulates these patches
 close to break-even and it is not a simple fixed-fraction mismatch.
 
-**To settle it**: a short diagnostic run with `LEAFN`, `FROOTN`, `LIVESTEMN`,
-`LIVECROOTN`, `XSMRPOOL` and `LEAFC_ALLOC` added to `hist_fincl2`, which would
-decompose maintenance respiration by tissue N and read the actual leaf
-allocation fraction rather than inferring it from a steady-state assumption.
+**Being settled now.** Job **522626** is running exactly that: 30 years of the
+original AD spin-up at annual resolution with those variables on both tapes (see
+section 6). It will decompose maintenance respiration by tissue nitrogen, resolve
+the `AR > MR + GR` gap through `XSMRPOOL`, and read the *actual* leaf allocation
+fraction from `LEAFC_ALLOC` against `LEAFC_LOSS` and `LEAFC_TO_LITTER` instead of
+inferring it from a steady-state assumption. That inference is precisely where
+the 200x error came from.
 
 **Whether this is known.** Three questions are out to colleagues in
 [ASK_COLLEAGUES.md](ASK_COLLEAGUES.md): has anyone seen it, is the phenology
@@ -323,7 +412,7 @@ There is no viability guard in the code today - a search of `biogeochem/` and
 transition. That is why the 0.5 degree transient partly recovered (78.1% to 9.9%
 stranded by 2023) and the 4 km one did not.
 
-## 7. Claims made and then retracted
+## 8. Claims made and then retracted
 
 Six explanations were advanced during this investigation and abandoned. Listing
 them because two of them failed the same way.
@@ -352,7 +441,7 @@ them because two of them failed the same way.
 Items 1 and 4 are the same error: **taking a mean over a bimodal population**.
 Item 3 is stopping the source search at the first plausible module.
 
-## 8. Impact, if nothing is changed
+## 9. Impact, if nothing is changed
 
 Counterfactual: give each stranded patch the mean carbon of healthy pine in the
 same temperature band, at its own PFT weight.
@@ -380,7 +469,95 @@ Minimum action without rerunning: mask or flag the affected cells in any map or
 regional total and state the limitation. They are reproducible from h1 output as
 pine patches with annual mean TLAI < 0.5.
 
-## 9. Reproducing any of this
+## 10. Rerun plan
+
+Both root causes are fixed and verified, so the chains can be rebuilt. Nothing
+below needs a code change or a new input dataset.
+
+### Prerequisites, both already in place
+
+| fix | where | status |
+|---|---|---|
+| HDM reader reads any grid and any calendar | `lnd_import_export.F90`, patched 2026-07-17 | in the current `SRCROOT` |
+| `zone_mappings.txt` free of ocean sentinels | 5 tables under `Daymet_ERA5_TESSFA2/cpl_bypass_full` | done 2026-09-10, verified |
+| `-bgc_spinup on` for any AD case | `ELM_BLDNML_OPTS` | must be set per case, see below |
+
+Proof the first two suffice at 4 km: section 5. Fixing HDM alone cuts the
+stranded fraction from 8.9% to 0.9%, and of that residual a third was the
+sentinel cells now also fixed.
+
+### Order: 0.5 degrees first
+
+It is the more broken chain and by far the cheaper one. Its `NTASKS_LND` is 571
+against 4 km's 2560, on a domain with roughly two orders of magnitude fewer
+gridcells, so the whole chain is hours rather than the better part of a week.
+
+### Chain A - 0.5 degrees, rebuild entirely
+
+The existing chain is not salvageable: `20260831_seus_halfdeg_ad_spinup` ran with
+`spinup_state = 0`, so `exit_spinup` never fired at the handoff and the final
+spin-up started from soil carbon roughly seven times too low. It ended at
+6752 gC/m2 still drifting 13.0% per century, against 4 km's 16960 at 0.8%. That
+is a broken carbon state, not just missing evergreens, and the transient plus
+seven future scenarios all inherit it.
+
+1. **AD spin-up, 200 years, cold start.** The one thing that was missing:
+   `./xmlchange --append ELM_BLDNML_OPTS="-bgc_spinup on"`.
+   **Gate:** `spinup_state = 1` in `CaseDocs/lnd_in` before submitting. This is
+   the entire cause of the chain's problem and it is one line.
+2. **Final spin-up, from the AD restart.** **Gate:** `TOTSOMC` must jump sharply
+   at the handoff - 4 km went 697 to 15320, a factor of 22. A ratio near 1 means
+   `exit_spinup` did not fire and the AD stage was not AD. Then run to
+   convergence and require end drift below about 1% per century.
+3. **Transient 1850-2023**, then **the seven future scenarios**.
+
+### Chain B - 4 km, rebuild from the AD stage
+
+The final spin-up and everything downstream inherit the stranded evergreens, so
+the rerun has to start at AD. Do not restart from any existing 4 km restart file.
+
+1. **AD spin-up, 200 years, cold start**, on the current source. Configuration is
+   otherwise the reference one - fire on, no `use_nofire`, `spinup_state = 1`,
+   `spinup_mortality_factor = 10` and `nyears_ad_carbon_only = 25` at their
+   defaults. Measured cost for the original: 2h40m per 20 years on 12 nodes,
+   26.7 h for 200 years; faster on 20.
+   **Gates**, all checkable in the first history file:
+   - `HDM` mean is about 5.1, not 0
+   - zero land cells with annual-mean `FSDS < 1`
+   - stranded pine fraction about 0.4%, not 1.0%
+2. **Final spin-up.** **Gate:** the same `TOTSOMC` handoff jump as above, then
+   end drift below about 1% per century.
+3. **Transient 1850-2023.** Measured cost: 66.4 h on 12 nodes for 174 years.
+4. **Future scenarios**, which pick up the fixed `future_clim/ssp*` tables
+   automatically.
+
+### Expected outcome
+
+Stranded evergreen patches should fall from 9.1% to roughly 0.6%, all of it in
+the hot southern end of Florida, and the 194 zero-carbon coastal cells should
+disappear entirely. Florida's biomass bias of 16.8% should largely close.
+
+### What the rerun does not fix
+
+The phenology trap of section 2 is untouched. Removing the triggers keeps
+patches out of it under *these* conditions; a different disturbance regime can
+strand evergreens again. The residual 0.6% is that trap still catching the most
+marginal sites.
+
+### Standing checks for any future spin-up
+
+Cheap, and each maps to something that actually went wrong here.
+
+| check | catches |
+|---|---|
+| per-PFT LAI from the `h1` tape after spin-up | the entire dieback, which a 50-variable gridcell-mean screen missed |
+| land cells with `FSDS < 1` or `TBOT` outside a physical range | sentinel forcing |
+| `spinup_state` in `CaseDocs/lnd_in` before submitting an AD case | an AD stage that is not AD |
+| `TOTSOMC` ratio across the AD-to-final handoff | `exit_spinup` failing to fire |
+| `HDM` mean non-zero when fire is on | a silently failed forcing read |
+| annual output for at least the first 30 AD years | collapse events invisible inside 20-year means |
+
+## 11. Reproducing any of this
 
 Everything comes from the `h1` PFT-vector history files (`hist_dov2xy = .false.`),
 which exist for both spin-ups and the transient at both resolutions. A

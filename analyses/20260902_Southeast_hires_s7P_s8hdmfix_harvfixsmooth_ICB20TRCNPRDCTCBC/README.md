@@ -94,10 +94,19 @@ domain-wide biomass index barely moves (1.030 → 1.034) even though the zoom
 box and the figures both show a clear improvement.
 
 **A separate and larger problem surfaced from these same figures.** The pale
-areas in Georgia and Florida are not missing data and not a colour artifact:
-the pine PFT is dead on 9% of pine patches, burned out during the AD spin-up,
-which ran with human population density stuck at zero. Florida's biomass is 17%
-low because of it. See [PINE_DIEBACK_HDM_FIRE.md](PINE_DIEBACK_HDM_FIRE.md).
+areas in Georgia and Florida are not missing data and not a colour artifact. The
+needleleaf evergreen temperate PFT sits at exactly zero leaf carbon on 9% of its
+patches here and 78% at 0.5 degrees, permanently, while every deciduous PFT in
+the same gridcells is healthy. Florida's biomass is 17% low because of it. The
+mechanism looks structural: `CNEvergreenPhenology` sets `bgtr = 0` and has no
+onset event, so an evergreen that loses its canopy has no way to rebuild it,
+while the deciduous subroutines re-flush from storage every spring.
+
+- [STATUS_FOR_REVIEW.md](STATUS_FOR_REVIEW.md) - start here. The findings, the
+  open questions, the two attributions that turned out to be wrong, and the
+  experiment in flight (job 522372).
+- [PINE_DIEBACK_HDM_FIRE.md](PINE_DIEBACK_HDM_FIRE.md) - fuller working detail,
+  the fire and HDM evidence, the configuration checks, and the cost figures.
 
 Only biomass ever accumulates the imprint. Over the zoom box, GPP, NPP and
 0–30 cm SOC hold a block index between 0.90 and 1.02 in every year from 1850 to

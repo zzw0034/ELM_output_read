@@ -1,5 +1,10 @@
 # Pine dieback in the SEUS 4 km spin-up: cause, extent, and what it costs
 
+> **For an independent review, read [STATUS_FOR_REVIEW.md](STATUS_FOR_REVIEW.md)
+> instead.** It states the same findings with the open questions, the two
+> attributions that turned out to be wrong, and the experiment now in flight.
+> This file keeps the fuller working detail and the cost figures.
+
 Found 2026-09-09 while asking why parts of Georgia and Florida look pale on the
 GPP maps in this analysis. Recorded here because every 4 km SEUS run in this
 lineage inherits it, including the future scenarios.
@@ -236,12 +241,51 @@ Minimum action if not rerunning: mask or flag the affected cells in any map or
 regional total, and state the limitation. The affected set is reproducible from
 the h1 output as pine patches with annual mean TLAI < 0.5.
 
+## Two configuration checks, one clear and one not
+
+`spinup_mortality_factor = 10` and `nyears_ad_carbon_only = 25` appear in the
+namelist of several cases and look alarming, but both are gated on
+`spinup_state >= 1`, and the factor multiplies only `m_deadstemc_to_litter` and
+`m_deadcrootc_to_litter` - dead structural pools, not leaves or storage.
+
+| case | `spinup_state` | `-bgc_spinup` | factor active |
+|---|---|---|---|
+| 4 km AD spin-up (20260712) | **1** | on | yes |
+| 4 km final spin-up (20260717) | 0 | absent | no, inert |
+| 0.5 deg "ad_spinup" (20260831) | **0** | **absent** | no, inert |
+| 0.5 deg final spin-up (20260901) | 0 | absent | not set |
+
+So the 4 km final spin-up at
+`/projects/hpcl-cli185/proj-shared/zw5/e3sm_run/20260717_Southeast_hires_s7P_s8hdmfix_ICB1850CNPRDCTCBC`
+is correctly configured; the leftover values do nothing.
+
+**But the 0.5 degree case named `ad_spinup` is not an AD spin-up.** It has
+`spinup_state = 0` and no `-bgc_spinup on`, so 201 years intended as
+accelerated decomposition ran with normal decomposition instead. That is a
+genuine misconfiguration in the 0.5 degree chain and needs its own assessment -
+it may be why that run's vegetation is so much further from equilibrium.
+
+It also strengthens the control: the 0.5 degree run had neither fire nor an
+active mortality factor, and still lost 78.1% of its pine.
+
+## Experiment in flight
+
+Job **522372**, submitted 2026-09-09, 12 nodes on the `hpcl-cli185` partition and
+QoS (all 20 of its nodes were idle; `parallel` had 8), about 11 hours for 80
+model years. Case
+`20260909_Southeast_hires_s7P_s8hdmfixTEST_ICB1850CNRDCTCBC_ad_spinup`, a clone
+of the original AD spin-up identical in every input, PE layout and namelist,
+differing only in an E3SM source that reads HDM correctly.
+`compare_ad_hdm_test.py` in this directory produces the verdict table.
+
 ## If it is fixed
 
 The rerun must start at the **AD spin-up**, not the final spin-up, which already
 inherits the damage. That is roughly 201 + 441 + 174 = 816 model years, against
 the 174-year transient's measured 66 hours on 12 nodes, so on the order of two
-weeks of wall time, plus redoing every downstream scenario.
+weeks of wall time, plus redoing every downstream scenario. Note that with the
+phenology trap in play, a rerun is not guaranteed to help: the 0.5 degree chain
+had no fire and lost eight times as much pine.
 
 Cheap sanity check for any future SEUS spin-up: look at pine LAI in the h1
 output around AD years 20-80. The whole outcome is decided in that window.

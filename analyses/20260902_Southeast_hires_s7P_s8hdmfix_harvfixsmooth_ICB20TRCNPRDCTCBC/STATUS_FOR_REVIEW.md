@@ -273,6 +273,37 @@ loss, pine dead fraction against the control's 1.0 / 6.6 / 7.8 / 8.9%, and
 `NDEP_TO_SMINN` as a confound check, since the source tree also gained a Ndep
 calendar-year fix between the two runs.
 
+## Interim result from job 522373: fixing HDM rescues most of the pine
+
+Two comparable checkpoints so far, control against experiment:
+
+| year | HDM | fire loss gC/m2/s | **pine dead %** | NDEP_TO_SMINN |
+|---|---|---|---|---|
+| 21 | 0.000 / **5.128** | 1.17e-06 / 3.43e-07 | 1.0% / **0.4%** | 1.99e-08 / 1.98e-08 |
+| 41 | 0.000 / **5.128** | 1.02e-06 / 3.52e-07 | **6.6% / 0.9%** | 1.99e-08 / 1.98e-08 |
+
+HDM now reads 5.128, matching the final spin-up. Fire drops to about a third.
+The dead fraction goes from 6.6% to 0.9% at year 41. At patch level, of the
+4556 pine patches the control has killed by then, **87.8% are alive in the
+experiment**, at mean LAI 1.468 against 1.831 for pine that never came close to
+dying.
+
+`NDEP_TO_SMINN` is 1.99e-08 against 1.98e-08, so the Ndep calendar-year fix that
+also landed between the two source versions is a no-op for this configuration.
+The experiment isolates HDM cleanly.
+
+**This converts fire from an inferred trigger to a demonstrated one, at 4 km.**
+Only HDM changed; fire fell; the pine lived. It also says a rerun of the 4 km
+chain with the corrected reader would largely work.
+
+Three caveats. The run is only at year 41 of 80 - the control kept climbing to
+8.9% by year 81 and 9.1% by 201, so the experiment may lose more, though the
+trajectories differ sharply already (1.0 to 6.6% against 0.4 to 0.9%). The fix
+is not complete: 0.9% still die, consistent with fire still being amplified by
+the AD fuel and mortality factors even with suppression restored. And none of
+this removes the phenology trap - it only removes a trigger strong enough to
+push patches into it.
+
 ## How to reproduce any of this
 
 Everything comes from the `h1` PFT-vector history files (`hist_dov2xy = .false.`),

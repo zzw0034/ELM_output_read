@@ -1,24 +1,14 @@
-# zone_mappings.txt 海洋哨兵点修复
+# zone_mappings.txt: removal of rows pointing at ocean sentinel records
 
-日期：2026-09-10　　执行：zw5　　已征得 f9y 同意（`cpl_bypass_full/zone_mappings.txt` 原属 f9y）
+Date: 2026-09-10   Performed by: zw5   Agreed with f9y, who owns
+`cpl_bypass_full/zone_mappings.txt`
 
-> **English summary.** The CPL_BYPASS met reader picks the nearest
-> `zone_mappings.txt` entry for each land gridcell and reads that record without
-> checking whether it contains data. 107,661 of the 225,625 entries point at
-> ocean records holding constant sentinels (`FSDS = -1111.027`, `TBOT = 396 K`,
-> `PSRF = -9999.086`). Because the SEUS 4 km model grid is offset half a cell
-> from the forcing grid, 194 coastal land cells snapped onto one and produced
-> `GPP = 0` for entire runs. The fix deletes the sentinel-pointing rows from
-> `zone_mappings.txt`; nothing else is touched, no `.nc` data is modified, and
-> the untouched original is preserved beside it as
-> `zone_mappings.txt.orig_before_sentinel_fix_20260910`. Reverting is a single
-> `cp` back. Details below in Chinese.
+## 1. The problem
 
----
-
-## 1. 问题
-
-ELM 的 `CPL_BYPASS` 气象读取（`components/elm/src/cpl/lnd_import_export.F90`，约 411–436 行）：
+ELM's CPL_BYPASS meteorology reader
+(`components/elm/src/cpl/lnd_import_export.F90`, around lines 411-436) loads
+every row of `zone_mappings.txt`, then for each land gridcell picks the row
+minimising the distance and reads that record:
 
 ```fortran
 open(unit=13, file=trim(metdata_bypass) // '/zone_mappings.txt')
@@ -37,82 +27,127 @@ do g3 = 1,ng
 end do
 ```
 
-对每个陆地格点在全部条目里找最近邻，**取到就用，从不检查那条记录里有没有有效数据**。
+It takes whatever is nearest and **never checks whether that record contains
+data**.
 
-而这套强迫的 225625 个点里，**107661 个是海洋点，存的是常数哨兵值**：
+Of the 225,625 points in this forcing, **107,661 are ocean and hold constant
+sentinel values**:
 
-| 变量 | 哨兵值 |
+| variable | sentinel |
 |---|---|
-| `FSDS` | −1111.027 |
+| `FSDS` | -1111.027 |
 | `TBOT` | 396.001 K |
-| `PRECTmms` | −0.088 |
-| `PSRF` | −9999.086 |
+| `PRECTmms` | -0.088 |
+| `PSRF` | -9999.086 |
 | `FLDS` | 1000.989 |
 
-五个变量标记的是同一批点，并集也是 107661，有效点 117964。`PSRF` 的 −9999 是典型缺测标志，说明这些是**刻意留的 no-data 标记**，不是数据损坏。
+All five variables flag the same set, and their union is also 107,661, leaving
+117,964 valid points. `PSRF`'s -9999 is a conventional missing-value flag, so
+these are deliberate no-data markers rather than corrupted data.
 
-## 2. 后果
+## 2. The consequence
 
-SEUS 4km 的模式网格和这套 4km 强迫网格**错开半个格**（模式格心落在强迫格心 +0.5 处），所以每个格点都要做最近邻，沿海格点完全可能命中隔壁的海洋点。
+The SEUS 4 km model grid is offset **half a cell** from this 4 km forcing grid -
+model cell centres fall at forcing index + 0.5 - so every gridcell takes a
+nearest neighbour, and a coastal one can land on the ocean point next door.
 
-实测：**194 个陆地格点**（占陆地 0.256%）读到的是哨兵，`GPP` 恒为 0，**在我们所有 4km run 里都是同一批**——AD spin-up、final spin-up、2010 年瞬变一模一样。位置全部贴着海岸线：迈阿密、劳德代尔堡、夏洛特港、加尔维斯顿湾、路易斯安那海岸。
+Measured: **194 land gridcells** (0.256% of land) read sentinels and produce
+`GPP = 0`, **the same 194 in every SEUS 4 km run we have** - AD spin-up, final
+spin-up, and the 2010 transient are identical. All sit on the immediate
+coastline: Miami, Fort Lauderdale, Charlotte Harbor, Galveston Bay, the
+Louisiana coast. Their `landfrac` is 1.000, so the model treats them as fully
+land.
 
-这些格点的 `landfrac` 全部等于 1.000，模式认为它们是 100% 陆地。
+> Section 10 of `elm_setup_and_run_guide.md` documented a related coastal
+> nearest-neighbour trap but stated it can never fire when the run resolution
+> matches the forcing file's. That holds only if the two grids' cell centres
+> coincide, which they do not here. That claim has been corrected.
 
-> 注：`elm_setup_and_run_guide.md` 第 10 节记过一个类似的沿海坑，但写着"原生分辨率跑该文件本身永远不会触发"。**那句话不成立**，前提是两套网格格心重合，而这里错开半个格。该处已更正。
+## 3. The fix
 
-## 3. 修法
+**Delete only the `zone_mappings.txt` rows that point at sentinel records. No
+`.nc` data is modified.**
 
-**只删 `zone_mappings.txt` 里指向哨兵记录的行，不动任何 `.nc` 数据。**
+This is safe because `ng` is counted from the file at read time and `grid_map` is
+column 4 - an explicit record index, not a row position - so removing rows
+shifts nothing.
 
-安全性依据：`ng` 是读文件时数出来的，`grid_map` 是第 4 列**显式给出的记录索引**，不是行号推的。所以删行既不改条目上限，也不会让索引错位。
+More importantly, the rows removed are only ever candidates that were **farther
+than or equal to** a valid one. A gridcell whose nearest point was already valid
+keeps exactly that point. Therefore:
 
-更重要的是，**删掉的只可能是"更远或等距"的候选**。一个格点如果原本最近的就是有效点，删完之后最近的还是同一个点。所以：
+- **only the 194 broken cells change their mapping**
+- the other 75,726 cells are **bit-identical**
 
-- **只有那 194 个格点会改映射**
-- 其余 75726 个格点的取值**逐比特不变**
+Measured displacement for those 194: the nearest valid point is at 3.30 km -
+median, mean, p90 and maximum are all 3.30 km - against the 3.27 km sentinel
+they use today. Every one is within a single grid cell (4.6 km). They move from
+the adjacent ocean point to the adjacent land point.
 
-实测位移：那 194 个格点到最近**有效**点的距离，中位数、均值、p90、最大值**全部是 3.30 km**，而它们现在用的哨兵点是 3.27 km。也就是从"隔壁的海洋点"改成"隔壁的陆地点"，100% 落在一个格距（4.6 km）以内。
+As a side effect `ng` drops from 225,625 to 117,964, halving the per-gridcell
+O(ng) search at initialisation.
 
-顺带 `ng` 从 225625 降到 117964，那个逐格点的 O(ng) 搜索快一倍。
+## 4. Files changed
 
-## 4. 处理了哪些文件
-
-| 目录 | 用途 | 原条目 | 保留 | 删除 |
+| directory | used by | rows before | kept | dropped |
 |---|---|---|---|---|
-| `cpl_bypass_full/` | spin-up 和历史 | 225625 | 117964 | 107661 |
-| `future_clim/ssp119/` | 4km future 情景 | 225625 | 117964 | 107661 |
-| `future_clim/ssp245/` | | 225625 | 117964 | 107661 |
-| `future_clim/ssp370/` | | 225625 | 117964 | 107661 |
-| `future_clim/ssp585/` | | 225625 | 117964 | 107661 |
+| `cpl_bypass_full/` | spin-up and historical | 225,625 | 117,964 | 107,661 |
+| `future_clim/ssp119/` | 4 km future scenarios | 225,625 | 117,964 | 107,661 |
+| `future_clim/ssp245/` | | 225,625 | 117,964 | 107,661 |
+| `future_clim/ssp370/` | | 225,625 | 117,964 | 107,661 |
+| `future_clim/ssp585/` | | 225,625 | 117,964 | 107,661 |
 
-## 5. 执行过程
+The five originals were byte-identical (md5 `cd20300f893cb80ed563d98aa67b1009`),
+so the four `future_clim` copies derive from the historical one. The sentinel
+set was nevertheless detected separately in each directory, from that
+directory's own `FSDS` file, rather than assuming the future forcing shares the
+historical ocean mask.
 
-脚本：`ELM_output_read/analyses/20260902_Southeast_hires_s7P_s8hdmfix_harvfixsmooth_ICB20TRCNPRDCTCBC/fix_zone_mappings.py`（在 GitHub `zzw0034/ELM_output_read` 里有版本记录）
+## 5. Procedure
 
-每个目录的步骤，全部通过才继续：
+Script: `fix_zone_mappings.py`, version-controlled at
+`ELM_output_read/analyses/20260902_Southeast_hires_s7P_s8hdmfix_harvfixsmooth_ICB20TRCNPRDCTCBC/`
+in GitHub `zzw0034/ELM_output_read`.
 
-1. 从**该目录自己的** `FSDS` 文件探测哨兵集合，采样记录的第 50% 和第 80% 两个时间步，取交集
-2. 原文件 `shutil.copy2` 成 `zone_mappings.txt.orig_before_sentinel_fix_20260910`，`filecmp.cmp(shallow=False)` 逐字节校验，不一致则中止
-3. 过滤后的表写入同目录临时文件 `zone_mappings.txt.tmp_sentinel_fix`
-4. 校验临时文件行数等于预期保留数
-5. 校验临时文件里**每一个**索引都指向非哨兵记录
-6. `os.replace` 原子替换，备份文件保留不删
+Per directory, every step must pass before the next:
 
-**为什么采样第 50% 和 80% 而不是第一个时间步**：`future_clim/*` 的 `DBCCA_Daymet_TESSFA2_FSDS_2023-2100_z01.nc` 开头有一个 dummy 区块，`t = 0..2918`（3 小时步长正好一年）全部 225625 个点都是哨兵。读 `t=0` 会把整张表判成哨兵、删光所有行。第一次干跑正是这样报的，因此改成采样中后段，并且**整条记录全是哨兵的时间步一律丢弃**。这个坑值得记住。
+1. Detect the sentinel set from that directory's own `FSDS` file, sampling two
+   timesteps at 50% and 80% through the record and taking their intersection.
+2. Copy `zone_mappings.txt` to
+   `zone_mappings.txt.orig_before_sentinel_fix_20260910` with `shutil.copy2`,
+   then verify it byte-for-byte with `filecmp.cmp(shallow=False)`. Abort on
+   mismatch.
+3. Write the filtered table to `zone_mappings.txt.tmp_sentinel_fix` in the same
+   directory.
+4. Check the temporary file's row count equals the expected number kept.
+5. Check that **every** index in the temporary file points at a non-sentinel
+   record.
+6. `os.replace` the temporary file over the original. The backup is never
+   removed.
 
-## 6. 如何回退
+**Why sample at 50% and 80% rather than the first timestep.** The
+`future_clim/*` files `DBCCA_Daymet_TESSFA2_FSDS_2023-2100_z01.nc` open with a
+dummy block: for `t = 0..2918` - one year at 3-hourly steps - every one of the
+225,625 points holds the sentinel. Reading `t = 0` there classifies the entire
+table as sentinel and would delete every row. The first dry run reported exactly
+that, which is why detection now samples the middle and later record and
+discards any wholly-sentinel timestep as uninformative wherever it occurs. Worth
+remembering for anything else that scans these files.
+
+## 6. How to revert
 
 ```bash
-cd <目录>
+cd <directory>
 cp zone_mappings.txt.orig_before_sentinel_fix_20260910 zone_mappings.txt
 ```
 
-备份文件不会被脚本删除。重复执行脚本时，若备份已存在则保留原备份不覆盖，所以最初的原始文件始终安全。
+The script never deletes the backup, and if one already exists it is kept rather
+than overwritten, so the pristine original survives repeated invocations.
 
-## 7. 如何验证修好了
+## 7. How to verify the fix
 
-跑一小段之后，对 `landmask == 1` 的格点统计年均 `FSDS < 1` 的数量，**应该是 0**（修复前是 194）。
+After a short run, count gridcells with `landmask == 1` and an annual-mean
+`FSDS < 1`. It should be **zero**; before the fix it was 194.
 
 ```python
 land = (landmask == 1)
@@ -120,18 +155,26 @@ bad = land & (annual_mean_FSDS < 1.0)
 assert bad.sum() == 0
 ```
 
-建议把这条检查加进任何新 case 的建立流程。已写入 `elm_setup_and_run_guide.md`。
+This check is worth adding to the setup of any new case, and has been added to
+`elm_setup_and_run_guide.md`.
 
-## 8. 影响范围提醒
+## 8. Who is affected
 
-改动对结果是**严格改善**：原本产出零的沿海格点开始产出合理的碳通量。但它确实会改变结果，所以：
+The change is a strict improvement: coastal cells that produced zero now produce
+sensible carbon fluxes. It does change results, so:
 
-- 修复前跑完的结果，那 194 个格点仍然是零，需要屏蔽或标注
-- 若有人正在做跨时间的对比，请注意 2026-09-10 前后的 run 在这些格点上不可直接比较
-- 其余 75726 个格点不受任何影响，可以直接比较
+- Runs completed before this date still contain zeros at those 194 cells and
+  need them masked or flagged in any map or regional total.
+- Anyone comparing runs across 2026-09-10 should not compare those 194 cells.
+- The other 75,726 cells are unaffected and remain directly comparable.
 
-## 9. 背景
+## 9. Background
 
-这个问题是在追查另一件事时发现的：SEUS 4km 历史模拟里常绿 PFT（松树、常绿阔叶灌木）在部分斑块上叶碳趋近于零且永久滞留。完整调查记录见
-`ELM_output_read/analyses/20260902_Southeast_hires_s7P_s8hdmfix_harvfixsmooth_ICB20TRCNPRDCTCBC/EVERGREEN_DIEBACK.md`。
-哨兵格点是那次调查的副产品，与常绿滞留是**两个独立的问题**。
+This was found while investigating something else: in the SEUS 4 km historical
+simulations the evergreen PFTs - needleleaf evergreen temperate and broadleaf
+evergreen shrub - sit at near-zero leaf carbon on a fraction of their patches
+and never recover. The full record of that investigation is at
+`ELM_output_read/analyses/20260902_Southeast_hires_s7P_s8hdmfix_harvfixsmooth_ICB20TRCNPRDCTCBC/EVERGREEN_DIEBACK.md`.
+
+The sentinel gridcells are a by-product of that investigation and are an
+**independent problem** from the evergreen stranding.

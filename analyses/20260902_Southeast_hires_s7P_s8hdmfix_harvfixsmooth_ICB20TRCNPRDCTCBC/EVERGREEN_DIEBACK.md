@@ -27,8 +27,10 @@ degrees, nitrogen starvation, because the case labelled `ad_spinup` was built
 without `-bgc_spinup on` and never ran accelerated decomposition. A controlled
 rerun proved the 4 km diagnosis: fixing only the HDM reader cut the stranded
 fraction from 8.9% to 0.9%, helping the two evergreen PFTs and leaving all five
-deciduous ones untouched to the decimal. Both causes are now fixed, so the chains
-can be rebuilt - section 10 is the plan.
+deciduous ones untouched to the decimal. Both causes are now fixed and the chains
+can be rebuilt, which is section 10 - but roughly 0.6% of pine is expected to
+stay stranded in south Florida, because the fixes remove triggers and the trap
+itself is structural.
 
 ## Where to look for what
 
@@ -72,10 +74,12 @@ below LAI 0.5.
 (LAI > 1.5) across 38 consecutive history outputs spanning ~800 model years and
 63,000 patches.
 
-**Set early, then frozen.** At 4 km the stranded fraction is 1.0% at AD year 21,
-6.6% at 41, 8.9% at 81, then locked at 9.0-9.1% through 441 years of final
-spin-up and all 174 transient years. 97% of the losses happen in the first 80
-years of AD; 63% between years 21 and 41.
+**Set early, then frozen.** At 4 km the stranded fraction reads 1.0% in the
+years 1-20 mean, 6.6% for 21-40, 8.9% for 61-80, then locks at 9.0-9.1% through
+441 years of final spin-up and all 174 transient years. So the outcome is
+settled inside the first eighty AD years and never moves again. Note these are
+20-year means, not snapshots - which window a patch first shows up in is not
+when it collapsed, see section 6.
 
 **Exactly the evergreen PFTs.** Of the seven PFTs present in this domain, the
 two with `evergreen = 1` in `clm_params.nc` are affected and the five with
@@ -308,8 +312,23 @@ stranded even with the fix - that is the trap still catching the most marginal
 sites, consistent with fire remaining amplified in AD by the fuel and mortality
 factors even once suppression works.
 
-So the real residual dieback is **0.6%, not 0.9%**, and it is concentrated in
-south Florida rather than spread across the domain.
+So the real residual dieback is **about 0.6%, not 0.9%**, concentrated in south
+Florida rather than spread across the domain.
+
+**That 0.6% is arithmetic, not a measurement.** It is 598 residual patches minus
+the 193 sentinel ones, over 68,773 pine patches. **No run has yet had both fixes
+at once**: job 522373 had the corrected HDM reader with the *unfixed* mapping
+table, and job 522626 has the *unfixed* HDM reader with the corrected table. The
+combined figure will be measured at the first checkpoint of the 4 km AD rerun.
+
+Two further limits on it. The experiment ran 80 of the AD stage's 200 years; the
+stranded fraction was flat at 0.9% across three checkpoints from year 41, which
+is strong but not proof that it stays flat. And the residual is not a leftover
+bug - it is the phenology trap of section 2 still catching the most marginal
+sites, because AD keeps fire amplified by the fuel and mortality factors even
+once suppression works. Below 26 N, 42.4% of pine is still stranded, and real
+south Florida flatwoods are pine-dominated, so that region needs a caveat even
+after the reruns.
 
 ## 6. A limit on every timing statement above
 
@@ -394,10 +413,6 @@ fraction from `LEAFC_ALLOC` against `LEAFC_LOSS` and `LEAFC_TO_LITTER` instead o
 inferring it from a steady-state assumption. That inference is precisely where
 the 200x error came from.
 
-**Whether this is known.** Three questions are out to colleagues in
-[ASK_COLLEAGUES.md](ASK_COLLEAGUES.md): has anyone seen it, is the phenology
-reading right, and is there a recommended guard.
-
 **Preventive measures identified so far**, cheapest first: initialize AD from an
 existing spun-up restart rather than bare ground; keep the establishment phase
 benign (here, working fire suppression); **QC per-PFT LAI after every spin-up**,
@@ -412,34 +427,27 @@ There is no viability guard in the code today - a search of `biogeochem/` and
 transition. That is why the 0.5 degree transient partly recovered (78.1% to 9.9%
 stranded by 2023) and the 4 km one did not.
 
-## 8. Claims made and then retracted
+## 8. Explanations advanced and rejected
 
-Six explanations were advanced during this investigation and abandoned. Listing
-them because two of them failed the same way.
+Recorded so that none of them comes back second-hand as established. Each was
+argued from data and then contradicted by better data.
 
-1. **Carbon starvation / respiration squeeze killed the pine.** Rejected: NPP is
-   positive for 100% of the dying cohort before it dies, and among surviving
-   pine per-patch MR/GPP flattens at 0.395-0.398 above 20 C, exactly where
-   60-70% of patches are lost. The supporting statistic was mean(AR)/mean(GPP)
-   over a population including dead patches.
-2. **Fire is the root cause.** Demoted: the 0.5 degree chain has two to three
-   orders of magnitude less fire and eight times more loss. Fire is a trigger,
-   at 4 km, now demonstrated (section 5).
-3. **`spinup_mortality_factor` is irrelevant because it only touches dead
-   structural pools in `GapMortalityMod`.** Wrong: it also multiplies fire
-   vegetation mortality and inflates fuel load in `FireMod.F90`. Only
-   `GapMortalityMod` had been checked.
-4. **The 0.5 degree run is not a clean control, it is merely establishing
-   slowly.** Wrong: its LAI distribution is bimodal, 77.9% below 0.01 and the
-   rest healthy. The mean of 0.201 described a state no patch was in.
-5. **Stranded patches carry more non-photosynthetic tissue.** Wrong: they carry
-   less live stem and less live coarse root per unit leaf.
-6. **Fixed allometry means leaf allocation cannot rise to what is needed.**
-   Inconsistent with the observed decay rate, which is 200x slower than that
-   would predict.
+1. **Carbon starvation killed the pine.** NPP is positive for 100% of the dying
+   cohort before it dies.
+2. **Fire is the root cause.** The 0.5 degree chain has two to three orders of
+   magnitude less fire and eight times more loss. Fire is a trigger, at 4 km.
+3. **`spinup_mortality_factor` is irrelevant.** It also multiplies fire
+   mortality and inflates fuel load in `FireMod.F90`.
+4. **The 0.5 degree run is merely establishing slowly, not a clean control.**
+   Its LAI distribution is bimodal: 77.9% at zero, the rest healthy.
+5. **Stranded patches carry more non-photosynthetic tissue.** They carry less
+   live stem and less live coarse root per unit leaf.
+6. **Fixed allometry keeps leaf allocation below what is needed.** That predicts
+   a six-year collapse; the observed decay is ~1250 years.
 
-Items 1 and 4 are the same error: **taking a mean over a bimodal population**.
-Item 3 is stopping the source search at the first plausible module.
+Two method lessons behind them. Items 1 and 4 are the same error, **a mean taken
+over a bimodal population**. Item 3 came from **stopping a source search at the
+first plausible module**.
 
 ## 9. Impact, if nothing is changed
 
@@ -531,11 +539,17 @@ the rerun has to start at AD. Do not restart from any existing 4 km restart file
 4. **Future scenarios**, which pick up the fixed `future_clim/ssp*` tables
    automatically.
 
-### Expected outcome
+### Expected outcome, and what it is based on
 
-Stranded evergreen patches should fall from 9.1% to roughly 0.6%, all of it in
-the hot southern end of Florida, and the 194 zero-carbon coastal cells should
-disappear entirely. Florida's biomass bias of 16.8% should largely close.
+Stranded evergreen patches should fall from 9.1% to roughly 0.6%, and the 194
+zero-carbon coastal cells should disappear entirely. Florida's 16.8% vegetation
+carbon bias should largely close.
+
+**Measured**: the HDM fix alone takes stranding from 8.9% to 0.9% (section 5).
+**Not measured**: the two fixes together. The 0.6% is that 0.9% minus the 193
+sentinel patches, and no run has yet had both fixes. Treat the first checkpoint
+of the AD rerun as the real test - it should show HDM near 5.1, zero cells on
+sentinel forcing, and stranding near 0.4%.
 
 ### What the rerun does not fix
 

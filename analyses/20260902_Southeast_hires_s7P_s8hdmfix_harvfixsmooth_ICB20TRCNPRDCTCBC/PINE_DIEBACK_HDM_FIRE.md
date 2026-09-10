@@ -25,10 +25,58 @@ Restoring pine alone closes 88% of the gridcell GPP gap; pine plus the
 broadleaf evergreen shrub, which fails the same way on 1.7% of the area,
 closes all of it.
 
-## Why it happened
+## Why it happened: the trap is the evergreen phenology, not any one trigger
 
-**Fire during the accelerated-decomposition spin-up, which ran with human
-population density identically zero.**
+**Read this section before the fire section below it.** The fire evidence is
+real but it identifies a *trigger*, and only at 4 km. The reason a trigger is
+permanent, and the reason it only ever hits certain PFTs, is structural.
+
+`CNEvergreenPhenology` in `components/elm/src/biogeochem/PhenologyMod.F90` does
+three things and nothing else: it sets a constant background leaf litterfall
+rate, sets `lgsf = 0`, and sets **`bgtr = 0`** - the background transfer growth
+rate. There is no onset event. An evergreen's leaves come only from current
+allocation, which is funded by photosynthesis, which needs leaves. Drive leafc
+to near zero and the loop is closed, while `bglfr_leaf` keeps removing what
+little remains.
+
+`CNSeasonDecidPhenology` and `CNStressDecidPhenology` are several hundred lines
+of onset/offset logic that flush `leafc_storage` into `leafc` at the start of
+each growing season. A deciduous patch that loses all its leaves re-flushes from
+storage next spring. Recovery is built in.
+
+The PFT roster confirms it with no exceptions. Of the seven PFTs present in this
+domain, exactly the two carrying `evergreen = 1` died:
+
+| PFT | evergreen | season_decid | stress_decid | outcome |
+|---|---|---|---|---|
+| needleleaf evergreen temperate | **1** | 0 | 0 | dies |
+| broadleaf evergreen shrub | **1** | 0 | 0 | dies |
+| broadleaf deciduous temperate tree | 0 | 1 | 0 | survives |
+| broadleaf deciduous temperate shrub | 0 | 0 | 1 | survives |
+| C3 grass, C4 grass, crop | 0 | 0 | 1 | survives |
+
+**The 0.5 degree run is the control that makes this decisive.** Its AD spin-up
+reads HDM correctly (mean 5.066, min 0.0016, max 40.59) and its fire loss is two
+to three orders of magnitude below the 4 km run's, 3e-10 to 2e-8 against ~1e-6.
+It still loses **78.1%** of its pine patches, against 9.1% at 4 km, with the same
+binary signature - at AD year 201, 77.9% of its pine sits below LAI 0.01 and the
+rest is healthy, with nothing in between, while not one oak patch is below 0.5.
+Less fire, far more death. Fire cannot be the cause.
+
+So: a cold-start AD spin-up systematically strands some fraction of every
+evergreen PFT at zero, and the fraction is close to arbitrary - 9% here, 78% at
+0.5 degrees. Any transient knock during establishment is enough.
+
+One consolation, visible at 0.5 degrees: the transient partly repairs it. Pine
+there goes from 78.1% dead at the end of spin-up to 9.9% dead by 2023, as
+land-cover transitions create patches with seed carbon. The 4 km transient did
+not get the same relief.
+
+## The fire evidence, and what it is worth
+
+Fire is the best candidate for the *trigger* at 4 km, where HDM was zero and the
+fire model therefore had no suppression term. It is not the cause of the dieback
+in general, per the section above.
 
 The dying cohort was not starving. At their year-21 pre-mortem state their
 carbon balance is only mildly worse than the survivors' (GPP 0.83 of it, NPP

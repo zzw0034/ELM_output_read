@@ -224,12 +224,45 @@ departure from the reference configuration of
 `20260519_Southeast_hires_ICB1850CNRDCTCBC_ad_spinup`. A rerun of the 4 km chain
 on the current source will largely work.
 
-Two things it does not do. The residual 0.9% and 22.6% remain, consistent with
-fire still being amplified in AD by the fuel and mortality factors even with
-suppression restored. And it does not remove the phenology trap of section 2 -
-it removes a trigger strong enough to push patches into it. Any future
-cold-start spin-up with a different disturbance regime can strand evergreens
-again.
+Two things it does not do. A residual remains, dissected below. And it does not
+remove the phenology trap of section 2 - it removes a trigger strong enough to
+push patches into it. Any future cold-start spin-up with a different disturbance
+regime can strand evergreens again.
+
+### The residual 0.9% is two different things, and one is a separate bug
+
+The 598 pine patches still stranded in the experiment split cleanly:
+
+| | n | mean annual T | FSDS | location |
+|---|---|---|---|---|
+| A | **193** | **49.85 C** | **0.00** | scattered, 25.5-37.5 N |
+| B | 405 | 22.82 C | 176.07 | south Florida, 25.2-30.1 N |
+
+**Group A is not a dieback at all - those gridcells are driven by ocean sentinel
+values.** Reading the raw cpl_bypass forcing at their locations gives a constant
+`TBOT` of 122.851 C and a constant `FSDS` of **-1111.027 W/m2** for all 44 years,
+against 13.8 C and 167.8 W/m2 at a normal inland point. Nothing can grow with a
+missing-data flag for sunlight.
+
+This affects **194 land cells, 0.26% of the domain, identically in every 4 km run
+we have** - AD control, AD experiment, final spin-up, and the 2010 transient all
+show the same 194 cells with `GPP = 0`. They are coastal: Miami, Fort
+Lauderdale, Charlotte Harbor, Galveston Bay, the Louisiana coast.
+
+The mechanism is the coastal nearest-neighbour trap in section 10 of
+`elm_setup_and_run_guide.md`, but that section says it can never fire at native
+resolution. It does here: the 4 km model grid is offset **half a cell** from the
+4 km forcing grid, so every cell takes a nearest neighbour and a coastal one can
+land on a point flagged as ocean. That claim in the guide has been corrected.
+
+**Group B is the genuine residual**, 405 patches at the hot southern end of
+Florida with normal forcing. Below 26 N, 42.4% of pine patches are still
+stranded even with the fix - that is the trap still catching the most marginal
+sites, consistent with fire remaining amplified in AD by the fuel and mortality
+factors even once suppression works.
+
+So the real residual dieback is **0.6%, not 0.9%**, and it is concentrated in
+south Florida rather than spread across the domain.
 
 ## 6. What is still open
 

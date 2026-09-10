@@ -53,17 +53,22 @@ def extract(path):
             raise ValueError('Multiple selected pine patches per cell; do not silently overwrite')
         order = np.argsort(key)
         ids, key = ids[order], key[order]
-        # Join by spatial IDs: parent pointers need not index the serialized
-        # history topounit vector globally (e.g. processor-local pointers).
         result = dict(key=key, pft_index=ids, lon=lon[ix[ids]], lat=lat[jy[ids]],
                       weight=wt[ids])
         for name in ('TLAI', 'LEAFC', 'GPP', 'NPP', 'TOTVEGC', 'AR', 'MR', 'GR', 'CPOOL'):
             if name in d.variables:
                 result[name] = read(d, name)[ids]
-        for name in ('TBOT', 'FSDS'):
-            result[name] = weighted_grid(d, name, 'topo1d',
-                                         len(lat)*len(lon), len(lon))[key]
-        units = getattr(d.variables['TBOT'], 'units', '')
+        # h1 topo1d_ixy is zero in this archive; do not use that metadata.
+        h0_path = Path(str(path).replace('.h1.', '.h0.'))
+        with nc.Dataset(h0_path) as h0:
+            np.testing.assert_allclose(read(h0, 'lat'), lat)
+            np.testing.assert_allclose(read(h0, 'lon'), lon)
+            for name in ('TBOT', 'FSDS'):
+                assert h0.variables[name].dimensions == ('time', 'lat', 'lon')
+                result[name] = read(h0, name).ravel()[key]
+            units = getattr(h0.variables['TBOT'], 'units', '')
+        if not all(np.isfinite(result[n]).all() for n in ('TBOT', 'FSDS')):
+            raise ValueError('Missing forcing values on selected pine cells')
         if units.lower() in ('k', 'kelvin'):
             result['TBOT'] -= 273.15
         elif units.lower() not in ('degc', 'c', 'degrees c', 'celsius'):
@@ -118,7 +123,8 @@ def main():
     for year in YEARS:
         path = args.run_dir / f'{CASE}.elm.h1.{year:04d}-01-01-00000.nc'
         data[year] = extract(path)
-        sources.append({'path': str(path), 'bytes': path.stat().st_size})
+        sources.append({'path': str(path), 'bytes': path.stat().st_size,
+                        'forcing_path': str(path).replace('.h1.', '.h0.')})
         if not np.array_equal(data[year]['key'], data[21]['key']):
             raise ValueError('Selected patch identities differ across windows')
     final, base = data[81], data[21]

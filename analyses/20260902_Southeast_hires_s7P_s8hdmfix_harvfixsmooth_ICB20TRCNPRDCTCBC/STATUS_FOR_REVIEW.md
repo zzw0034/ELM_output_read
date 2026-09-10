@@ -101,6 +101,65 @@ namelist of several cases, but it multiplies only `m_deadstemc_to_litter` and
 leaves, not storage - and it is gated on `spinup_state >= 1`. It was inert in
 every case except the 4 km AD spin-up, and it applies equally to oak.
 
+## The AD phase amplifies fire three ways, and that is why 4 km burned
+
+`spinup_state == 1` does more than accelerate decomposition. In
+`components/elm/src/biogeochem/FireMod.F90`:
+
+```fortran
+line 586:  if (spinup_state == 1) fuelc(c) = fuelc(c) + ((spinup_mortality_factor - 1._r8)*deadstemc_col(c))
+line 983:  if (spinup_state == 1) m_veg = spinup_mortality_factor
+```
+
+So during an AD spin-up the fuel load is inflated by nine times the dead stem
+carbon, and **fire-induced vegetation mortality is multiplied by ten**. Stack
+that on the 4 km run's zero HDM, which removed the suppression term, and the
+result is the ~1e-6 gC/m2/s fire loss measured there against ~1e-8 at 0.5
+degrees. The 4 km AD spin-up was burning under three amplifications at once.
+
+This also retires `spinup_mortality_factor` as a red herring: it does not kill
+leaves through gap mortality, but it does raise fire kill tenfold, so it matters
+after all - just through the fire module, not the mortality module.
+
+## The 0.5 degree trigger: nitrogen limitation, from the missing AD
+
+The 0.5 degree pine never established at all - all 526 patches were below LAI
+0.5 at year 21, where 4 km pine was already at 1.55. The cause is visible in the
+nutrient diagnostics:
+
+| run | year | FPG | FPI | SMINN | TOTSOMC | HR |
+|---|---|---|---|---|---|---|
+| 4 km AD | 21 | **1.000** | **1.000** | 0.090 | 459 | 9.4e-06 |
+| 0.5 deg | 21 | **0.678** | **0.406** | 0.021 | 118 | 1.5e-06 |
+| 0.5 deg | 201 | 0.756 | 0.492 | 0.0020 | 2060 | 5.8e-06 |
+
+With accelerated decomposition on, 4 km has `FPG = 1.000` at year 21 - no
+nitrogen downregulation whatsoever, because AD floods the system with mineral N.
+Without it, the 0.5 degree run sits at `FPG = 0.678`, growth downregulated by a
+third, with four times less mineral N, four times less soil carbon and six times
+less heterotrophic respiration. Establishment is slow enough that evergreens
+never cross the threshold, while deciduous PFTs, which flush from storage each
+spring regardless, do.
+
+So the two resolutions had different triggers, and both trace to configuration:
+4 km burned because AD amplified fire while broken HDM removed suppression;
+0.5 degrees starved because AD was never switched on. The phenology trap turned
+both triggers into permanent holes.
+
+## How the 0.5 degree AD setting was missed
+
+A search of prior session transcripts finds `-bgc_spinup on` in exactly one
+place: a July 2026 script for the 4 km chain, as
+`./xmlchange --append ELM_BLDNML_OPTS="-bgc_spinup on"`. It appears in neither
+of the two sessions that built the 0.5 degree cases on 2026-08-31. Those
+sessions do contain the string, but only inside the auto-generated `lnd_in`
+comment `! Set spinup_state by the CLM_BLDNML_OPTS -bgc_spinup setting`, which
+is boilerplate, not a setting.
+
+The failure mode is that nothing complains. `create_newcase` succeeds, the case
+builds, it runs 201 years, it writes files named `ad_spinup`, and only
+`spinup_state = 0` deep in `lnd_in` records that it was never an AD spin-up.
+
 ## Open questions for the reviewer
 
 1. **Is the phenology reading right?** Specifically: is there any pathway by
@@ -118,14 +177,13 @@ every case except the 4 km AD spin-up, and it applies equally to oak.
    share 40.9% to 30.1%, C4 grass from 1 patch to 130). The seed-carbon pathway
    is the obvious candidate but has not been verified in the output.
 
-4. **A separate misconfiguration, found while checking the above.** The 0.5
-   degree case named `20260831_seus_halfdeg_ad_spinup` has `spinup_state = 0`
-   and no `-bgc_spinup on` in `ELM_BLDNML_OPTS`. It is not an
-   accelerated-decomposition spin-up despite the name. The 4 km AD spin-up has
-   `spinup_state = 1` and `-bgc_spinup on` as expected. This needs its own
-   assessment: 201 years of intended AD may have done far less spin-up work than
-   planned, which could be why the 0.5 degree vegetation is so much further from
-   equilibrium.
+4. **How much of the 0.5 degree chain has to be redone?** Its `ad_spinup` was
+   not an AD spin-up (`spinup_state = 0`, no `-bgc_spinup on`), so 201 years
+   meant to accelerate decomposition ran at normal rates. Soil carbon there was
+   still climbing steeply at year 201 (118 to 2060 gC/m2 over the run, against
+   4 km reaching 459 by year 21), so the whole chain may be far from
+   equilibrium, not just the evergreens. That is a separate and possibly larger
+   problem than the dieback.
 
    For the record, the 4 km final spin-up
    (`/projects/hpcl-cli185/proj-shared/zw5/e3sm_run/20260717_Southeast_hires_s7P_s8hdmfix_ICB1850CNPRDCTCBC`)
@@ -142,9 +200,17 @@ clone of the original 4 km AD spin-up, identical in every input, PE layout and
 namelist, differing only in that its E3SM source reads HDM correctly. RUNDIR and
 EXEROOT on scratch under the same case name.
 
-It tests whether removing the fire trigger saves the pine at 4 km. Given the 0.5
-degree result the expected answer is no, in which case both fire and HDM are
-closed out and the phenology trap stands alone. `compare_ad_hdm_test.py` in this
+It tests whether removing the fire trigger saves the pine at 4 km. Note that it
+removes only the suppression half: the run is still an AD spin-up, so the fuel
+inflation and the tenfold fire mortality of `FireMod.F90` lines 586 and 983 are
+still active. A null result therefore would not clear fire, only HDM.
+
+First submission (522372) failed in 22 seconds on `GETFIL: FAILED to get
+/domain.nc`. `ATM_DOMAIN_PATH` and `LND_DOMAIN_PATH` are empty in this case
+lineage and `ATM_DOMAIN_FILE` is the bare name `domain.nc`, which GETFIL
+resolves against RUNDIR; the original case had a real `domain.nc` staged in its
+run directory and the fresh scratch RUNDIR did not. Symlinking it across fixed
+it. Job **522373** is the live one. `compare_ad_hdm_test.py` in this
 directory produces the verdict table: HDM (zero would void the experiment), fire
 loss, pine dead fraction against the control's 1.0 / 6.6 / 7.8 / 8.9%, and
 `NDEP_TO_SMINN` as a confound check, since the source tree also gained a Ndep

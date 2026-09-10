@@ -178,21 +178,58 @@ reference configuration of `20260519_Southeast_hires_ICB1850CNRDCTCBC_ad_spinup`
 |---|---|---|---|---|
 | 21 | 0.000 / **5.128** | 1.17e-06 / 3.43e-07 | 1.0% / 0.4% | 1.99e-08 / 1.98e-08 |
 | 41 | 0.000 / **5.128** | 1.02e-06 / 3.52e-07 | 6.6% / 0.9% | 1.99e-08 / 1.98e-08 |
-| 61 | 0.000 / **5.128** | 1.52e-06 / 5.42e-07 | **7.8% / 0.9%** | 1.99e-08 / 1.98e-08 |
+| 61 | 0.000 / **5.128** | 1.52e-06 / 5.42e-07 | 7.8% / 0.9% | 1.99e-08 / 1.98e-08 |
+| **81** | 0.000 / **5.128** | 1.33e-06 / 5.34e-07 | **8.9% / 0.9%** | 1.99e-08 / 1.98e-08 |
 
-The control climbs to 7.8% while the experiment is flat at 0.9% from year 41.
-Of the 5397 patches the control has stranded by year 61, **89.3% are alive in
-the experiment**, at mean LAI 1.622 against 2.014 for pine that never came
-close.
+**Complete. Job finished 2026-09-10, 12h50m, all four checkpoints.**
 
-`NDEP_TO_SMINN` matches to three digits, so the Ndep calendar-year fix that also
-landed between the two source versions is a no-op here and the experiment
-isolates HDM cleanly.
+The control climbs 1.0 to 8.9% while the experiment is flat at 0.9% from year 41
+onward, three checkpoints running. That matters because the control's 8.9% at
+year 81 is essentially its final value - it locks at 9.0-9.1% and does not move
+through 441 years of final spin-up and 174 transient years.
 
-**Conclusion**: fixing the HDM reader alone is enough at 4 km. A rerun of that
-chain needs no other configuration change - no `use_nofire`, no restart surgery.
-Fire on with working suppression is the reference configuration and it works.
-One checkpoint (year 81) remains; the control reached 8.9% there.
+Of the 6104 patches the control has stranded by year 81, **90.4% are alive in
+the experiment**, at mean LAI 1.545 against 1.957 for pine that never came
+close. The experiment's own 598 losses are almost entirely a subset of the
+control's: 583 of them, so only 15 patches are stranded that the control did not
+also lose.
+
+**It helps exactly the evergreens and nothing else**, which is what the
+mechanism predicts:
+
+| PFT | ctrl LAI | expt LAI | ctrl stranded | expt stranded |
+|---|---|---|---|---|
+| needleleaf evergreen temperate | 1.623 | 1.940 | **8.9%** | **0.9%** |
+| broadleaf evergreen shrub | 0.496 | 1.080 | **63.2%** | **22.6%** |
+| broadleaf deciduous temperate tree | 2.544 | 2.757 | 0.3% | 0.3% |
+| broadleaf deciduous temperate shrub | 8.398 | 9.134 | 0.7% | 0.7% |
+| C3 grass | 5.372 | 5.694 | 0.3% | 0.3% |
+| C4 grass | 5.666 | 7.079 | 0.0% | 0.0% |
+
+The domain state is healthy, not merely different. Fire falls to 40% of the
+control and everything else moves modestly upward in the expected direction:
+TOTSOMC +15%, TOTVEGC +9%, GPP +7%, NPP +9%, TLAI +10%, SMINN +16%, FPG 0.949 to
+0.969. Nothing looks broken; it is simply a less-burned system.
+
+`NDEP_TO_SMINN` matches to three digits throughout, so the Ndep calendar-year
+fix that also landed between the two source versions is a no-op here and the
+experiment isolates HDM cleanly.
+
+### Conclusion
+
+**Fixing the HDM reader alone is sufficient at 4 km.** It cuts the permanent
+pine loss from 8.9% to 0.9% and the evergreen shrub loss from 63.2% to 22.6%,
+with no other configuration change - no `use_nofire`, no restart surgery, no
+departure from the reference configuration of
+`20260519_Southeast_hires_ICB1850CNRDCTCBC_ad_spinup`. A rerun of the 4 km chain
+on the current source will largely work.
+
+Two things it does not do. The residual 0.9% and 22.6% remain, consistent with
+fire still being amplified in AD by the fuel and mortality factors even with
+suppression restored. And it does not remove the phenology trap of section 2 -
+it removes a trigger strong enough to push patches into it. Any future
+cold-start spin-up with a different disturbance regime can strand evergreens
+again.
 
 ## 6. What is still open
 

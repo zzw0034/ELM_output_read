@@ -49,17 +49,32 @@ came back empty only because the probe's physical-range thresholds were wrong
 for them; it makes no difference, since a record flagged in the other five is
 unusable regardless.)
 
+Two deployment modes
+--------------------
+`--dst <dir>` builds the private symlink directory described above and leaves the
+original untouched. `--in-place` edits the directory given by `--src`: it copies
+`zone_mappings.txt` to `zone_mappings.txt.orig_before_sentinel_fix_<date>`,
+verifies the backup byte-for-byte, writes the filtered table to a temporary file
+in the same directory, checks its row count and that every retained index points
+at valid data, and only then renames it over the original. The backup is never
+removed. If a backup from a previous run already exists it is kept and not
+overwritten, so the pristine original survives repeated invocations.
+
 Usage (on Pathfinder)
 ---------------------
-    python fix_zone_mappings.py --src <metdata dir> --dst <private dir>
-    python fix_zone_mappings.py --src <metdata dir> --dst <private dir> --apply
+    python fix_zone_mappings.py --src <metdata dir>                    # dry run
+    python fix_zone_mappings.py --src <metdata dir> --in-place --apply
+    python fix_zone_mappings.py --src <metdata dir> --dst <dir> --apply
 
-Without --apply it reports what it would do and writes nothing.
+Without --apply nothing is written in either mode.
 """
 
 import argparse
+import datetime
+import filecmp
 import glob
 import os
+import shutil
 
 import numpy as np
 import netCDF4 as nc
@@ -74,23 +89,87 @@ def find_fsds(src: str) -> str:
     return hits[0]
 
 
-def sentinel_mask(fsds_path: str) -> np.ndarray:
-    """True where a forcing record holds the ocean sentinel. One timestep is
-    enough - the sentinel is constant for the whole record."""
+def sentinel_mask(fsds_path: str, fracs=(0.50, 0.80)) -> np.ndarray:
+    """True where a forcing record holds the ocean sentinel.
+
+    Do not sample the start of the record. The future DBCCA files open with a
+    dummy block - in `DBCCA_Daymet_TESSFA2_FSDS_2023-2100_z01.nc` every point is
+    the sentinel for t = 0..2918, one year at 3-hourly steps - so reading t = 0
+    there flags all 225625 points and would delete the whole table. Sampling
+    from the middle and later part of the record avoids it, and any wholly
+    sentinel timestep is discarded as uninformative regardless of where it sits.
+    A point counts as ocean only if it is flagged at every usable sample.
+    """
+    masks = []
     with nc.Dataset(fsds_path) as d:
         var = [v for v in d.variables if v.upper() == "FSDS"][0]
-        first = np.ma.filled(d.variables[var][:, 0], np.nan).astype(np.float32)
-    return first < SENTINEL_FSDS
+        nt = d.variables[var].shape[1]
+        for f in fracs:
+            t = min(int(nt * f), nt - 1)
+            s = np.ma.filled(d.variables[var][:, t], np.nan).astype(np.float32)
+            m = s < SENTINEL_FSDS
+            if m.all():
+                print(f"  t={t}: every point is sentinel, skipping as a dummy record")
+                continue
+            masks.append(m)
+    if not masks:
+        raise SystemExit("every sampled timestep is wholly sentinel; cannot detect "
+                         "the ocean set from this file")
+    return np.vstack(masks).all(axis=0)
+
+
+def write_filtered(zone_src: str, out_path: str, keep: np.ndarray) -> int:
+    """Write the retained rows, preserving each line verbatim."""
+    written = 0
+    with open(zone_src) as fin, open(out_path, "w") as fout:
+        for i, line in enumerate(fin):
+            if i < len(keep) and keep[i]:
+                fout.write(line)
+                written += 1
+    return written
+
+
+def do_in_place(src: str, zone_src: str, keep: np.ndarray, sent: np.ndarray) -> None:
+    stamp = datetime.date.today().strftime("%Y%m%d")
+    backup = f"{zone_src}.orig_before_sentinel_fix_{stamp}"
+
+    if os.path.exists(backup):
+        print(f"  backup already present, keeping it: {os.path.basename(backup)}")
+    else:
+        shutil.copy2(zone_src, backup)
+        if not filecmp.cmp(zone_src, backup, shallow=False):
+            raise SystemExit("backup does not match the original; aborting")
+        print(f"  backed up  -> {os.path.basename(backup)} "
+              f"({os.path.getsize(backup)} bytes, verified byte-for-byte)")
+
+    tmp = f"{zone_src}.tmp_sentinel_fix"
+    written = write_filtered(zone_src, tmp, keep)
+    if written != int(keep.sum()):
+        os.unlink(tmp)
+        raise SystemExit(f"wrote {written} rows, expected {int(keep.sum())}; aborting")
+
+    check = np.loadtxt(tmp)
+    if sent[check[:, 3].astype(int) - 1].any():
+        os.unlink(tmp)
+        raise SystemExit("filtered table still points at sentinels; aborting")
+
+    os.replace(tmp, zone_src)
+    print(f"  rewrote    -> zone_mappings.txt ({written} rows, all indices verified valid)")
 
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("--src", required=True, help="original metdata_bypass directory")
-    ap.add_argument("--dst", required=True, help="private directory to create")
+    ap.add_argument("--src", required=True, help="metdata_bypass directory to read")
+    ap.add_argument("--dst", help="build a private symlink directory here")
+    ap.add_argument("--in-place", action="store_true", dest="in_place",
+                    help="back up and rewrite src/zone_mappings.txt instead")
     ap.add_argument("--apply", action="store_true", help="write; otherwise dry run")
     args = ap.parse_args()
+    if bool(args.dst) == bool(args.in_place):
+        raise SystemExit("give exactly one of --dst or --in-place")
 
-    src, dst = os.path.abspath(args.src), os.path.abspath(args.dst)
+    src = os.path.abspath(args.src)
+    dst = os.path.abspath(args.dst) if args.dst else None
     zone_src = os.path.join(src, "zone_mappings.txt")
     if not os.path.exists(zone_src):
         raise SystemExit(f"no zone_mappings.txt in {src}")
@@ -110,7 +189,15 @@ def main():
           f"dropping {int((~keep).sum())} that point at sentinels")
 
     if not args.apply:
-        print("\ndry run, nothing written. Re-run with --apply to create the directory.")
+        mode = "rewrite it in place (with backup)" if args.in_place else f"build {dst}"
+        print(f"\ndry run, nothing written. Re-run with --apply to {mode}.")
+        return
+
+    if args.in_place:
+        do_in_place(src, zone_src, keep, sent)
+        print("\nThe original stays valid at the .orig_before_sentinel_fix_* path.")
+        print("Verify after a short run: count cells with landmask == 1 and "
+              "annual-mean FSDS < 1. It should be zero.")
         return
 
     os.makedirs(dst, exist_ok=True)
@@ -125,12 +212,7 @@ def main():
         linked += 1
 
     out = os.path.join(dst, "zone_mappings.txt")
-    with open(zone_src) as fin, open(out, "w") as fout:
-        for i, line in enumerate(fin):
-            if i < len(keep) and keep[i]:
-                fout.write(line)
-
-    written = sum(1 for _ in open(out))
+    written = write_filtered(zone_src, out, keep)
     print(f"\nwrote {dst}")
     print(f"  {linked} entries symlinked from the source (no data copied)")
     print(f"  zone_mappings.txt: {written} rows")

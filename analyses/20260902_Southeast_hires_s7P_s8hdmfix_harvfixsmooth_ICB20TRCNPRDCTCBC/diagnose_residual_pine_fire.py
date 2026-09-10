@@ -53,16 +53,16 @@ def extract(path):
             raise ValueError('Multiple selected pine patches per cell; do not silently overwrite')
         order = np.argsort(key)
         ids, key = ids[order], key[order]
-        top = read(d, 'pfts1d_topounit').astype(int)[ids] - 1
-        if np.any(top < 0) or np.any(top >= len(d.dimensions['topounit'])):
-            raise ValueError('Unexpected topounit mapping')
+        # Join by spatial IDs: parent pointers need not index the serialized
+        # history topounit vector globally (e.g. processor-local pointers).
         result = dict(key=key, pft_index=ids, lon=lon[ix[ids]], lat=lat[jy[ids]],
                       weight=wt[ids])
         for name in ('TLAI', 'LEAFC', 'GPP', 'NPP', 'TOTVEGC', 'AR', 'MR', 'GR', 'CPOOL'):
             if name in d.variables:
                 result[name] = read(d, name)[ids]
         for name in ('TBOT', 'FSDS'):
-            result[name] = read(d, name)[top]
+            result[name] = weighted_grid(d, name, 'topo1d',
+                                         len(lat)*len(lon), len(lon))[key]
         units = getattr(d.variables['TBOT'], 'units', '')
         if units.lower() in ('k', 'kelvin'):
             result['TBOT'] -= 273.15

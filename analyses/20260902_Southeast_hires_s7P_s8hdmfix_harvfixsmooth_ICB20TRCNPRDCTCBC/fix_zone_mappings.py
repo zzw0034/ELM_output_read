@@ -39,6 +39,16 @@ Five directories need this for the SEUS 4 km chain:
 Sentinels are detected from each directory's own FSDS file, so this works even
 if a future_clim directory has a different grid or point count.
 
+Detecting on FSDS alone is exact, not a shortcut. Checked against all seven
+variables in the historical file: FSDS, TBOT, PRECTmms, PSRF and FLDS each flag
+the same 107661 records, and their union is also 107661, so the ocean set is
+identical in every variable. Each carries its own marker - FSDS -1111.027,
+TBOT 396.001 K, PRECTmms -0.088, PSRF -9999.086, FLDS 1000.989 - which is what
+a deliberate no-data flag looks like rather than corrupted data. (QBOT and WIND
+came back empty only because the probe's physical-range thresholds were wrong
+for them; it makes no difference, since a record flagged in the other five is
+unusable regardless.)
+
 Usage (on Pathfinder)
 ---------------------
     python fix_zone_mappings.py --src <metdata dir> --dst <private dir>

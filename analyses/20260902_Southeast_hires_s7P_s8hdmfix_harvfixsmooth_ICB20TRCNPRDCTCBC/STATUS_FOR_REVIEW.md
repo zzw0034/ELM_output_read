@@ -304,6 +304,65 @@ the AD fuel and mortality factors even with suppression restored. And none of
 this removes the phenology trap - it only removes a trigger strong enough to
 push patches into it.
 
+## Why the low state persists, and what would prevent it
+
+The stranded patches are not dead. At 4 km final spin-up year 441 they hold
+LEAFC 0.092 gC/m2 with a *positive* NPP of 0.187 gC/m2/yr. They are parked on a
+slightly loss-making equilibrium, decaying with a time constant of order a
+thousand years.
+
+The arithmetic, per unit leaf carbon:
+
+| | stranded | healthy |
+|---|---|---|
+| GPP per unit leafC, /yr | **9.234** | 7.489 |
+| AR/GPP | **0.779** | 0.638 |
+| NPP per unit leafC, /yr | **2.04** | **2.71** |
+| froot C per leaf C | 1.11 | 1.00 |
+| leaf allocation needed to hold steady | **32.7% of NPP** | 24.6% |
+
+A sparse canopy is *more* efficient per unit leaf - no self-shading - but it
+carries proportionally more non-photosynthetic tissue, so respiration takes 78%
+of GPP instead of 64% and the net per unit leaf is lower. Meanwhile turnover
+demands `leafc / leaf_long` = 0.667 x leafc per year regardless. Growth rate is
+`f * (NPP/leafc) - 1/leaf_long`; both terms scale with leaf carbon, so initial
+size is irrelevant and only the sign matters. Stranded sits just below, healthy
+just above.
+
+Three structural reasons it cannot climb out:
+
+1. **Allocation is fixed allometry.** `AllocationMod.F90` sets
+   `f1 = froot_leaf(ivt)`, `f2 = croot_stem(ivt)`, `stem_leaf(ivt)` - PFT
+   constants, not functions of plant state. A carbon-starved real tree shifts
+   allocation to foliage and sheds fine roots. ELM keeps the same ratios, so `f`
+   never rises to the 32.7% these patches would need.
+2. **No demography, no recruitment.** There are no individuals and no seed rain
+   between patches. The only seed flux, `dwt_seedc_to_leaf`, fires only when a
+   patch's *area* changes through a land-use transition. (That is why the 0.5
+   degree transient recovered and the 4 km one did not.)
+3. **No viability floor.** A search of `biogeochem/` and `main/` finds no
+   minimum leaf carbon guard - the only `min` hit is `min_days_senes`. Nothing
+   checks whether a PFT with nonzero area still has a viable canopy, so the
+   near-zero regime fails silently rather than erroring.
+
+This looks like a known class of limitation of big-leaf CN models without
+demography rather than a coding error; models with recruitment (FATES, ED, LPJ)
+recover. The damaging part is the silence - gridcell-mean output looks merely
+low, not wrong.
+
+**Prevention, cheapest first.** Initialize AD from an existing spun-up restart
+rather than bare ground, so vegetation is established before any disturbance can
+hit. Make the establishment phase benign - here that meant fixing HDM so fire
+suppression works, which recovers 88%. **QC per-PFT LAI after every spin-up**,
+which is two lines on the h1 output and would have caught this immediately at
+both resolutions. Repair the restart for an otherwise-good chain by setting
+`leafc`/`leafc_storage` with matching N and P to a small viable value. A leaf
+carbon floor in the model is the general fix but is a code change with
+carbon-conservation implications and belongs upstream.
+
+Note the margin is small: 32.7% against 24.6%. This is a shallow threshold with
+no step, not a deep pit.
+
 ## How to reproduce any of this
 
 Everything comes from the `h1` PFT-vector history files (`hist_dov2xy = .false.`),

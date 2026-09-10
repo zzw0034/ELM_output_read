@@ -95,18 +95,18 @@ box and the figures both show a clear improvement.
 
 **A separate and larger problem surfaced from these same figures.** The pale
 areas in Georgia and Florida are not missing data and not a colour artifact. The
-needleleaf evergreen temperate PFT sits at exactly zero leaf carbon on 9% of its
-patches here and 78% at 0.5 degrees, permanently, while every deciduous PFT in
-the same gridcells is healthy. Florida's biomass is 17% low because of it. The
-mechanism looks structural: `CNEvergreenPhenology` sets `bgtr = 0` and has no
-onset event, so an evergreen that loses its canopy has no way to rebuild it,
-while the deciduous subroutines re-flush from storage every spring.
+evergreen PFTs sit at near-zero leaf carbon on 9% of their patches here and 78%
+at 0.5 degrees, permanently, while every deciduous PFT in the same gridcells is
+healthy. Florida's biomass is 17% low because of it. That investigation has its
+own record:
 
-- [STATUS_FOR_REVIEW.md](STATUS_FOR_REVIEW.md) - start here. The findings, the
-  open questions, the two attributions that turned out to be wrong, and the
-  experiment in flight (job 522372).
-- [PINE_DIEBACK_HDM_FIRE.md](PINE_DIEBACK_HDM_FIRE.md) - fuller working detail,
-  the fire and HDM evidence, the configuration checks, and the cost figures.
+- **[EVERGREEN_DIEBACK.md](EVERGREEN_DIEBACK.md)** - the full record. What is
+  wrong, the structural reason in `CNEvergreenPhenology`, the two triggers (fire
+  from a silently failed HDM read at 4 km, nitrogen limitation from a missing
+  `-bgc_spinup on` at 0.5 degrees), the running experiment, what is still open,
+  what was retracted along the way, and the cost of leaving it.
+- [ASK_COLLEAGUES.md](ASK_COLLEAGUES.md) - the short version to send out, asking
+  whether anyone has seen this and whether there is a recommended guard.
 
 Only biomass ever accumulates the imprint. Over the zoom box, GPP, NPP and
 0–30 cm SOC hold a block index between 0.90 and 1.02 in every year from 1850 to

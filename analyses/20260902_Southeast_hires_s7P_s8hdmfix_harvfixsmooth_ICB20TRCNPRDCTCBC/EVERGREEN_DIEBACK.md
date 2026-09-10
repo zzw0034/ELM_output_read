@@ -580,3 +580,12 @@ Four traps cost time here:
   bare name `domain.nc`, which GETFIL resolves against RUNDIR. A cloned case
   with a fresh RUNDIR dies in 22 seconds on `GETFIL: FAILED to get /domain.nc`
   until the file is staged or symlinked across.
+- A `--keepexe` clone still has `BUILD_COMPLETE` reset to `FALSE` by
+  `case.setup --reset`, and `case.submit` then refuses with "Build complete is
+  not True". The executable is untouched; set `BUILD_COMPLETE=TRUE` and
+  `SMP_VALUE` back to the source case's values rather than rebuilding.
+- `xmlchange` splits its argument on commas, so
+  `BATCH_COMMAND_FLAGS='... --exclude=blc051,blc052'` is truncated to `blc051`
+  and errors with "Expecting a key value pair". Edit the XML directly.
+- `BATCH_COMMAND_FLAGS` lives in `env_workflow.xml`, not `env_batch.xml`.
+  Editing the latter appears to succeed and changes nothing.

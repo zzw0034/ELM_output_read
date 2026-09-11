@@ -205,10 +205,35 @@ else if (spinup_state == 1 .and. kyr >= 40) then
 
 Together with **nitrogen** limitation resuming at year 26, that puts **two**
 configuration-driven regime changes inside the first 80 years. Only nitrogen
-resumes: `lnd_in` in this case lineage has `suplnitro = 'NONE'` and
-`suplphos = 'ALL'`, so phosphorus stays supplemented throughout AD and
-`FPG_P` is 1.000 in every window of the 522677 analysis. Confirm both settings
-against the rerun case's own `lnd_in` rather than inheriting them from here.
+resumes, and the reason is structural rather than a per-case choice: the AD
+stage is a **CN** run, so phosphorus is not prognosed there at all.
+
+Checked across every AD case in this lineage, 2026-02-06 through the
+2026-09-10 0.5 degree rerun, plus the matching final spin-up and transient
+cases (**measured**, from each case's `CaseDocs/lnd_in` and `ELM_BLDNML_OPTS`):
+
+| stage | `-nutrient` | `suplnitro` | `suplphos` | `spinup_state` |
+|---|---|---|---|---|
+| AD spin-up | `cn` | `NONE` | **`ALL`** | 1 |
+| final spin-up | `cnp` | `NONE` | **`NONE`** | 0 |
+| transient | `cnp` | `NONE` | **`NONE`** | 0 |
+
+So `suplphos = 'ALL'` is uniform across AD and consistent with the CN compset,
+and `FPG_P` is 1.000 in every window of the 522677 analysis as a result. It is
+also ELM's compiled-in default: `AllocationMod.F90:94` initialises
+`suplphos = suplpAll`, while `suplnitro` initialises to `suplnNon`, and
+`namelist_defaults.xml` forces `ALL` only under `use_fates`. The line in
+`user_nl_elm` is therefore explicit but redundant, whereas the CNP stages must
+set `NONE` explicitly to obtain phosphorus limitation.
+
+**This puts a stress on the chain that AD never applies.** Prognostic
+phosphorus first appears at the final spin-up, not during AD. Evergreen health
+at the end of a clean AD stage is therefore not evidence that the same patches
+survive the switch, which is one more reason C5.2 re-runs the per-PFT check
+after final spin-up rather than trusting the AD result.
+
+Confirm all four settings against the rerun case's own `lnd_in` rather than
+inheriting them from here.
 
 Annual output has to span both boundaries, which independently justifies a
 diagnostic window of at least 60 years and comfortably supports 80.
@@ -538,6 +563,11 @@ that is an assumption the rerun should not silently inherit.
    per-pool AD-exit transformation, then end drift below about 1% per century,
    **and re-run C3**. A converged soil under a re-stranded canopy is still a
    failed stage.
+3. The final spin-up is the **first** stage with prognostic phosphorus, since
+   AD runs the CN compset with `suplphos = 'ALL'`. Report `FPI_P` and `FPG_P`
+   alongside the per-PFT check there, and treat any evergreen loss that appears
+   only after the switch as a phosphorus-limitation finding, not a leftover of
+   the AD stage.
 
 ---
 

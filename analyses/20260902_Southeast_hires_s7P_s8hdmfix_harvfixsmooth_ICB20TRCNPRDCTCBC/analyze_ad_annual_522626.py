@@ -239,38 +239,96 @@ def patch_timeline(diag_run, groups, out):
     return series, meta, local, take
 
 
-def decline_timing(series, rows, establish=1.0, drop_fraction=0.5):
-    """When each patch established, peaked, and then lost half its own peak.
+def decline_timing(series, rows, drop_fraction=0.5, min_peak=50.0,
+                   persist_years=3, establish=1.0, fire_event=50.0):
+    """Per-patch decline dating and fire-event pairing, with the known biases fixed.
 
-    A cold start puts EVERY patch below any LAI threshold in year 1, so a plain
-    "first year below 0.5" test returns year 1 for healthy and dying patches
-    alike and measures nothing. Establishment is therefore required first, and
-    the decline is measured against each patch's OWN peak rather than a fixed
-    level.
+    Four rules, each answering a way the first version could have lied.
+
+    Peak is the running maximum UP TO the year being tested, never the whole
+    record, so a later recovery cannot retro-date a decline.
+
+    A decline must PERSIST: leaf carbon stays below the fraction of that running
+    peak for `persist_years` consecutive years, or to the end of the record, in
+    which case it is flagged censored. A one-year dip is not a collapse.
+
+    Fire is paired EVENT BY EVENT, not by the single largest fire of the record.
+    Every year above `fire_event` counts, so a small early fire that starts the
+    decline is not masked by a larger one that follows it.
+
+    Annual means cannot order two events inside the same year. A fire in the
+    same year as the decline is reported as `same_year_order_unresolved`, never
+    as fire preceding the drop.
     """
     years = np.array(sorted(series))
     lai = np.vstack([series[y]['TLAI'][rows] for y in years])
     leafc = np.vstack([series[y]['LEAFC'][rows] for y in years])
     fire = np.vstack([series[y]['fire_gC_m2_yr'][rows] for y in years])
-    n = lai.shape[1]
-    established = np.full(n, np.nan)
-    peak_year = np.full(n, np.nan)
-    half_year = np.full(n, np.nan)
-    worst_fire_year = np.full(n, np.nan)
+    n = leafc.shape[1]
+    out = {k: np.full(n, np.nan) for k in
+           ('established_year', 'peak_before_decline', 'peak_year_before_decline',
+            'decline_year', 'first_fire_event_year', 'last_fire_before_decline',
+            'n_fire_events', 'largest_fire_year')}
+    censored = np.zeros(n, dtype=bool)
+    pairing = []
+    events = []
     for i in range(n):
         above = np.flatnonzero(lai[:, i] >= establish)
-        if not len(above):
-            continue
-        established[i] = years[above[0]]
-        k = int(np.nanargmax(leafc[:, i]))
-        peak_year[i] = years[k]
-        after = np.flatnonzero(leafc[k:, i] < drop_fraction * leafc[k, i])
-        if len(after):
-            half_year[i] = years[k + after[0]]
+        if len(above):
+            out['established_year'][i] = years[above[0]]
+        fire_years = years[np.flatnonzero(fire[:, i] >= fire_event)]
+        out['n_fire_events'][i] = len(fire_years)
+        if len(fire_years):
+            out['first_fire_event_year'][i] = fire_years[0]
         if np.isfinite(fire[:, i]).any():
-            worst_fire_year[i] = years[int(np.nanargmax(fire[:, i]))]
-    return {'established_year': established, 'peak_leafc_year': peak_year,
-            'half_of_peak_year': half_year, 'largest_fire_year': worst_fire_year}
+            out['largest_fire_year'][i] = years[int(np.nanargmax(fire[:, i]))]
+
+        run_max, run_arg = -np.inf, None
+        for k in range(len(years)):
+            if leafc[k, i] > run_max:
+                run_max, run_arg = leafc[k, i], k
+            if run_max < min_peak:
+                continue
+            tail = leafc[k:k + persist_years, i]
+            if not (tail < drop_fraction * run_max).all():
+                continue
+            if len(tail) < persist_years:
+                censored[i] = True
+            out['decline_year'][i] = years[k]
+            out['peak_before_decline'][i] = run_max
+            out['peak_year_before_decline'][i] = years[run_arg]
+            break
+
+        dy = out['decline_year'][i]
+        if np.isnan(dy):
+            pairing.append('no_sustained_decline')
+            continue
+        before = fire_years[fire_years < dy]
+        if len(before):
+            out['last_fire_before_decline'][i] = before[-1]
+            pairing.append('fire_before_decline')
+        elif (fire_years == dy).any():
+            pairing.append('same_year_order_unresolved')
+        elif len(fire_years):
+            pairing.append('fire_only_after_decline')
+        else:
+            pairing.append('no_notable_fire')
+
+        # Leaf response to every notable fire, so a small early fire is visible.
+        for fy in fire_years:
+            k = int(np.flatnonzero(years == fy)[0])
+            if k == 0 or k + 1 >= len(years):
+                continue
+            pre = leafc[k - 1, i]
+            post = np.nanmin(leafc[k:k + 3, i])
+            if pre > min_peak:
+                events.append({'event_year': int(fy),
+                               'fire_gC_m2_yr': float(fire[k, i]),
+                               'leafc_before': float(pre),
+                               'fraction_retained': float(post / pre),
+                               'before_decline': bool(fy < dy)})
+    out['censored_by_end_of_record'] = censored
+    return out, pairing, events
 
 
 def stats(a):
@@ -394,10 +452,20 @@ def main():
 
     report = {'case': DIAG_CASE, 'coastal': coastal, 'groups': {}, 'timing': {},
               'caveats': [
-                  'Pre-fix HDM executable: stranded fractions here are CONTROL values.',
+                  'PRE-FIX HDM EXECUTABLE. Human population density is zero here, '
+                  'so fire is unsuppressed. Any decline dated in this run describes '
+                  'these patches UNDER THE OLD HDM. It does not establish that the '
+                  'same patches decline by the same process once HDM is corrected; '
+                  'that needs the combined-fix experiment.',
                   'Repaired zone_mappings.txt: the coastal result IS a real test.',
                   'Every field is avgflag=A, so no strict per-year state budget exists.',
-                  'XR is recovered from AR - MR - GR, not read from its own field.',
+                  'XR is recovered as AR - MR - GR. A zero XR bounds EXCESS '
+                  'respiration only. Maintenance and growth respiration are still '
+                  'present and are reported separately as MR and GR.',
+                  'Annual means cannot order two events inside one year; those cases '
+                  'are counted as same_year_order_unresolved, never as fire first.',
+                  'Group-mean fire peaking before group-mean leaf carbon falls is '
+                  'not a per-patch ordering. Use the pairing counts, not the means.',
                   'A healthy sample of up to 2000 patches is a sample, not a census.',
               ]}
 
@@ -410,23 +478,35 @@ def main():
             'by_year': {str(y): {f: stats(series[y][f][rows]) for f in fields}
                         for y in sorted(series)},
         }
-        timing = decline_timing(series, rows)
-        declined = np.isfinite(timing['half_of_peak_year'])
-        lead = (timing['half_of_peak_year'] - timing['largest_fire_year'])[declined]
+        timing, pairing, events = decline_timing(series, rows)
+        declined = np.isfinite(timing['decline_year'])
+        lead = (timing['decline_year'] - timing['last_fire_before_decline'])[declined]
         report['timing'][name] = {
             'never_established_lai_1.0': int(np.isnan(timing['established_year']).sum()),
             'established_year': stats(timing['established_year']),
-            'peak_leafc_year': stats(timing['peak_leafc_year']),
-            'half_of_peak_year': stats(timing['half_of_peak_year']),
-            'n_lost_half_of_peak': int(declined.sum()),
-            'largest_fire_year': stats(timing['largest_fire_year']),
-            'half_of_peak_minus_largest_fire_year': stats(lead),
-            'fire_at_or_before_the_drop': int(np.sum(lead >= 0)),
-            'fire_after_the_drop': int(np.sum(lead < 0)),
+            'peak_year_before_decline': stats(timing['peak_year_before_decline']),
+            'peak_leafc_before_decline': stats(timing['peak_before_decline']),
+            'decline_year': stats(timing['decline_year']),
+            'n_with_sustained_decline': int(declined.sum()),
+            'n_censored_by_end_of_record':
+                int(timing['censored_by_end_of_record'].sum()),
+            'n_fire_events_per_patch': stats(timing['n_fire_events']),
+            'first_fire_event_year': stats(timing['first_fire_event_year']),
+            'decline_year_minus_last_fire_before_it': stats(lead),
+            'pairing': {k: int(pairing.count(k)) for k in sorted(set(pairing))},
             'declined_before_carbon_only_ends_year_%d' % CARBON_ONLY_YEARS:
-                int(np.nansum(timing['half_of_peak_year'] <= CARBON_ONLY_YEARS)),
+                int(np.nansum(timing['decline_year'] <= CARBON_ONLY_YEARS)),
             'declined_after_carbon_only_ends':
-                int(np.nansum(timing['half_of_peak_year'] > CARBON_ONLY_YEARS)),
+                int(np.nansum(timing['decline_year'] > CARBON_ONLY_YEARS)),
+            'fire_event_response': {
+                'n_events': len(events),
+                'fraction_retained_after_event': stats(
+                    [e['fraction_retained'] for e in events]),
+                'fraction_retained_events_before_decline': stats(
+                    [e['fraction_retained'] for e in events if e['before_decline']]),
+                'fraction_retained_events_after_decline': stats(
+                    [e['fraction_retained'] for e in events if not e['before_decline']]),
+            },
         }
 
     rows = local['residual']

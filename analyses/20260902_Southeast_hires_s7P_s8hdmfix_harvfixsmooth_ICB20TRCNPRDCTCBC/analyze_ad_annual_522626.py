@@ -61,6 +61,24 @@ def to_celsius(values, units):
     raise ValueError('Unknown temperature units: ' + repr(units))
 
 
+def record_years(dataset):
+    """Model year covered by each record, and which records cover no time.
+
+    Do NOT assume record k is year k+1. In job 522626 the first record is the
+    nstep-0 initial dump: `nstep = 0`, `mcdate = 10101`, and `time_bounds` of
+    [0, 0], so it covers zero elapsed time and every accumulated field in it is
+    zero. `mcdate` is the date at the END of the interval, so the year the
+    record covers is its `mcdate` year minus one. Ignoring this labelled every
+    result one year too late.
+    """
+    mcdate = dataset.variables['mcdate'][:]
+    tb = np.ma.filled(np.asarray(dataset.variables['time_bounds'][:], dtype=float), np.nan)
+    length = tb[:, 1] - tb[:, 0]
+    years = (np.asarray(mcdate, dtype=int) // 10000) - 1
+    complete = length > 0
+    return years, complete, length
+
+
 def seconds_per_year(dataset):
     """Refuse to guess the calendar; the flux unit conversion depends on it."""
     cal = (getattr(dataset.variables['time'], 'calendar', '') or '').lower()
@@ -149,6 +167,7 @@ def coastal_audit(diag_run, ref_run, out):
     diag_h0 = diag_run / f'{DIAG_CASE}.elm.h0.0001-01-01-00000.nc'
     with nc.Dataset(diag_h0) as h0:
         nt = len(h0.dimensions['time'])
+        h0_years, h0_complete, h0_length = record_years(h0)
         diag_land = land  # same grid; asserted below
         with nc.Dataset(diag_run / f'{DIAG_CASE}.elm.h1.0001-01-01-00000.nc') as d:
             if not np.array_equal(land_cell_keys(d), land):
@@ -158,12 +177,17 @@ def coastal_audit(diag_run, ref_run, out):
             raise ValueError('Flagged cells not found in the diagnostic land mask')
         for t in range(nt):
             bad, tbot, fsds, gpp = forcing_flags(h0, t, diag_land)
-            # The first annual record carries FSDS identically zero on EVERY land
-            # cell, which is a cold-start artifact of the first history interval,
-            # not sentinel forcing. Reported, never counted.
+            # A record is excluded only when the FILE says it covers no time,
+            # never because of its position. In job 522626 record 1 is the
+            # nstep-0 dump with time_bounds [0, 0]: FSDS is zero there because
+            # nothing was accumulated, which is arithmetic, not an anomaly. An
+            # all-zero FSDS inside a record that DOES span a full year would be
+            # a real finding and must not be waved away as initialisation.
             per_year.append({
-                'year': t + 1,
-                'excluded_from_verdict': bool(t == 0),
+                'year': int(h0_years[t]),
+                'interval_days': float(h0_length[t]),
+                'covers_no_time': bool(not h0_complete[t]),
+                'excluded_from_verdict': bool(not h0_complete[t]),
                 'flagged_land_cells': int(bad.sum()),
                 'previously_flagged_still_flagged': int(bad[pos].sum()),
                 'previously_flagged_with_positive_gpp': int((gpp[pos] > 0).sum()),
@@ -171,7 +195,7 @@ def coastal_audit(diag_run, ref_run, out):
                 'previously_flagged_min_fsds': float(np.nanmin(fsds[pos])),
                 'previously_flagged_max_tbot': float(np.nanmax(tbot[pos])),
             })
-            if t == nt - 1:
+            if t == nt - 1 and h0_complete[t]:
                 still_flagged = dict(tbot=tbot[pos], fsds=fsds[pos], gpp=gpp[pos])
 
     with (out / 'coastal_cells.csv').open('w', newline='') as f:
@@ -202,6 +226,9 @@ def patch_timeline(diag_run, groups, out):
         nlon = len(read(d, 'lon'))
         nt = len(d.dimensions['time'])
         ids, key = pine_patches(d)
+        years, complete, length = record_years(d)
+        if not complete.any():
+            raise ValueError('No record covers a complete interval')
         col_ix = read(d, 'cols1d_ixy').astype(int) - 1
         col_jy = read(d, 'cols1d_jxy').astype(int) - 1
         col_key = col_jy * nlon + col_ix
@@ -213,7 +240,9 @@ def patch_timeline(diag_run, groups, out):
         rows = ids[take]
         tbot_units = getattr(g.variables['TBOT'], 'units', '')
         for t in range(nt):
-            rec = {'year': t + 1}
+            if not complete[t]:
+                continue          # zero-length initial dump; nothing accumulated
+            rec = {'year': int(years[t]), 'interval_days': float(length[t])}
             for name in patch_flds:
                 rec[name] = read(d, name, t)[rows]
             cell = key[take]
@@ -230,7 +259,7 @@ def patch_timeline(diag_run, groups, out):
             # (VegetationDataType.F90:8256). XR is not on this tape; recover it.
             rec['XR'] = rec['AR'] - rec['MR'] - rec['GR']
             rec['fire_gC_m2_yr'] = rec['COL_FIRE_CLOSS'] * spy
-            series[t + 1] = rec
+            series[int(years[t])] = rec
         lat, lon = read(d, 'lat'), read(d, 'lon')
         meta = {'key': key[take], 'lat': lat[key[take] // nlon],
                 'lon': lon[key[take] % nlon], 'seconds_per_year': spy,

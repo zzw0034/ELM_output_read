@@ -79,6 +79,46 @@ def record_years(dataset):
     return years, complete, length
 
 
+def index_records(paths):
+    """Map model year to (path, record index) across every file of a tape.
+
+    A tape is not one file. Job 522626 wrote `hist_mfilt = 30`, so its first
+    file holds the nstep-0 dump plus model years 1 to 29 and year 30 lands in a
+    second file stamped 0031-01-01. Reading only the first file silently drops a
+    year. Duplicates, gaps and zero-length records are reported, never guessed
+    at: the first occurrence of a year wins and the collision is recorded.
+    """
+    table, duplicates, zero_length, odd_length = {}, [], [], []
+    for path in sorted(paths):
+        with nc.Dataset(path) as d:
+            years, complete, length = record_years(d)
+        for i, (y, ok, L) in enumerate(zip(years, complete, length)):
+            entry = {'file': pathlib.Path(path).name, 'index': int(i),
+                     'year': int(y), 'interval_days': float(L)}
+            if not ok:
+                zero_length.append(entry)
+                continue
+            if abs(L - 365.0) > 1e-6:
+                odd_length.append(entry)
+            if int(y) in table:
+                duplicates.append({**entry, 'kept': table[int(y)][2]})
+                continue
+            table[int(y)] = (path, int(i), pathlib.Path(path).name)
+    present = sorted(table)
+    gaps = [y for y in range(present[0], present[-1] + 1)
+            if y not in table] if present else []
+    audit = {'files': sorted(pathlib.Path(q).name for q in paths),
+             'years_present': [int(present[0]), int(present[-1])] if present else [],
+             'n_years': len(present), 'gaps': gaps,
+             'duplicates': duplicates, 'zero_length_records': zero_length,
+             'records_not_365_days': odd_length}
+    return table, audit
+
+
+def tape_paths(run_dir, case, tape):
+    return sorted(run_dir.glob(f'{case}.elm.{tape}.*.nc'))
+
+
 def seconds_per_year(dataset):
     """Refuse to guess the calendar; the flux unit conversion depends on it."""
     cal = (getattr(dataset.variables['time'], 'calendar', '') or '').lower()
@@ -164,39 +204,53 @@ def coastal_audit(diag_run, ref_run, out):
 
     # The same cells, year by year, in the run that read the repaired mapping.
     per_year, still_flagged = [], {}
-    diag_h0 = diag_run / f'{DIAG_CASE}.elm.h0.0001-01-01-00000.nc'
-    with nc.Dataset(diag_h0) as h0:
-        nt = len(h0.dimensions['time'])
-        h0_years, h0_complete, h0_length = record_years(h0)
-        diag_land = land  # same grid; asserted below
-        with nc.Dataset(diag_run / f'{DIAG_CASE}.elm.h1.0001-01-01-00000.nc') as d:
-            if not np.array_equal(land_cell_keys(d), land):
-                raise ValueError('Land cell set differs between the two cases')
-        pos = np.searchsorted(diag_land, flagged_cells)
-        if not np.array_equal(diag_land[pos], flagged_cells):
-            raise ValueError('Flagged cells not found in the diagnostic land mask')
-        for t in range(nt):
-            bad, tbot, fsds, gpp = forcing_flags(h0, t, diag_land)
-            # A record is excluded only when the FILE says it covers no time,
-            # never because of its position. In job 522626 record 1 is the
-            # nstep-0 dump with time_bounds [0, 0]: FSDS is zero there because
-            # nothing was accumulated, which is arithmetic, not an anomaly. An
-            # all-zero FSDS inside a record that DOES span a full year would be
-            # a real finding and must not be waved away as initialisation.
-            per_year.append({
-                'year': int(h0_years[t]),
-                'interval_days': float(h0_length[t]),
-                'covers_no_time': bool(not h0_complete[t]),
-                'excluded_from_verdict': bool(not h0_complete[t]),
-                'flagged_land_cells': int(bad.sum()),
-                'previously_flagged_still_flagged': int(bad[pos].sum()),
-                'previously_flagged_with_positive_gpp': int((gpp[pos] > 0).sum()),
-                'previously_flagged_min_gpp': float(np.nanmin(gpp[pos])),
-                'previously_flagged_min_fsds': float(np.nanmin(fsds[pos])),
-                'previously_flagged_max_tbot': float(np.nanmax(tbot[pos])),
-            })
-            if t == nt - 1 and h0_complete[t]:
-                still_flagged = dict(tbot=tbot[pos], fsds=fsds[pos], gpp=gpp[pos])
+    h0_table, h0_audit = index_records(tape_paths(diag_run, DIAG_CASE, 'h0'))
+    h1_table, h1_audit = index_records(tape_paths(diag_run, DIAG_CASE, 'h1'))
+    if h0_audit['gaps'] or h1_audit['gaps']:
+        raise ValueError('Missing model years on a tape: %r / %r'
+                         % (h0_audit['gaps'], h1_audit['gaps']))
+    first_h1 = h1_table[min(h1_table)][0]
+    with nc.Dataset(first_h1) as d:
+        if not np.array_equal(land_cell_keys(d), land):
+            raise ValueError('Land cell set differs between the two cases')
+    pos = np.searchsorted(land, flagged_cells)
+    if not np.array_equal(land[pos], flagged_cells):
+        raise ValueError('Flagged cells not found in the diagnostic land mask')
+
+    # Every record of the tape, including the zero-length dump, in model-year
+    # order across all files. Duplicates are emitted, not silently collapsed;
+    # index_records reports them separately.
+    rows = []
+    for path in tape_paths(diag_run, DIAG_CASE, 'h0'):
+        with nc.Dataset(path) as h0:
+            yrs, ok, length = record_years(h0)
+        rows.extend((int(yrs[i]), bool(ok[i]), float(length[i]), path, i)
+                    for i in range(len(yrs)))
+    for year, ok, length, path, i in sorted(rows, key=lambda r: (r[0], not r[1])):
+        with nc.Dataset(path) as h0:
+            bad, tbot, fsds, gpp = forcing_flags(h0, i, land)
+        # A record is excluded only when the FILE says it covers no time, never
+        # because of its position. In job 522626 the first record is the nstep-0
+        # dump with time_bounds [0, 0]: FSDS is zero there because nothing was
+        # accumulated, which is arithmetic, not an anomaly. An all-zero FSDS
+        # inside a record that DOES span a full year would be a real finding and
+        # must not be waved away as initialisation.
+        per_year.append({
+            'year': year, 'interval_days': length,
+            'covers_no_time': not ok, 'excluded_from_verdict': not ok,
+            'source_file': pathlib.Path(path).name,
+            'flagged_land_cells': int(bad.sum()),
+            'previously_flagged_still_flagged': int(bad[pos].sum()),
+            'previously_flagged_with_positive_gpp': int((gpp[pos] > 0).sum()),
+            'previously_flagged_min_gpp': float(np.nanmin(gpp[pos])),
+            'previously_flagged_min_fsds': float(np.nanmin(fsds[pos])),
+            'previously_flagged_max_tbot': float(np.nanmax(tbot[pos])),
+        })
+        if ok and year == max(h0_table):
+            still_flagged = dict(tbot=tbot[pos], fsds=fsds[pos], gpp=gpp[pos])
+    if not still_flagged:
+        raise ValueError('No complete final-year record to report per-cell values from')
+    recon['tape_audit'] = {'h0': h0_audit, 'h1': h1_audit}
 
     with (out / 'coastal_cells.csv').open('w', newline='') as f:
         w = csv.writer(f)
@@ -218,17 +272,18 @@ def patch_timeline(diag_run, groups, out):
                   'LEAFC_TO_LITTER', 'CPOOL', 'XSMRPOOL', 'AR', 'MR', 'GR',
                   'BTRAN', 'TOTVEGC', 'LEAFN')
     col_flds = ('FPG', 'FPI', 'FPG_P', 'COL_FIRE_CLOSS', 'SMINN')
-    h1 = diag_run / f'{DIAG_CASE}.elm.h1.0001-01-01-00000.nc'
-    h0 = diag_run / f'{DIAG_CASE}.elm.h0.0001-01-01-00000.nc'
+    h1_table, h1_audit = index_records(tape_paths(diag_run, DIAG_CASE, 'h1'))
+    h0_table, h0_audit = index_records(tape_paths(diag_run, DIAG_CASE, 'h0'))
+    model_years = sorted(set(h1_table) & set(h0_table))
+    if not model_years:
+        raise ValueError('No model year has both an h1 and an h0 record')
+    missing = sorted(set(h1_table) ^ set(h0_table))
     series = {}
-    with nc.Dataset(h1) as d, nc.Dataset(h0) as g:
+    with nc.Dataset(h1_table[model_years[0]][0]) as d, \
+         nc.Dataset(h0_table[model_years[0]][0]) as g:
         spy = seconds_per_year(d)
         nlon = len(read(d, 'lon'))
-        nt = len(d.dimensions['time'])
         ids, key = pine_patches(d)
-        years, complete, length = record_years(d)
-        if not complete.any():
-            raise ValueError('No record covers a complete interval')
         col_ix = read(d, 'cols1d_ixy').astype(int) - 1
         col_jy = read(d, 'cols1d_jxy').astype(int) - 1
         col_key = col_jy * nlon + col_ix
@@ -239,17 +294,25 @@ def patch_timeline(diag_run, groups, out):
         take = np.unique(np.concatenate(list(index.values())))
         rows = ids[take]
         tbot_units = getattr(g.variables['TBOT'], 'units', '')
-        for t in range(nt):
-            if not complete[t]:
-                continue          # zero-length initial dump; nothing accumulated
-            rec = {'year': int(years[t]), 'interval_days': float(length[t])}
+        cell = key[take]
+    # Records come from whichever file holds that model year, so a tape split
+    # across files is read whole.
+    for year in model_years:
+        h1_path, h1_i, _ = h1_table[year]
+        h0_path, h0_i, _ = h0_table[year]
+        with nc.Dataset(h1_path) as d, nc.Dataset(h0_path) as g:
+            # A second file of the same tape must carry the same patch vector.
+            if len(d.dimensions['pft']) != len(read(d, 'pfts1d_ixy')):
+                raise ValueError('Inconsistent patch dimension in %s' % h1_path)
+            if not (read(d, 'pfts1d_itype_veg')[rows] == PINE).all():
+                raise ValueError('Patch identities differ in %s' % h1_path)
+            rec = {'year': int(year)}
             for name in patch_flds:
-                rec[name] = read(d, name, t)[rows]
-            cell = key[take]
-            rec['TBOT'] = to_celsius(read(g, 'TBOT', t), tbot_units).ravel()[cell]
-            rec['FSDS'] = read(g, 'FSDS', t).ravel()[cell]
+                rec[name] = read(d, name, h1_i)[rows]
+            rec['TBOT'] = to_celsius(read(g, 'TBOT', h0_i), tbot_units).ravel()[cell]
+            rec['FSDS'] = read(g, 'FSDS', h0_i).ravel()[cell]
             for name in col_flds:
-                val = read(d, name, t)
+                val = read(d, name, h1_i)
                 ok = np.isfinite(val) & (col_wt > 0) & col_nat
                 den = np.bincount(col_key[ok], weights=col_wt[ok], minlength=size)
                 num = np.bincount(col_key[ok], weights=col_wt[ok] * val[ok], minlength=size)
@@ -259,11 +322,14 @@ def patch_timeline(diag_run, groups, out):
             # (VegetationDataType.F90:8256). XR is not on this tape; recover it.
             rec['XR'] = rec['AR'] - rec['MR'] - rec['GR']
             rec['fire_gC_m2_yr'] = rec['COL_FIRE_CLOSS'] * spy
-            series[int(years[t])] = rec
+            series[int(year)] = rec
+    with nc.Dataset(h1_table[model_years[0]][0]) as d:
         lat, lon = read(d, 'lat'), read(d, 'lon')
-        meta = {'key': key[take], 'lat': lat[key[take] // nlon],
-                'lon': lon[key[take] % nlon], 'seconds_per_year': spy,
-                'nlon': nlon}
+    meta = {'key': key[take], 'lat': lat[key[take] // nlon],
+            'lon': lon[key[take] % nlon], 'seconds_per_year': spy,
+            'nlon': nlon, 'model_years': [int(y) for y in model_years],
+            'years_on_one_tape_only': [int(y) for y in missing],
+            'tape_audit': {'h1': h1_audit, 'h0': h0_audit}}
     local = {name: np.searchsorted(take, index[name]) for name in index}
     return series, meta, local, take
 
@@ -480,6 +546,11 @@ def main():
     series, meta, local, take = patch_timeline(args.diag_run, groups, args.output_dir)
 
     report = {'case': DIAG_CASE, 'coastal': coastal, 'groups': {}, 'timing': {},
+              'record_audit': {
+                  'model_years_analysed': meta['model_years'],
+                  'years_on_one_tape_only': meta['years_on_one_tape_only'],
+                  'tapes': meta['tape_audit'],
+              },
               'caveats': [
                   'PRE-FIX HDM EXECUTABLE. Human population density is zero here, '
                   'so fire is unsuppressed. Any decline dated in this run describes '
@@ -496,6 +567,11 @@ def main():
                   'Group-mean fire peaking before group-mean leaf carbon falls is '
                   'not a per-patch ordering. Use the pairing counts, not the means.',
                   'A healthy sample of up to 2000 patches is a sample, not a census.',
+                  'Model years come from each record mcdate minus one, since '
+                  'mcdate is the interval END. Do not read a record index as a '
+                  'year: the first record is the nstep-0 dump spanning no time.',
+                  'All files of each tape are merged. hist_mfilt splits a tape '
+                  'across files, so reading only the first one drops years.',
               ]}
 
     fields = ('TLAI', 'LEAFC', 'GPP', 'NPP', 'LEAFC_ALLOC', 'LEAFC_LOSS',

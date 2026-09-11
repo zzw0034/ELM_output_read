@@ -76,13 +76,20 @@ def record_years(dataset):
     length = tb[:, 1] - tb[:, 0]
     years = (np.asarray(mcdate, dtype=int) // 10000) - 1
     # "Covers time" is not the same as "covers the sampling interval". The first
-    # record of job 522626 spans 0.0417 days, a single one-hour model step at
-    # midnight on 0001-01-01, so it is neither zero-length nor a year. FSDS is
-    # zero in it because the sun is down, which is physics, not a defect. The
-    # expected interval is taken as the modal record length rather than
-    # hardcoded, so a tape at a different frequency still works.
+    # record of job 522626 spans 0.0417 days, about one hour, so it is neither
+    # zero-length nor a year and cannot serve as an annual mean. Why its
+    # accumulated fields are zero is NOT established here: model midnight is not
+    # local midnight everywhere, and initialisation may also be involved. The
+    # only claim made is that it is a short record.
+    #
+    # A record is accepted on the CALENDAR length first, 365 days for annual
+    # no-leap output, with the modal observed length as a fallback when the
+    # calendar is something else. Contiguity of the time bounds is checked
+    # separately in index_records.
     finite = length[np.isfinite(length) & (length > 0)]
-    expected = float(np.bincount(np.round(finite).astype(int)).argmax()) if finite.size else np.nan
+    modal = float(np.bincount(np.round(finite).astype(int)).argmax()) if finite.size else np.nan
+    cal = (getattr(dataset.variables['time'], 'calendar', '') or '').lower()
+    expected = 365.0 if (cal in ('noleap', '365_day') and abs(modal - 365.0) <= 1.0) else modal
     complete = np.isfinite(length) & (np.abs(length - expected) <= 0.5)
     return years, complete, length, expected
 
@@ -113,9 +120,23 @@ def index_records(paths):
     present = sorted(table)
     gaps = [y for y in range(present[0], present[-1] + 1)
             if y not in table] if present else []
+    # Contiguity: each accepted record must start where the previous one ended.
+    # A gap or overlap in the time bounds means the series is not a clean run,
+    # whatever the year labels say.
+    breaks, prev_end, prev_year = [], None, None
+    for y in present:
+        path, i, name = table[y]
+        with nc.Dataset(path) as d:
+            tb = np.ma.filled(np.asarray(d.variables['time_bounds'][i], dtype=float), np.nan)
+        if prev_end is not None and abs(tb[0] - prev_end) > 1e-6:
+            breaks.append({'between_years': [prev_year, int(y)],
+                           'previous_end_day': float(prev_end),
+                           'this_start_day': float(tb[0])})
+        prev_end, prev_year = float(tb[1]), int(y)
     audit = {'files': sorted(Path(q).name for q in paths),
              'years_present': [int(present[0]), int(present[-1])] if present else [],
              'n_years': len(present), 'gaps': gaps, 'duplicates': duplicates,
+             'time_bound_discontinuities': breaks,
              'records_excluded_wrong_interval': odd_length}
     return table, audit
 
@@ -597,9 +618,11 @@ def main():
             'peak_year_before_decline': stats(timing['peak_year_before_decline']),
             'peak_leafc_before_decline': stats(timing['peak_before_decline']),
             'decline_year': stats(timing['decline_year']),
-            'n_with_sustained_decline': int(declined.sum()),
-            'n_censored_by_end_of_record':
-                int(timing['censored_by_end_of_record'].sum()),
+            'n_declined_confirmed_by_%d_full_years' % 3:
+                int((declined & ~timing['censored_by_end_of_record']).sum()),
+            'n_declined_censored_at_end_of_record':
+                int((declined & timing['censored_by_end_of_record']).sum()),
+            'n_with_sustained_decline_either_way': int(declined.sum()),
             'n_fire_events_per_patch': stats(timing['n_fire_events']),
             'first_fire_event_year': stats(timing['first_fire_event_year']),
             'decline_year_minus_last_fire_before_it': stats(lead),

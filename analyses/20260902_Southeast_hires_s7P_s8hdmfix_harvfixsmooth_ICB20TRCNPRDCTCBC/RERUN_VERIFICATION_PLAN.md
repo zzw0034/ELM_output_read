@@ -226,7 +226,28 @@ also ELM's compiled-in default: `AllocationMod.F90:94` initialises
 `user_nl_elm` is therefore explicit but redundant, whereas the CNP stages must
 set `NONE` explicitly to obtain phosphorus limitation.
 
-**This puts a stress on the chain that AD never applies.** Prognostic
+**Where the setting comes from: OLMT imposes it.** In
+`/projects/hpcl-cli185/proj-shared/zw5/elm-olmt/model_ELM/main.py`:
+
+```python
+line 796:  if ('ad_spinup' in self.casename):
+               self.xmlchange('ELM_BLDNML_OPTS', append="'-bgc_spinup on'")
+line 972:  if ('ad_spinup' in self.casename):    # Turn on supplemental P for ad spinup
+               self.customize_namelist(variable='suplphos', value="'ALL'")
+```
+
+So supplemental phosphorus during AD is the tool's convention, not an ELM
+requirement; ELM runs an AD stage with `suplphos = 'NONE'` perfectly well. For
+this chain it is also moot, because AD is CN and phosphorus is not prognosed.
+
+**Both settings hang off the same substring test on the case name**, and that is
+worth carrying forward as a standing check. A case that does not contain
+`ad_spinup` in its name silently loses `-bgc_spinup on` **and** `suplphos =
+'ALL'`, with no error. That is the same failure class as the never-was-AD
+0.5 degree case, from the same two lines. Verify both in `CaseDocs/lnd_in`
+before submitting any AD case rather than trusting the name.
+
+**Prognostic phosphorus puts a stress on the chain that AD never applies.** Prognostic
 phosphorus first appears at the final spin-up, not during AD. Evergreen health
 at the end of a clean AD stage is therefore not evidence that the same patches
 survive the switch, which is one more reason C5.2 re-runs the per-PFT check

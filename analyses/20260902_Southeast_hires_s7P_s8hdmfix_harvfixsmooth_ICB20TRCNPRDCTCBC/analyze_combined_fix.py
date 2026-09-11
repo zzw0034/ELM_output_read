@@ -1,8 +1,10 @@
 """Combined-fix outcome from the production AD rerun; run on a compute node.
 
 The first run with the corrected HDM reader AND the repaired zone_mappings.
-Reads only CLOSED history files so a segment still being written is never
-touched.
+Reads every closed segment file on each tape (glob + MFDataset), concatenated
+along the record dimension. The caller is responsible for only pointing this
+at a run whose segments are all finished — do not run it while a later
+segment is still writing to the same tape.
 
 Three deliverables, kept apart:
   A. per-PFT low-LAI fractions, split three ways and reported by region,
@@ -86,12 +88,20 @@ def main():
                     help='ignore records beyond this model year')
     a = ap.parse_args()
 
-    h1 = a.run_dir / f'{a.case}.elm.h1.0001-01-01-00000.nc'
-    h0 = a.run_dir / f'{a.case}.elm.h0.0001-01-01-00000.nc'
-    h2 = a.run_dir / f'{a.case}.elm.h2.0001-01-01-00000.nc'
-    rep = {'case': a.case, 'files': [p.name for p in (h0, h1, h2)], 'caveats': [
-        'Only the first, closed segment file is read; a file still being '
-        'written is never opened.',
+    h1_files = sorted(a.run_dir.glob(f'{a.case}.elm.h1.*-01-01-00000.nc'))
+    h0_files = sorted(a.run_dir.glob(f'{a.case}.elm.h0.*-01-01-00000.nc'))
+    h2_files = sorted(a.run_dir.glob(f'{a.case}.elm.h2.*-01-01-00000.nc'))
+    for tag, files in (('h0', h0_files), ('h1', h1_files), ('h2', h2_files)):
+        if not files:
+            raise SystemExit(f'no {tag} segment files found under {a.run_dir}')
+    h1, h0, h2 = h1_files, h0_files, h2_files
+    rep = {'case': a.case,
+          'files': {'h0': [p.name for p in h0], 'h1': [p.name for p in h1],
+                    'h2': [p.name for p in h2]},
+          'caveats': [
+        'All closed segment files on each tape are read and concatenated by '
+        'record; the caller must not point this at a run with a segment still '
+        'writing.',
         'Group membership comes from the final state of job 522373, a different '
         'simulation, so it is a retrospective comparison of the same locations.',
         'Fire association is not causation; the leaf budget gives the proximate '
@@ -127,7 +137,7 @@ def main():
                           'healthy_sample': int(healthy_key.size)}
 
     # ---- production run geometry -----------------------------------------
-    with nc.Dataset(h1) as d:
+    with nc.MFDataset(h1) as d:
         nlon = len(read(d, 'lon'))
         lat, lon = read(d, 'lat'), read(d, 'lon')
         pix = read(d, 'pfts1d_ixy').astype(int) - 1
@@ -162,7 +172,7 @@ def main():
         lo = hi + 1
 
     per_pft = {}
-    with nc.Dataset(h1) as d:
+    with nc.MFDataset(h1) as d:
         for lo, hi, sel in windows:
             lai_sum = np.zeros(len(pkey)); lc_sum = np.zeros(len(pkey))
             for t in sel:
@@ -207,7 +217,7 @@ def main():
     colf = ('FPG', 'FPI', 'COL_FIRE_CLOSS', 'FAREA_BURNED')
     size = len(lat) * nlon
     series = {}
-    with nc.Dataset(h1) as d, nc.Dataset(h2) as s:
+    with nc.MFDataset(h1) as d, nc.MFDataset(h2) as s:
         s_years, s_full, s_mc = records(s)
         # h2 record stamped (y+1)-01-01 is the state at the END of year y.
         end_state = {int(m // 10000) - 1: i for i, m in enumerate(s_mc)}

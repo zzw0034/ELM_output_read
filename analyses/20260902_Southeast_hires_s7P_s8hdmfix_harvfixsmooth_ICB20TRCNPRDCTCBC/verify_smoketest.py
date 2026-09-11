@@ -59,7 +59,6 @@ def main():
     R = args.run_dir
     rep = {'case': CASE, 'run_dir': str(R), 'checks': {}}
 
-    h0 = sorted(R.glob(f'{CASE}.elm.h0.*.nc'))[0]
     h1 = sorted(R.glob(f'{CASE}.elm.h1.*.nc'))[0]
 
     # Pair h2 with the restart written at the SAME instant, by date. Taking the
@@ -81,41 +80,13 @@ def main():
         raise SystemExit('no h2 snapshot shares a date with any restart; '
                          'available restarts: %r' % sorted(restarts))
 
-    # ---- record structure -------------------------------------------------
+    # ---- grid geometry, from the first h0 file (static across segments) ---
     all_h0 = sorted(R.glob(f'{CASE}.elm.h0.*.nc'))
-    per_file = []
-    for q in all_h0:
-        with nc.Dataset(q) as d:
-            o, m, L, e, c = full_year_records(d)
-            per_file.append({'file': q.name, 'records': int(len(L)),
-                             'full_year_records': int(len(o)),
-                             'model_years': [int(m[o[0]] // 10000) - 1,
-                                             int(m[o[-1]] // 10000) - 1] if len(o) else [],
-                             'short_records': [round(float(L[i]), 4)
-                                               for i in range(len(L))
-                                               if abs(L[i] - e) > 0.5]})
-    with nc.Dataset(h0) as d:
-        ok, mcdate, length, expected, cal = full_year_records(d)
-        rep['checks']['record_structure'] = {
-            'files_on_this_tape': per_file,
-            'calendar': cal, 'expected_interval_days': expected,
-            'n_records': int(len(length)),
-            'full_year_record_indices': [int(i) for i in ok],
-            'full_year_model_years': [int(mcdate[i] // 10000) - 1 for i in ok],
-            'rejected': [{'index': int(i), 'days': float(length[i])}
-                         for i in range(len(length)) if i not in set(ok.tolist())],
-            'verdict': 'PASS' if len(ok) >= 1 else 'FAIL: no complete annual interval',
-        }
-        if not len(ok):
-            raise SystemExit(json.dumps(rep, indent=2))
-        last = int(ok[-1])
-        lat, lon = read(d, 'lat'), read(d, 'lon')
-        nlon = len(lon)
-        hdm = read(d, 'HDM', last)
-        tbot = to_c(read(d, 'TBOT', last), getattr(d.variables['TBOT'], 'units', ''))
-        fsds = read(d, 'FSDS', last)
-        gpp = read(d, 'GPP', last)
-        model_year = int(mcdate[last] // 10000) - 1
+    if not all_h0:
+        raise SystemExit(f'no h0 files found under {R}')
+    with nc.Dataset(all_h0[0]) as d0:
+        nlon = len(read(d0, 'lon'))
+        cal = (getattr(d0.variables['time'], 'calendar', '') or '').lower()
 
     # ---- land mask, from the patch tape -----------------------------------
     with nc.Dataset(h1) as d:
@@ -126,8 +97,51 @@ def main():
         h1_methods = {v: getattr(d.variables[v], 'cell_methods', None)
                       for v in ('LEAFC', 'LEAFC_ALLOC', 'LEAFC_LOSS') if v in d.variables}
 
-    # ---- check 1a: HDM actually read --------------------------------------
-    hv = hdm.ravel()[land]
+    # ---- record structure, and C1.1: sentinel/physical-range check on EVERY
+    # complete annual h0 record across every closed segment file (not just
+    # the last one) — RERUN_VERIFICATION_PLAN.md section 5, C1. Model year 0
+    # (the mcdate=0001-01-01 cold-start init record, FSDS identically zero on
+    # every land cell) is excluded, matching the plan's "excluding year 0001".
+    per_file, year_flags = [], {}
+    last_year = hdm_last = gpp_last = tbot_last = fsds_last = None
+    for q in all_h0:
+        with nc.Dataset(q) as d:
+            o, m, L, e, c2 = full_year_records(d)
+            per_file.append({'file': q.name, 'records': int(len(L)),
+                             'full_year_records': int(len(o)),
+                             'model_years': [int(m[o[0]] // 10000) - 1,
+                                             int(m[o[-1]] // 10000) - 1] if len(o) else [],
+                             'short_records': [round(float(L[i]), 4)
+                                               for i in range(len(L))
+                                               if abs(L[i] - e) > 0.5]})
+            for i in o:
+                yr = int(m[i] // 10000) - 1
+                if yr < 1:
+                    continue
+                tb = to_c(read(d, 'TBOT', i), getattr(d.variables['TBOT'], 'units', ''))
+                fs = read(d, 'FSDS', i)
+                tl, fl = tb.ravel()[land], fs.ravel()[land]
+                bad = (fl < SENTINEL_FSDS) | (tl < TMIN) | (tl > TMAX)
+                year_flags[yr] = int(bad.sum())
+                if last_year is None or yr > last_year:
+                    last_year = yr
+                    hdm_last = read(d, 'HDM', i)
+                    gpp_last = read(d, 'GPP', i)
+                    tbot_last, fsds_last = tb, fs
+
+    rep['checks']['record_structure'] = {
+        'files_on_this_tape': per_file,
+        'calendar': cal,
+        'n_full_year_records_checked': len(year_flags),
+        'model_years_checked': sorted(year_flags),
+        'verdict': 'PASS' if year_flags else 'FAIL: no complete annual interval on any h0 file',
+    }
+    if not year_flags:
+        raise SystemExit(json.dumps(rep, indent=2))
+    model_year = last_year
+
+    # ---- check 1a: HDM actually read, at the latest full year -------------
+    hv = hdm_last.ravel()[land]
     rep['checks']['hdm'] = {
         'model_year': model_year,
         'mean': float(np.nanmean(hv)), 'min': float(np.nanmin(hv)),
@@ -139,16 +153,19 @@ def main():
                    else 'FAIL: HDM not read as expected',
     }
 
-    # ---- check 1b: no sentinel forcing anywhere ---------------------------
-    tl, fl, gl = tbot.ravel()[land], fsds.ravel()[land], gpp.ravel()[land]
-    bad = (fl < SENTINEL_FSDS) | (tl < TMIN) | (tl > TMAX)
+    # ---- check 1b: no sentinel forcing in ANY complete annual record ------
+    tl, fl, gl = tbot_last.ravel()[land], fsds_last.ravel()[land], gpp_last.ravel()[land]
+    total_flagged = sum(year_flags.values())
     rep['checks']['sentinel_forcing'] = {
-        'model_year': model_year, 'land_cells': int(len(land)),
-        'flagged_cells': int(bad.sum()),
-        'min_fsds': float(np.nanmin(fl)), 'max_tbot_c': float(np.nanmax(tl)),
-        'min_tbot_c': float(np.nanmin(tl)),
-        'cells_with_zero_gpp': int((gl <= 0).sum()),
-        'verdict': 'PASS' if bad.sum() == 0 else 'FAIL: %d cells on sentinel forcing' % bad.sum(),
+        'model_year_of_snapshot_stats': model_year,
+        'land_cells': int(len(land)),
+        'flagged_cells_by_year': year_flags,
+        'total_flagged_cell_years': int(total_flagged),
+        'min_fsds_latest_year': float(np.nanmin(fl)), 'max_tbot_c_latest_year': float(np.nanmax(tl)),
+        'min_tbot_c_latest_year': float(np.nanmin(tl)),
+        'cells_with_zero_gpp_latest_year': int((gl <= 0).sum()),
+        'verdict': ('PASS' if total_flagged == 0 else
+                   'FAIL: %d flagged cell-years, see flagged_cells_by_year' % total_flagged),
     }
 
     # ---- check 2a: requested flux fields present --------------------------
@@ -226,15 +243,24 @@ def main():
         res['verdict'] = 'FAIL: cannot align h2 and restart patch vectors'
     rep['checks']['h2_vs_restart'] = res
 
-    # ---- check 3: output shapes ------------------------------------------
+    # ---- check 3: output shapes and total volume across every closed file -
+    all_h1 = sorted(R.glob(f'{CASE}.elm.h1.*.nc'))
+    all_h2 = sorted(R.glob(f'{CASE}.elm.h2.*.nc'))
     sizes = {}
-    for tag, path in (('h0', h0), ('h1', h1), ('h2', h2), ('elm.r', rst)):
+    for tag, path, group in (('h0', all_h0[0], all_h0), ('h1', h1, all_h1),
+                             ('h2', h2, all_h2), ('elm.r', rst, None)):
         n = 1
         if tag != 'elm.r':
             with nc.Dataset(path) as d:
                 n = len(d.dimensions['time'])
-        sizes[tag] = {'bytes': int(path.stat().st_size), 'records': int(n),
-                      'MB_per_record': round(path.stat().st_size / n / 1e6, 1)}
+        total_bytes = int(path.stat().st_size) if group is None else sum(
+            p.stat().st_size for p in group)
+        sizes[tag] = {'representative_file': path.name,
+                      'bytes_representative_file': int(path.stat().st_size),
+                      'records_representative_file': int(n),
+                      'MB_per_record': round(path.stat().st_size / n / 1e6, 1),
+                      'n_files': 1 if group is None else len(group),
+                      'total_bytes_all_files': total_bytes}
     rep['checks']['output_volume'] = sizes
 
     args.out.parent.mkdir(parents=True, exist_ok=True)

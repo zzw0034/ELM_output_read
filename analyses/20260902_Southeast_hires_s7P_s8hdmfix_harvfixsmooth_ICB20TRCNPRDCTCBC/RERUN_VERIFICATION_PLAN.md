@@ -81,8 +81,11 @@ behind it. Nothing has been read out of its output yet — see section 6.
    non-litterfall leaf loss as one lumped term.
 4. **XR is recoverable by arithmetic.** `VegetationDataType.F90:8256` sets
    `ar = mr + gr + xr` for the non-crop `nu_com='RD'` branch, so
-   `XR = AR - MR - GR` exactly, from fields the run already has. The dieback
-   record's open item on XR does not require a new run to close.
+   `XR = AR - MR - GR` exactly, from fields the run already has.
+   This closes only the **availability** half of the dieback record's XR item.
+   The mechanism half stays open: it still requires reading the data and
+   establishing XR's magnitude before and after the decline, and its relation
+   to `CPOOL` and temperature. Recovering a flux is not explaining it.
 
 **What it cannot do.**
 
@@ -125,6 +128,16 @@ within-window ordering is unresolved at this output frequency.
 
 **The collapse concentrates in years 21-40.** 107 → 382 in one window.
 
+**None of this yet excludes the two standing alternatives.** An early fire
+excess of 4.1x strengthens the fire hypothesis but does not rule out a common
+environmental driver that raises both fire and mortality, and 20-year means
+cannot order events inside a window in any case. Nor does `FPG = 1.000` in
+window 1-20 clear nitrogen: it rules out nitrogen downregulation **in that
+window only**, because that window lies inside the carbon-only phase. Nitrogen
+limitation resuming at year 26 can still participate in widening the decline
+through windows 21-40 and later. Both alternatives are tested on the annual
+axis, not on these windows.
+
 ### 1.3 Source facts verified for this plan (**measured**, from `SRCROOT`)
 
 `SRCROOT = /projects/hpcl-cli185/proj-shared/zw5/E3SM`.
@@ -142,12 +155,29 @@ leafc_loss(p)  = m_leafc_to_litter(p)      &
                + hrv_leafc_to_litter(p)
 ```
 
-So `d(LEAFC)/dt = LEAFC_ALLOC - LEAFC_LOSS`, and `LEAFC_LOSS` decomposes into
-background mortality, fire combustion, fire mortality to litter, litterfall and
-harvest. `hrv_leafc_to_litter` has **no history field registered** — checked, it
-appears only as a pointer and in the sums. In this AD compset there is no
-`flanduse_timeseries` and no `do_harvest` in `lnd_in`, so it should be zero and
-the budget residual will show it if it is not.
+So `d(LEAFC)/dt = LEAFC_ALLOC - LEAFC_LOSS` holds as a **flux identity at the
+model time step**, and `LEAFC_LOSS` decomposes into background mortality, fire
+combustion, fire mortality to litter, litterfall and harvest.
+`hrv_leafc_to_litter` has **no history field registered**, checked; it appears
+only as a pointer and in the sums. In this AD compset there is no
+`flanduse_timeseries` and no `do_harvest` in `lnd_in`, so it should be zero.
+
+**That identity does not by itself make an annual state budget checkable.** The
+history tapes carry `avgflag='A'`, so an annual `LEAFC` record is the mean of
+the year, not the state at either end of it. The difference between two annual
+means is not the year's change in leaf carbon, and comparing it against the
+year's integrated fluxes folds a lag into the residual. A strict check needs
+**end-of-year state**: leaf carbon at the year boundary minus leaf carbon at
+the previous year boundary, against the time integral of allocation and loss
+between them.
+
+Two further reasons a residual cannot be read as one missing term.
+`PrecisionControlMod` truncates very small leaf carbon to zero, which removes
+carbon without any flux recording it, and that truncation is most active
+exactly in the collapsing patches this analysis targets. And any transfer
+outside the five named terms, for instance a patch-weight change, also lands in
+the residual. A non-zero residual is a signal to look, not evidence of
+harvest.
 
 **Fire leaf loss is not multiplied by `spinup_mortality_factor`.**
 `FireMod.F90:1012` and `FireMod.F90:1083`:
@@ -173,10 +203,15 @@ else if (spinup_state == 1 .and. kyr >= 40) then
    fuelc(c) = fuelc(c) + decomp_cpools_vr(c,j,i_cwd)*dzsoi_decomp(j)*spinup_factor(i_cwd)/scalaravg_col(c,j)
 ```
 
-Together with nitrogen and phosphorus limitation resuming at year 26, that puts
-**two** configuration-driven regime changes inside the first 80 years. Annual
-output has to span both, which independently justifies a diagnostic window of
-at least 60 years and comfortably supports 80.
+Together with **nitrogen** limitation resuming at year 26, that puts **two**
+configuration-driven regime changes inside the first 80 years. Only nitrogen
+resumes: `lnd_in` in this case lineage has `suplnitro = 'NONE'` and
+`suplphos = 'ALL'`, so phosphorus stays supplemented throughout AD and
+`FPG_P` is 1.000 in every window of the 522677 analysis. Confirm both settings
+against the rerun case's own `lnd_in` rather than inheriting them from here.
+
+Annual output has to span both boundaries, which independently justifies a
+diagnostic window of at least 60 years and comfortably supports 80.
 
 **`use_nofire` is a clean global switch.** `FireMod.F90:652` zeroes
 `farea_burned`, `baf_crop`, `baf_peatf`, `fbac` and `fbac1` together. It is a
@@ -215,6 +250,22 @@ fraction of wall time, so the scaling should hold):
 | annual first 80 yr only | 80 | ~6.2 h | ~59 GB | ~32 GB |
 | no-fire counterfactual | 40 | ~3.1 h | ~29 GB | ~16 GB |
 
+**Those columns are the `h1` tape only and are not a resource request.** A
+formal estimate has to add, at minimum:
+
+| item | measured or derived | 200-year AD |
+|---|---|---|
+| `h0` gridded annual, 34 fields | 1.3 MB per field-year, measured | ~9 GB |
+| `h3` instantaneous state, 7 fields | 11.8 MB per field-year, derived | ~17 GB |
+| `elm.r` restart, 4 km | **14.85 GB each**, measured from job 522626 | depends on `REST_N` |
+| `cpl.r` and `rpointer` | 4.0 MB each, measured | negligible |
+| build directory | not measured | to be added |
+
+The restart term dominates any estimate and is controlled entirely by `REST_N`.
+At `REST_N = 20` a 200-year AD keeps 10 restarts, about 149 GB, more than the
+entire history output. Decide `REST_N` and whether old restarts are pruned
+before quoting a total.
+
 Storage context: `/scratch` currently holds 16.79 T for this user with no block
 quota set (**measured**, `lfs quota -u zw5 /scratch`). An 80-90 GB diagnostic
 tape is about half a percent of that. The binding constraint on scratch is the
@@ -252,26 +303,38 @@ Required settings, each with a reason:
 | `metdata_bypass` | `cpl_bypass_full`, checksum recorded at submit | proves which mapping table the run actually read |
 | start | cold, `RUN_STARTDATE = 1-01-01` | no existing 4 km restart is usable; they all carry stranded evergreens |
 | `hist_dov2xy` | `.true.,.false.` | `h0` gridded for input checks, `h1` patch vector for per-PFT work |
-| `hist_nhtfrq` | `-8760,-8760` | annual; 20-year means are reconstructed offline |
+| `hist_nhtfrq` | `-8760,-8760,-8760` | annual; 20-year means are reconstructed offline |
+| third tape | `hist_fincl3` with `:I` fields, `hist_dov2xy(3) = .false.` | year-end state, without which the leaf budget cannot be closed strictly |
 
 Open for the user to set, deliberately not chosen here: `STOP_N`, `REST_N`,
 `RESUBMIT`, node count, and `-p`/`-q` pairing.
 
 ### 3.2 Experiment B — no-fire counterfactual (conditional, and shorter)
 
-The user's proposal 2, with two changes.
+**Decided: not now.** No no-fire run is scheduled at this stage merely to split
+fire from the other loss terms. Experiment A's per-PFT fire fluxes do that
+directly. The counterfactual is held in reserve for a different question, which
+is whether removing fire would have prevented the stranding, and that question
+only becomes worth paying for under the conditions below.
 
-**Make it conditional.** Experiment A's per-PFT fire fluxes give the proximate
+**Trigger conditions.** Experiment A's per-PFT fire fluxes give the proximate
 loss term directly, per patch, per year. If the fire share of `LEAFC_LOSS`
 dominates in the decline years and the fire year precedes or coincides with the
 leaf carbon drop patch by patch, fire is established as the proximate cause of
-leaf loss without any counterfactual. Run B only if that test is ambiguous, or
-if the 405 are still stranded after the combined fix.
+leaf loss without any counterfactual. Run B only if that test comes out
+ambiguous, or if the 405 are still stranded after the combined fix.
 
-**Make it 40 years, not 80.** From the 522373 trajectory, 395 of 405 patches are
-already below threshold by the 41-60 window, and 382 by 21-40. Forty years
-covers the whole transition. That is ~3.1 h on 20 nodes and ~16-29 GB against
-~6.2 h and ~32-59 GB for 80.
+**Start it at 40 years, with an explicit extension condition.** Forty years is a
+first block, not a claim of coverage. Two reasons it may not be enough. The
+522373 trajectory still moves after year 40: 382 of 405 patches are below
+threshold in the 21-40 window and 395 by 41-60, so the transition is not
+complete at year 40. And the AD fuel formula switches at `kyr = 40`, so a run
+that stops there observes essentially none of the post-switch response, which
+is the part of the fire regime the second half of AD actually runs under.
+
+Plan it as 40 years with a decision point, extending to 60 or 80 if the
+stranded fraction is still changing at year 40 or if the post-switch fire
+response matters to the conclusion. Costs scale linearly from section 2.
 
 Keep the pairing strict: clone Experiment A, `--keepexe`, change only
 `use_nofire = .true.`, same cold start, same forcing, same field list.
@@ -302,7 +365,27 @@ Marked **[i]** = registered `default='inactive'`, so it is absent unless named
 in `hist_fincl`. That is the entire reason job 522626 cannot close the fire
 question.
 
-**Leaf carbon budget, the closing set.** Together these satisfy
+**Year-end state, required for a strict budget.** Verified in
+`main/histFileMod.F90`: a per-field averaging flag is parsed from a `:` suffix
+in `hist_fincl` (`getname`/`getflag`, lines 4335 to 4380), `'I'` is an accepted
+flag (line 540), and `hist_avgflag_pertape` sets a whole-tape default (line
+81). So the state snapshots come from a third tape, written annually with
+instantaneous sampling:
+
+```
+hist_fincl3 = 'LEAFC:I', 'LEAFC_STORAGE:I', 'LEAFC_XFER:I', 'CPOOL:I',
+              'XSMRPOOL:I', 'TLAI:I', 'TOTVEGC:I'
+hist_nhtfrq(3) = -8760 ;  hist_mfilt(3) = 200 ;  hist_dov2xy(3) = .false.
+```
+
+Seven patch-vector fields is about 83 MB per model year, roughly 17 GB over 200
+years. A snapshot at the annual boundary pairs with the averaged fluxes of the
+year that just ended, and that is what turns the flux identity into a checkable
+state budget. Confirm the snapshot's timestamp convention against the first
+written record instead of assuming which side of the boundary it lands on.
+
+**Leaf carbon budget, the flux set.** With the snapshots above, these close
+the budget. The identity they satisfy at each time step is
 `d(LEAFC)/dt = LEAFC_ALLOC - LEAFC_LOSS` exactly.
 
 ```
@@ -415,13 +498,23 @@ that is an assumption the rerun should not silently inherit.
 
 ### C4 — leaf carbon budget closure and attribution (G3)
 
-1. **Closure.** For every tracked patch and year,
-   `|dLEAFC - (LEAFC_ALLOC - LEAFC_LOSS)*dt|` must be small against
-   `LEAFC_LOSS*dt`. Report the residual distribution, not a mean. Expect near
-   exact closure; `PrecisionControlMod` truncation of very small leaf carbon and
-   a zero `hrv_leafc_to_litter` are the only known legitimate residuals. A
-   systematically large residual means a missing term and invalidates the
-   attribution built on top of it.
+1. **Closure, from year-end state, not from annual means.** For every tracked
+   patch and year, compare `LEAFC(end of year) - LEAFC(end of previous year)`
+   taken from the instantaneous `h3` tape against
+   `(LEAFC_ALLOC - LEAFC_LOSS) * seconds_in_year` taken from the averaged `h1`
+   tape. Report the residual distribution, not a mean, and report it separately
+   for collapsing and healthy patches.
+
+   A difference of two annual **means** is not the year's change in state and
+   must not be substituted for this. Where only averaged output exists, say so
+   and label the result an approximate consistency check.
+
+   Known legitimate residual sources, to be quantified rather than assumed
+   away: `PrecisionControlMod` truncation of very small leaf carbon, which is
+   most active in exactly the collapsing patches; any patch-weight transfer; and
+   `hrv_leafc_to_litter`, which has no history field. Do not attribute the
+   residual to any one of them without a separate test. A systematically large
+   residual means a missing term and invalidates the attribution built on it.
 2. **Attribution.** In the years where `LEAFC` falls fastest, per patch,
    compute the share of `LEAFC_LOSS` carried by
    `M_LEAFC_TO_FIRE + M_LEAFC_TO_LITTER_FIRE`, by `LEAFC_TO_LITTER`, and by
@@ -461,12 +554,25 @@ One batch job, reading output that already exists.
    `TLAI`, `LEAFC`, `GPP`, `NPP`. Produces the first-year-below-threshold
    distribution that 20-year means cannot give, and tests the
    "establish first, then fail" statement the dieback record downgraded.
-3. **Partial budget:** `dLEAFC` against `LEAFC_ALLOC - LEAFC_LOSS`, and
-   `LEAFC_LOSS - LEAFC_TO_LITTER` as one lumped non-litterfall loss term. This
-   validates the closure machinery before Experiment A runs, so the analysis
-   code is already trusted when the production data arrives.
-4. **XR by arithmetic:** `AR - MR - GR`, with `CPOOL`, `XSMRPOOL` and `TBOT`,
-   closing the respiration open item without a new run.
+3. **Budget, plus an explicit inventory of what this output cannot close.**
+   Every field on both tapes is `avgflag='A'`, so no year-end state exists
+   except in one place: the single restart `elm.r.0031-01-01`, **measured** at
+   14.85 GB, written because `REST_N = 30`. That is one exact anchor, at the
+   end of the run.
+
+   Report three categories separately. Checkable now, and labelled approximate:
+   `LEAFC_ALLOC - LEAFC_LOSS` against the year-to-year change in annual-mean
+   `LEAFC`, plus `LEAFC_LOSS - LEAFC_TO_LITTER` as one lumped non-litterfall
+   loss term. Checkable once, at year 31, against the restart state. Not
+   answerable from this run at all, and needing the `h3` instantaneous tape from
+   Experiment A: strict per-year closure, and the size of the
+   `PrecisionControl` truncation term. That inventory is a deliverable of this
+   job, not a footnote.
+4. **XR read, not merely recovered.** Compute `AR - MR - GR` per patch per year,
+   then report its magnitude before, during and after the decline, alongside
+   `CPOOL`, `XSMRPOOL` and `TBOT`. Recovering the flux closes the missing-field
+   problem only. Whether excess respiration contributes to the decline needs
+   these comparisons, and they are what this job should deliver.
 
 Its stranded fractions are control values under the unfixed HDM. They must
 never be quoted as a repaired outcome.

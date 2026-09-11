@@ -164,7 +164,17 @@ def main():
            'patch_count_h2': int(len(h2_leafc)), 'patch_count_restart': int(len(r_leafc)),
            'patch_identity_matches_elementwise': identity}
     if identity:
-        both = np.isfinite(h2_leafc) & np.isfinite(r_leafc)
+        # ELM writes spval = 1e36 for patches a tape does not carry, and the two
+        # files do not mask it identically. Comparing raw arrays therefore
+        # compares fill against real data on the ~74% of patches that are
+        # inactive. Restrict to patches both files actually report.
+        FILL = 1e30
+        real = (np.isfinite(h2_leafc) & np.isfinite(r_leafc)
+                & (np.abs(h2_leafc) < FILL) & (np.abs(r_leafc) < FILL))
+        res['patches_reported_by_both'] = int(real.sum())
+        res['patches_fill_in_h2'] = int((np.abs(h2_leafc) >= FILL).sum())
+        res['patches_fill_in_restart'] = int((np.abs(r_leafc) >= FILL).sum())
+        both = real
         diff = np.abs(h2_leafc[both] - r_leafc[both])
         scale = np.maximum(np.abs(r_leafc[both]), 1e-30)
         res.update({
@@ -172,9 +182,11 @@ def main():
             'max_abs_diff_gC_m2': float(diff.max()) if both.any() else None,
             'max_rel_diff': float((diff / scale).max()) if both.any() else None,
             'n_exceeding_1e-5_relative': int(((diff / scale) > 1e-5).sum()),
-            'tlai_max_abs_diff': float(np.nanmax(np.abs(h2_tlai - r_tlai))),
+            'tlai_max_abs_diff': float(np.nanmax(np.abs(h2_tlai[both] - r_tlai[both]))),
         })
-        agree = res['n_exceeding_1e-5_relative'] == 0
+        # h2 is float32, the restart is float64, so exact equality is not the
+        # test; single-precision rounding is.
+        agree = (res['n_exceeding_1e-5_relative'] == 0 and both.sum() > 0)
         res['verdict'] = ('PASS: h2 is the state the restart holds at the same instant'
                           if (agree and res['dates_match'] and
                               h2_methods.get('LEAFC') == 'time: point')

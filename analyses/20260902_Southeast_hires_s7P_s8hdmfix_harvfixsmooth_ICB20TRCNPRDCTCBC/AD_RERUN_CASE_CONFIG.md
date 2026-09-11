@@ -186,15 +186,20 @@ them.
 
 ### Total storage
 
-| item | fields | per model year | 200 years |
-|---|---|---|---|
-| `h1` patch vector, annual mean | 34 | 401 MB | 80 GB |
-| `h0` gridded, annual mean | 34 | 44 MB | 9 GB |
-| `h2` patch vector, annual instantaneous | 7 | 83 MB | 17 GB |
-| `elm.r` restarts | | | 119 GB |
-| **total** | | | **about 225 GB** |
+**Superseded by measurement.** The smoke test wrote the real thing; see
+[SMOKETEST_ACCEPTANCE.md](SMOKETEST_ACCEPTANCE.md). The estimate below assumed
+34 fields on `h1`, but the tape carries the reference 57 plus the 20 additions
+of section 4, so it was low by about a factor of two.
 
-Against 16.79 T already on `/scratch` with no block quota, this is about 1.3%.
+| item | fields | measured per model year | 200 years |
+|---|---|---|---|
+| `h1` patch vector, annual mean | 77 | 926.5 MB | 185 GB |
+| `h0` gridded, annual mean | 58 | 99.5 MB | 20 GB |
+| `h2` patch vector, annual instantaneous | 7 | 159.5 MB | 32 GB |
+| `elm.r` restarts | | 14.85 GB each | 119 GB |
+| **total** | | | **about 356 GB** |
+
+Against 16.79 T already on `/scratch` with no block quota, this is about 2%.
 The build directory is not included and was not measured.
 
 ## 3b. Paths, all verified, no conflicts

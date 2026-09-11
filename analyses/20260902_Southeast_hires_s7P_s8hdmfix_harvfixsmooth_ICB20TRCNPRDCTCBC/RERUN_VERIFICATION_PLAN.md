@@ -357,6 +357,15 @@ Open for the user to set, deliberately not chosen here: `STOP_N`, `REST_N`,
 
 ### 3.2 Experiment B — no-fire counterfactual (conditional, and shorter)
 
+> **Superseded 2026-09-11.** The trigger conditions below were written before
+> the combined-fix result existed. They fired, the 405 did remain stranded, and
+> the decision was nonetheless **not** to run the counterfactual: the residual is
+> accepted as a masked 0.42% limitation, so the answer would change no action.
+> See "Decision, 2026-09-11" in section 5 of
+> [EVERGREEN_DIEBACK.md](EVERGREEN_DIEBACK.md). Note also that a no-fire run
+> tests only whether removing fire prevents the decline; it cannot judge whether
+> the simulated fire regime is realistic.
+
 **Decided: not now.** No no-fire run is scheduled at this stage merely to split
 fire from the other loss terms. Experiment A's per-PFT fire fluxes do that
 directly. The counterfactual is held in reserve for a different question, which
@@ -650,8 +659,9 @@ repaired versions.
 - a land cell still reads a sentinel, or the mapping checksum does not match;
 - `HDM` is zero or the wrong magnitude, meaning the wrong executable;
 - the pine stranded fraction rises across the last three AD windows;
-- the 405 remain stranded at a comparable rate after the combined fix — this is
-  the specific trigger for Experiment B;
+- ~~the 405 remain stranded after the combined fix~~ — **this fired on
+  2026-09-11 and was answered by accepting the residual, not by running
+  Experiment B**; see section 5 of the dieback record;
 - the leaf budget does not close, since every attribution statement rests on it;
 - broadleaf evergreen shrub stays near its 22.6% HDM-only value, which is a
   separate problem from pine and must not be waved through on pine's number.

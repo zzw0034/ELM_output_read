@@ -21,8 +21,10 @@ re-establishment; this does not by itself explain all low-LAI states. An 80-year
 cold-start experiment using the corrected HDM reader reduced pine stranding
 from 8.9% to 0.9%. Coastal forcing mappings have also been repaired and checked
 by replaying nearest-neighbour selection, but the combined vegetation response
-has not been measured. The remaining 405 non-sentinel pine patches represent
-about 0.6% of the pine population studied; their cause remains unresolved.
+was measured on 2026-09-11 and is reported in section 5: the 193 coastal patches
+recover, the 405 do not. Those 405 are about 0.6% of the pine population studied
+and 0.42% of domain pine carbon, and they are now an accepted, masked limitation
+rather than an open defect.
 The 0.5 degree case never enabled AD and ended final spin-up far from soil-carbon
 equilibrium. Corrected AD settings must be verified in each rebuilt case.
 
@@ -370,7 +372,8 @@ established as the cause of this residual.
 **About 0.6% is arithmetic, not a combined-fix outcome:**
 `(598 - 193) / 68773 = 0.589%`. Job 522373 used corrected HDM with the unfixed
 mapping. Job 522626 is documented as using the original HDM executable with the
-corrected mapping. No combined-fix vegetation result is documented here.
+corrected mapping. **Superseded 2026-09-11**: the combined-fix result now exists
+and is in the subsection at the end of this section.
 Compare matching averaging windows and continue checking through full AD and
 final spin-up. Stability across three windows in 80 years does not prove
 stability through the completed chain.
@@ -515,7 +518,13 @@ every year**, to machine precision. No missing term, harvest zero, truncation
 negligible at these magnitudes. That licenses the split below, which job 522626
 could not make.
 
-| model year | state change | total loss | fire | background mortality | litterfall | fire share |
+Columns are group means of per-patch values. **The last column is the mean of
+each patch's own `fire / total loss` ratio, not the ratio of the two group means
+beside it**, so it does not equal column 4 divided by column 3. Both are
+legitimate; the per-patch mean is reported because it weights every patch
+equally rather than letting the heaviest-burning patches set the ratio.
+
+| model year | state change | total loss | fire | background mortality | litterfall | fire share, per-patch mean |
 |---|---|---|---|---|---|---|
 | 6 | +55.1 | 116.7 | 0.9 | 3.4 | 112.5 | 0.7% |
 | **7** | **-57.6** | 157.1 | **53.1** | 3.0 | 101.0 | **31.4%** |
@@ -560,12 +569,35 @@ lived there in 1850.
 Area-weighted, over model years 41 to 49, which is what decides whether it
 matters:
 
-| region | pine area weight | stranded, area-weighted | pine vegetation carbon missing |
-|---|---|---|---|
-| whole domain | 27002 | **0.42%** | 0.42% |
-| Florida box | 4188 | 2.72% | 2.71% |
-| south of 26 N | **84** | 41.6% | 41.4% |
-| 25 to 27 N band | 291 | 20.4% | 20.1% |
+| region | pine area weight | stranded, area-weighted | pine vegetation carbon missing | healthy `TOTVEGC` baseline |
+|---|---|---|---|---|
+| whole domain | 27002 | **0.42%** | 0.42% | 1809.1 |
+| Florida box | 4188 | 2.72% | 2.71% | 1736.5 |
+| south of 26 N | **84** | 41.6% | 41.4% | 1599.0 |
+| 25 to 27 N band | 291 | 20.4% | 20.1% | 1410.5 |
+
+**How the carbon column is computed**, since a percentage of missing carbon
+needs a stated counterfactual. Script:
+`quantify_stranded_pine_impact.py` in this directory.
+
+- Baseline is the **area-weighted mean `TOTVEGC` of healthy pine in the same
+  region**, meaning every pine patch in that region with mean TLAI at or above
+  0.5 over model years 41 to 49. It is not temperature-matched, and it is not
+  the domain mean applied everywhere. The regional baselines differ, 1809 for
+  the domain against 1410 in the 25 to 27 N band, which is why a regional
+  baseline matters.
+- Missing carbon is `stranded_area * healthy_baseline` minus the carbon those
+  patches actually carry.
+- The denominator is what the region would hold if the stranded patches sat at
+  their regional healthy baseline, so the percentage is against a
+  counterfactual total, not against the simulated one.
+- It is total vegetation carbon, not leaf carbon.
+
+⚠️ This is a **different baseline** from the counterfactual in section 9, which
+matched healthy pine within the same temperature band. The two numbers are not
+directly comparable. The regional baseline is the coarser of the two; it was
+chosen because the decision it informs is regional reporting scope, not a bias
+estimate against observations.
 
 The 41.6% south of 26 N sits on a pine area weight of 84, which is 0.3% of the
 domain total. So the large regional percentage and the small absolute
@@ -600,12 +632,24 @@ Variables `stranded_pine` and `pine_present` on the 324 x 504 grid, with the
 membership definition and the numbers above in the file's own attributes.
 Written by `make_stranded_pine_mask.py` in this directory.
 
-**The no-fire counterfactual is not scheduled.** Its value was to separate "the
-fire is wrong" from "the fire is right and recovery is broken". With the
-residual accepted, that distinction no longer changes any action, so the three
-hours of machine time buys an answer nobody acts on. The question stays open and
-documented; run it if a reviewer asks or if the regional result ever becomes the
-deliverable.
+**The no-fire counterfactual is not scheduled, and its reach was overstated
+earlier in this record.** It can test one thing only: whether removing fire
+prevents the decline. It **cannot** judge whether the simulated fire frequency
+or intensity is realistic. That needs observational or independent constraint,
+for example burned-area products or published fire return intervals for south
+Florida pine flatwoods, and no model-only experiment substitutes for it.
+
+So the open question splits in two:
+
+| question | what would settle it |
+|---|---|
+| does removing fire prevent the decline | the no-fire run, about 3 h on 30 nodes |
+| is the simulated fire regime realistic | observations or an independent constraint, not a model run |
+
+With the residual accepted, neither changes an action now. Both stay open and
+documented. Run the first if a reviewer asks or if the regional result becomes
+the deliverable; the second is required before any claim that the fire itself is
+correct.
 
 **Accepted is not the same as absent.** This is a quantified, bounded bias with
 a mask attached, not a solved problem.
@@ -929,7 +973,8 @@ the rerun has to start at AD. Do not restart from any existing 4 km restart file
 years-61-80 window. Shrub stranding remains 22.6% and needs separate assessment;
 pine percentages must not be generalized to all evergreens.
 
-**Not measured:** both fixes together or a completed corrected chain. The 0.6%
+**Measured 2026-09-11 for the AD stage**, see section 5; the completed chain
+through final spin-up and transient is still outstanding. The 0.6%
 pine figure is the non-sentinel subset in the existing experiment, not a
 prediction guaranteed after rerunning. Mapping repair removes the identified
 invalid selection; vegetation and Florida carbon improvements require output

@@ -555,6 +555,61 @@ Map: `outputs/residual_405_map.png`, produced by
 `plot_residual_405_map_local.py`. What both clusters share is that almost nobody
 lived there in 1850.
 
+### Decision, 2026-09-11: the residual is accepted as a quantified limitation
+
+Area-weighted, over model years 41 to 49, which is what decides whether it
+matters:
+
+| region | pine area weight | stranded, area-weighted | pine vegetation carbon missing |
+|---|---|---|---|
+| whole domain | 27002 | **0.42%** | 0.42% |
+| Florida box | 4188 | 2.72% | 2.71% |
+| south of 26 N | **84** | 41.6% | 41.4% |
+| 25 to 27 N band | 291 | 20.4% | 20.1% |
+
+The 41.6% south of 26 N sits on a pine area weight of 84, which is 0.3% of the
+domain total. So the large regional percentage and the small absolute
+consequence are both true.
+
+**The residual is accepted rather than chased further.** At 0.42% domain-wide it
+is far below the model's own structural uncertainty and below the uncertainty in
+the forcing and surface datasets. Another experiment to remove it does not
+change any decision that depends on the domain or state scale.
+
+**Where the results stay usable, and where they do not.**
+
+- Usable: domain-wide and state-scale pine results, and all deciduous PFTs
+  everywhere.
+- Needs a stated caveat: the Florida box, at 2.7% of pine carbon missing.
+- **Not usable without excluding the mask**: anything south of 26 N, anything
+  specific to south Florida pine flatwoods, the Everglades or Big Cypress, and
+  anything specific to the Big Bend and panhandle coast.
+- **Management scenarios need particular care.** These gridcells hold almost no
+  pine leaf carbon, so they cannot respond to reforestation, reduced harvest or
+  any other treatment. In a scenario difference the signal is absent rather than
+  cancelling, so a treatment whose target area overlaps either cluster will read
+  systematically low.
+
+**Mask file**, so this never has to be re-derived:
+
+```text
+/projects/hpcl-cli185/proj-shared/zw5/20260910_seus_rerun_inputs/stranded_pine_mask_SEUS_1_24deg.nc
+```
+
+Variables `stranded_pine` and `pine_present` on the 324 x 504 grid, with the
+membership definition and the numbers above in the file's own attributes.
+Written by `make_stranded_pine_mask.py` in this directory.
+
+**The no-fire counterfactual is not scheduled.** Its value was to separate "the
+fire is wrong" from "the fire is right and recovery is broken". With the
+residual accepted, that distinction no longer changes any action, so the three
+hours of machine time buys an answer nobody acts on. The question stays open and
+documented; run it if a reviewer asks or if the regional result ever becomes the
+deliverable.
+
+**Accepted is not the same as absent.** This is a quantified, bounded bias with
+a mask attached, not a solved problem.
+
 **Inference, labelled as such.** The two configuration errors are gone and what
 remains is pine in genuinely unpopulated, fire-prone country. Whether that fire
 is itself correct is not established here. If it is, the residual is not a

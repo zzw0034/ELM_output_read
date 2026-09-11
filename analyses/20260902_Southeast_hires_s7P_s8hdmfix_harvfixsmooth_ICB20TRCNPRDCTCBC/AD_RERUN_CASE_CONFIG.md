@@ -197,6 +197,132 @@ them.
 Against 16.79 T already on `/scratch` with no block quota, this is about 1.3%.
 The build directory is not included and was not measured.
 
+## 3b. Paths, all verified, no conflicts
+
+Case name, 69 characters:
+
+```
+20260910_Southeast_hires_30n_hdmfix_mapfix_ICB1850CNRDCTCBC_ad_spinup
+```
+
+| variable | absolute path | state |
+|---|---|---|
+| `CASEROOT` | `/projects/hpcl-cli185/proj-shared/zw5/e3sm_cases/20260910_Southeast_hires_30n_hdmfix_mapfix_ICB1850CNRDCTCBC_ad_spinup` | does not exist |
+| `CIME_OUTPUT_ROOT` | `/scratch/hpcl-cli185/zw5/cime_output_dirs/20260910_seus_rerun` | **exists**, created 2026-09-10 17:42, currently holds only `20260910_seus_halfdeg_ad_spinup` |
+| `RUNDIR` | `$CIME_OUTPUT_ROOT/20260910_Southeast_hires_30n_hdmfix_mapfix_ICB1850CNRDCTCBC_ad_spinup/run` | does not exist |
+| `EXEROOT` | `$CIME_OUTPUT_ROOT/20260910_Southeast_hires_30n_hdmfix_mapfix_ICB1850CNRDCTCBC_ad_spinup/bld` | does not exist |
+
+Checked: nothing of that name exists under either `e3sm_cases` or the rerun
+root, so no existing case is overwritten. `CIME_OUTPUT_ROOT` sets both `EXEROOT`
+and `RUNDIR`, and it has to be given at `create_newcase` time; changing it later
+means moving directories by hand, because CMake bakes absolute paths into its
+cache.
+
+### Grid and case construction
+
+Reuse the grid, domain and construction method of
+`20260909_Southeast_hires_s7P_s8hdmfixTEST_ICB1850CNRDCTCBC_ad_spinup`
+unchanged. Only three things differ from that reference: the executable is
+rebuilt on the current source, the forcing reads the repaired mapping tables,
+and the output specification is the three tapes of section 4.
+
+### PIO, and why it needs no change
+
+| setting | value |
+|---|---|
+| `PIO_TYPENAME` | `netcdf` |
+| `PIO_STRIDE` | 128 |
+| `PIO_NUMTASKS` | -99, meaning derived |
+| `PIO_ROOT` | 0 |
+| `PIO_REARRANGER` | 1 |
+
+`PIO_STRIDE = 128` is one I/O task per node, so the I/O task count follows the
+node count automatically, 20 at 20 nodes and 30 at 30. Nothing needs editing for
+the layout change.
+
+`PIO_TYPENAME = netcdf` is serial netCDF, which is the likely reason the 565 s
+of history I/O in section 3 did not scale with node count. Whether `pnetcdf`
+would help is a measurable question worth asking later. It is **not** changed
+here: it would depart from the reference configuration for a term that is 6.9%
+of the loop, and this run has to stay comparable to job 522626.
+
+### Provenance to record at build time
+
+Not a reference to an earlier note. Write these into the case directory as
+`PROVENANCE.txt` when the build finishes:
+
+- `git -C $SRCROOT rev-parse HEAD`. It was `17efedae5f` on 2026-09-10 and must
+  be re-read, not assumed.
+- `git -C $SRCROOT status --short` and `git -C $SRCROOT diff --stat`. Both were
+  empty on 2026-09-10. If either is not empty at build time, record the full
+  diff: the executable then corresponds to no commit.
+- `md5sum $EXEROOT/e3sm.exe`, with its timestamp.
+- Which `e3sm.bldlog.*` actually produced that executable, by timestamp, and
+  whether `zgrep -c CPL_BYPASS` on **that** log is non-zero.
+
+## 3c. Smoke test before the production chain
+
+A two-year test in the same case, then the production submit. It is a
+**correctness** test, not a throughput measurement: `elm_setup_and_run_guide.md`
+§7 warns that initialisation overhead dominates a short run and makes any
+extrapolation from it useless. Cost is about 15 to 20 minutes on 30 nodes.
+
+Set `STOP_N = 2`, `RESUBMIT = 0`, and submit **without** `--resubmit`. §6 of the
+guide records that a smoke test submitted with `--resubmit` while `RESUBMIT > 0`
+silently consumes `RESUBMIT` and flips `CONTINUE_RUN` to `TRUE`.
+
+### What the smoke test must show
+
+**Configuration**, from `CaseDocs/lnd_in` and the allocation:
+
+1. `spinup_state = 1`, `nyears_ad_carbon_only = 25`, `spinup_mortality_factor = 10`.
+2. `suplnitro = 'NONE'` and `suplphos = 'ALL'`, matching every AD case in the lineage.
+3. `finidat = ' '` and `RUN_TYPE = startup`, so the run is a genuine cold start.
+   The reference case has both.
+4. `RUN_STARTDATE = 0001-01-01`. The reference writes it as `1-01-01` and the
+   0.5 degree rerun as `0001-01-01`; both resolve to year 1, and the four-digit
+   form is preferred.
+5. The allocation really is 30 nodes and 3840 single-threaded ranks, read from
+   the job record rather than from the XML.
+
+**Inputs**, from the year-2 record. Year 1 is excluded because its `h0` record
+carries `FSDS` identically zero on every land cell, a cold-start artifact of the
+first history interval measured in job 522626.
+
+6. `HDM` has a spatial mean near 5.128, a minimum of at least 0, and is not
+   identically zero. Zero means the wrong executable.
+7. Zero land cells with `FSDS < 1` or annual-mean `TBOT` outside -30 to +45 C.
+8. The `zone_mappings.txt` under `metdata_bypass` matches the repaired table by
+   checksum.
+
+**Output specification.** These are the failures that would silently waste the
+whole 16-hour chain.
+
+9. `h1` carries every requested field, in particular `M_LEAFC_TO_FIRE`,
+   `M_LEAFC_TO_LITTER_FIRE`, `M_LEAFC_TO_LITTER`, `M_LEAFC_STORAGE_TO_FIRE`,
+   `M_LEAFC_XFER_TO_FIRE`, `XR`, `AVAILC`, `PLANT_CALLOC`,
+   `LEAFC_XFER_TO_LEAFC`, `CPOOL_TO_LEAFC` and `FAREA_BURNED`. All five
+   `M_LEAFC_*` are `default='inactive'` and are the reason job 522626 could not
+   split fire from background mortality.
+10. `h2` exists, carries its seven fields, and **its `LEAFC` differs from `h1`'s
+    `LEAFC` for the same year**. That difference is the only proof the `:I`
+    suffix produced an instantaneous sample rather than a second copy of the
+    annual mean. If they are equal, the instantaneous tape did not work and the
+    leaf budget cannot be closed.
+11. Per-record file sizes are within roughly 20% of prediction: `h1` about
+    401 MB, `h0` about 44 MB, `h2` about 83 MB.
+
+If any of 1 through 11 fails, stop and report. Do not start the production
+chain on a case that failed its own output check.
+
+### Between the smoke test and production
+
+The smoke test leaves year-1 and year-2 history files and a restart in `RUNDIR`
+under names the production run will reuse. **Move** them, do not delete them,
+into `$RUNDIR/smoketest_<jobid>/`, then reset `STOP_N = 50`,
+`RESUBMIT = 3` and `CONTINUE_RUN = FALSE` and re-verify those three with
+`xmlquery` before submitting.
+
 ## 4. The three history tapes
 
 Tape numbering is offset by one: `hist_fincl1` writes `.h0.`, `hist_fincl2`
@@ -334,8 +460,26 @@ because they have already failed once in this project.
    `case.setup --reset` silently resets `JOB_WALLCLOCK_TIME` to 24 h and the XML
    string will not reveal it; `CONTINUE_RUN = FALSE` and `RESUBMIT = 3`.
 10. **`case.submit`**, recording the job ID and the `SRCROOT` commit hash.
-11. **Five minutes after it starts, run `check_node_freq.sh`.** A node stuck at
-    399 MHz reads as healthy to Slurm and cost this project 15 hours once.
+11. **Monitor and report, without acting.** Three things, on this schedule:
 
-Steps 1 through 8 create and modify files and compile. Step 10 submits. I will
-run none of them until you confirm.
+    - **Five minutes in**, `check_node_freq.sh`. A node stuck at 399 MHz reads
+      as healthy to Slurm and cost this project 15 hours once.
+    - **After the first annual history write**, re-run smoke checks 6, 7, 9, 10
+      and 11 on the production files, since the output specification is the one
+      thing a passing smoke test cannot guarantee stayed in place.
+    - **After about an hour**, read `$RUNDIR/timing/checkpoints/` for measured
+      throughput.
+
+    **The speedup comparison must use comparable model years.** Job 522626 ran
+    years 1 to 30, of which 25 are carbon-only and cheaper. The only valid
+    comparison is this run's years 1 to 30 against those, at the same annual
+    output frequency. Comparing against a window containing full-physics years
+    would understate the new layout.
+
+    If throughput, node state or the diagnostic output looks wrong, **report the
+    evidence and a proposed adjustment**. Do not cancel the job and do not
+    switch back to 20 nodes without approval.
+
+Steps 1 through 8 create and modify files and compile. Step 9a submits the smoke
+test, step 10 submits the production chain. I will run none of them until you
+confirm.

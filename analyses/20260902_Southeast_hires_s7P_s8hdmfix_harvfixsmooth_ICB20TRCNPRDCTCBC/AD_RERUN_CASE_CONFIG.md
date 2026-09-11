@@ -61,46 +61,89 @@ All five, with the evidence behind each. Throughput is measured, not assumed.
 
 | parameter | value | unit |
 |---|---|---|
-| nodes | **20** | `NTASKS = 2560` for every component, `MAX_TASKS_PER_NODE = 128` |
+| nodes | **30** | `NTASKS = 3840` for every component, `MAX_TASKS_PER_NODE = 128` |
 | partition / QoS | **`-p parallel -q hpcl-cli185`** | with `--mem=200g --constraint=BL`, no `--exclude` |
 | `STOP_OPTION` / `STOP_N` | **`nyears` / 50** | 4 segments of 50 model years |
 | `RESUBMIT` | **3** | segments minus one |
 | `REST_OPTION` / `REST_N` | **`nyears` / 25** | 8 restarts, at model years 25 through 200 |
-| `JOB_WALLCLOCK_TIME` | **10:00:00** | about 1.9 times the estimated 5.4 h of the longest segment |
+| `JOB_WALLCLOCK_TIME` | **08:00:00** | about 2.0 times the estimated 4.0 h of the longest segment |
 
-Total: 200 model years, about **21 h** of compute across 4 segments.
+Total: 200 model years, about **16 h** of compute across 4 segments.
+Validated with `sbatch --test-only`, which allocated 3840 processors on
+`blc[075-105]`.
 
-### Where 21 h comes from, and why it is not 15 h
+| segment | model years | estimate at 30 nodes |
+|---|---|---|
+| 1 | 1-50, of which 25 are carbon-only | 3.4 h |
+| 2, 3, 4 | 51-200, all full physics | 4.0 h each |
 
-Extrapolating 522626's 13.05 model-yr/h to 200 years gives 15.3 h. That is too
-optimistic, because 25 of its 30 years were carbon-only and cheaper than a full
-year. Solving the two measured jobs as a two-point model, with per-year node
-costs `c_ad` for carbon-only years and `c_full` for the rest:
+### Where 16 h comes from
+
+Two steps: cost per model year, then how that divides across nodes.
+
+**Cost per model year.** Extrapolating job 522626's 13.05 model-yr/h to 200
+years would give 15.3 h, but 25 of its 30 years were carbon-only and cheaper
+than a full year. Solving the two measured jobs as a two-point model:
 
 | | equation | result |
 |---|---|---|
 | job 522626 | `25·c_ad + 5·c_full = 45.96` node-h | `c_ad = 1.41` node-h per model year |
 | job 522373 | `25·c_ad + 55·c_full = 153.9` node-h | `c_full = 2.16` node-h per model year |
 
-A full-physics year costs about **1.5 times** a carbon-only year. For 200 years
-that is 413 node-h, which on 20 nodes is **20.7 h**:
+A full-physics year costs about **1.5 times** a carbon-only year, so 200 years
+is 413 node-h, which on 20 nodes is 20.7 h.
 
-| segment | model years | estimate |
-|---|---|---|
-| 1 | 1-50, of which 25 carbon-only | 4.5 h |
-| 2, 3, 4 | 51-200, all full physics | 5.4 h each |
+**How that scales.** Not linearly. The GPTL statistics of job 522626, 20 nodes
+and 2560 tasks, show where the time goes on the critical rank:
 
-This assumes node scaling is linear between the 12-node and 20-node jobs, which
-is the one thing these two measurements cannot verify. Treat 21 h as an estimate
-with a stated assumption. Per `elm_setup_and_run_guide.md` §7, the number to
-trust is the production job's own GPTL snapshots under
-`$RUNDIR/timing/checkpoints/`, read during its first hour. Adjust
-`JOB_WALLCLOCK_TIME` from that, not from this table.
+| timer | value |
+|---|---|
+| `CPL:RUN_LOOP` | 8216.8 s, matching the 02:17:54 elapsed |
+| `CPL:LND_RUN`, slowest rank | 6802.2 s |
+| `CPL:LND_RUN`, fastest rank | 3927.3 s |
+| `CPL:LND_RUN`, mean | 5215.1 s |
+| `l:elm_drv_io`, slowest rank | 565.5 s |
 
-### Why each value
+Two facts follow. **Load imbalance is already substantial**: 1.73 times between
+the fastest and slowest land rank, with the slowest 30% above the mean, and the
+fastest spending 4289 s waiting at barriers. And **about 1979 s does not scale
+with node count**: 565 s of history I/O plus 1414 s of coupler and other work on
+the critical rank. Note that annual output costs 6.9% of the loop in I/O against
+1.2 to 1.6% for the 20-year-mean configuration.
 
-**20 nodes on `parallel`, not the dedicated partition, and not because it is
-faster.** The two partitions are the same hardware: `sinfo` reports
+Treating 6237 s as scalable and 1979 s as fixed:
+
+| nodes | `NTASKS` | gridcells per task | estimated speedup | 200-yr wall | node-h | efficiency |
+|---|---|---|---|---|---|---|
+| 20 | 2560 | 29.7 | 1.00 | 21 h | 420 | 100% |
+| **30** | **3840** | **19.8** | **1.34** | **15.7 h** | **471** | **89%** |
+| 40 | 5120 | 14.8 | 1.61 | 13.0 h | 520 | 80% |
+| 60 | 7680 | 9.9 | 2.02 | 10.4 h | 624 | 67% |
+
+**The marginal cost, not the efficiency column, is what selects 30.** Going from
+20 to 30 nodes saves 5.3 h of wall clock for 51 extra node-h, which is 9.6
+node-h per hour saved. Going from 30 to 40 saves 2.7 h for 49 node-h, which is
+18.1, nearly double the unit price. The knee is at 30.
+
+Thirty also fits the queue as it stands: 40 BL nodes with at least 200 g were
+idle when this was checked, so a 30-node job fits inside the idle pool while a
+40-node job would wait for backfill. That is a transient condition and a weak
+argument for a run measured in hours; the marginal cost is the real reason.
+
+**Two ways this estimate can be wrong, both in the same direction.** It assumes
+node scaling is linear between the 12-node and 20-node jobs, which those two
+measurements cannot verify. And gridcells per task falls from 29.7 to 19.8, so
+the 1.73 imbalance ratio will probably worsen, since there is less averaging
+within each task. Expect the real speedup to be below 1.34.
+
+Per `elm_setup_and_run_guide.md` §7, the number to trust is the production job's
+own GPTL snapshots under `$RUNDIR/timing/checkpoints/`, read during the first
+segment. If the measured speedup is below about 1.2, drop back to 20 nodes for
+the remaining segments: that costs one `case.setup`, re-adding the CPL_BYPASS
+macro, and a forced clean rebuild of about two minutes.
+
+**30 nodes on `parallel`, not the dedicated partition, and not because the
+parallel pool is faster.** The two partitions are the same hardware: `sinfo` reports
 `blc161-180` and `blc081-101` alike as 128-core nodes with features `IB,HDR,BL`.
 Only memory differs, 515 GB on the dedicated nodes against 257 GB on the
 parallel ones, and the measured requirement is about 75 GB per node, so the
@@ -117,12 +160,11 @@ recommends for 4 km production. `-q hpcl-cli185` is required
 because `normal` caps a user at 2000 CPUs and 2560 would pend forever.
 `--constraint=BL` avoids the 84-core `pfc` nodes and their mixed-generation
 InfiniBand, which hangs E3SM. `--mem=200g` filters unusable node specs while
-keeping 138 nodes eligible; 400 g would cut that to 70 and buy nothing, since
-the real need is about 75 g. Validated with `sbatch --test-only`, which
-allocated 2560 processors on `blc[081-093,095-101]`.
+keeping 140 nodes eligible; 400 g would cut that to 70 and buy nothing, since
+the real need is about 75 g.
 
 **Segment length 50 years.** This trades queue waits against failure loss. Four
-segments of 4.5 to 5.4 h lose at most one segment to a crash and take four queue
+segments of 3.4 to 4.0 h lose at most one segment to a crash and take four queue
 waits. Eight segments of 25 years would halve the loss and double the waits.
 Fifty years is the middle.
 
@@ -131,12 +173,12 @@ frequency and restart frequency are deliberately decoupled. Annual diagnostics
 need no annual restart; the leaf budget is closed by the instantaneous history
 tape in section 4, not by restart files. `REST_N = 25` gives one restart at each
 segment boundary, which resubmission requires, plus one mid-segment, which caps
-a crash at about 2.7 h of lost compute. `STOP_N` must stay an integer multiple
+a crash at about 2.0 h of lost compute. `STOP_N` must stay an integer multiple
 of `REST_N`, and 50 is 2 times 25. Year 25 also happens to be the end of the
 carbon-only phase, so one exact state lands on that boundary for free.
 
 Restart storage is the price: 8 sets at 14.85 GB is **119 GB**. Choosing
-`REST_N = 50` would cut that to 59 GB and raise the worst-case loss to 5.4 h.
+`REST_N = 50` would cut that to 59 GB and raise the worst-case loss to 4.0 h.
 Do not assume the full set survives: `elm_setup_and_run_guide.md` §15.9 records
 a case that kept 7 restarts at roughly 29-year spacing against a documented
 `REST_N = 20`. Check with `ls $RUNDIR/*.elm.r.*.nc` before relying on any of
@@ -268,7 +310,7 @@ because they have already failed once in this project.
 1. **`create_newcase`** from `SRCROOT`, compset `ICB1850CNRDCTCBC`, custom SEUS
    grid, following `elm_setup_and_run_guide.md` §3.
 2. **All `xmlchange` that can trigger `case.setup --reset`**: PE layout to
-   `NTASKS = 2560`, domain settings, `ELM_BLDNML_OPTS` append `-bgc_spinup on`,
+   `NTASKS = 3840`, domain settings, `ELM_BLDNML_OPTS` append `-bgc_spinup on`,
    `DOUT_S = FALSE`, `STOP_OPTION`/`STOP_N`/`REST_OPTION`/`REST_N`/`RESUBMIT`,
    `JOB_WALLCLOCK_TIME`.
 3. **`BATCH_COMMAND_FLAGS` in `env_workflow.xml`**, all three subgroups, to

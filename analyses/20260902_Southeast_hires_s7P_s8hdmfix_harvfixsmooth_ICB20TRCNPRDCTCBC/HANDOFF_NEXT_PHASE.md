@@ -1,6 +1,6 @@
 # Handoff: SEUS 4 km rerun, next phase
 
-Cold-start briefing written 2026-09-11 12:39. Read this, then
+Cold-start briefing, last updated 2026-09-11 14:40. Read this, then
 [EVERGREEN_DIEBACK.md](EVERGREEN_DIEBACK.md) sections 5 and 7 for the evidence
 and [RERUN_VERIFICATION_PLAN.md](RERUN_VERIFICATION_PLAN.md) for the gates.
 Read the workspace `AGENTS.md` before any SSH, Slurm or sync action.
@@ -11,8 +11,24 @@ Read the workspace `AGENTS.md` before any SSH, Slurm or sync action.
 `20260910_Southeast_hires_30n_hdmfix_mapfix_ICB1850CNRDCTCBC_ad_spinup`, the
 first run with the corrected HDM reader **and** the repaired `zone_mappings.txt`
 together. Cold start, 200 model years, 4 segments of 50, 30 nodes, 3840 ranks.
-At the time of writing it is in segment 3 at model year 130, about 16 model
-years per hour, expected to finish around 15:00 to 16:00 local.
+
+| job | segment | model years | state |
+|---|---|---|---|
+| 522838 | two-year smoke test | 1-2 | COMPLETED 00:11:28, moved aside into `run/smoketest_522838/` |
+| 522930 | 1 | 1-50 | COMPLETED 03:07:20 |
+| 523140 | 2 | 51-100 | COMPLETED 03:11:45 |
+| 523228 | 3 | 101-150 | COMPLETED 03:20:46 |
+| **523537** | **4** | **151-200** | **RUNNING**, at model year 159 as of 14:36 |
+
+Roughly 15 to 16 model years per hour. Segment 4 should finish about 17:00 to
+17:30 local. CIME resubmits on its own; `RESUBMIT` has been consumed down, so
+after segment 4 the chain simply stops.
+
+**First thing to do: check whether it finished.**
+
+```bash
+ssh pathfinder "sacct -j 523537 --format=JobID%8,State,Elapsed,End -X"
+```
 
 | item | path |
 |---|---|
@@ -49,7 +65,12 @@ The 0.5 degree chain is running independently and is already in final spin-up.
 ## 3. Immediate next actions
 
 **A. Final acceptance of the AD stage, when it finishes.** This is the gate to
-everything downstream. Run the existing scripts against the completed run:
+everything downstream. Both scripts live in this directory and are already
+synced to the Pathfinder copy; submit them with their `run_*.slurm` wrappers,
+which target `serial` and `normal` and take well under a minute each. Note that
+`analyze_combined_fix.py` currently reads only the **first** closed segment file
+so it never touches a file being written; with the run finished, drop that
+restriction so it merges all four segment files per tape.
 
 1. `verify_smoketest.py` on the final output, for HDM, sentinel forcing, field
    completeness, `h2` against the restart at a matching date, and volume.

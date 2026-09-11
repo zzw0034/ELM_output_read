@@ -26,6 +26,15 @@ about 0.6% of the pine population studied; their cause remains unresolved.
 The 0.5 degree case never enabled AD and ended final spin-up far from soil-carbon
 equilibrium. Corrected AD settings must be verified in each rebuilt case.
 
+Added 2026-09-10, from jobs 522626 and 522812: the mapping repair is now
+verified in a running model, with zero flagged land cells and positive GPP at
+all 194 previously affected cells. Under the **old** HDM the 405 residual
+patches establish and then decline, with about five times the fire event
+frequency of healthy pine starting ten years earlier; that association is not
+an independent causal result and does not describe the post-fix regime. Excess
+respiration is excluded as the initiator of that early decline. Section 7 lists
+what remains open.
+
 This record distinguishes configuration errors, measured outcomes and hypotheses;
 it does not establish that every low-LAI patch will disappear.
 
@@ -37,7 +46,7 @@ it does not establish that every low-LAI patch will disappear.
 | the mechanism, from source | 2 |
 | why 4 km and 0.5 degrees failed for different reasons | 3 |
 | why the 0.5 degree chain is worse than the dieback alone | 4 |
-| the experiment supporting the 4 km diagnosis | 5 |
+| the experiments supporting the 4 km diagnosis | 5 |
 | why every timing statement here has a resolution limit | 6 |
 | what is still unexplained | 7 |
 | explanations advanced and then abandoned | 8 |
@@ -210,7 +219,7 @@ Thus the 0.5 degree chain has inadequate soil equilibration as well as
 evergreen stranding, and the
 transient plus seven future scenarios all inherit it.
 
-## 5. Experiment: job 522373
+## 5. Experiments: job 522373, and jobs 522626 / 522812
 
 `20260909_Southeast_hires_s7P_s8hdmfixTEST_ICB1850CNRDCTCBC_ad_spinup` is a
 clone documented as retaining the original inputs, PE layout and namelist,
@@ -336,6 +345,104 @@ patches and 193 changed land-cell mappings are reported. Patch and gridcell
 counts differ, but that alone does not explain the 194-versus-193 gridcell
 mismatch. Reconcile IDs and masks before claiming all affected cells are covered.
 
+### 522626 and 522812: annual diagnostic under the old HDM
+
+Kept separate from the HDM-fix experiment above on purpose. `20260910_ADdiag_annual_ICB1850CNRDCTCBC_ad_spinup`
+is a `--keepexe` clone of the ORIGINAL AD spin-up, so it runs the **pre-2026-07-17
+HDM executable** with human population density at zero and fire unsuppressed. It
+is also the **first run to read the repaired `zone_mappings.txt`**, the tables
+having been rewritten between 15:24 and 15:44 on 2026-09-10 and the job starting
+at 16:18. So it tests the mapping fix while its stranded fractions stay control
+values. 30 model years, annual output on both tapes, 20 nodes, 02:17:54,
+COMPLETED 2026-09-10. Analysis job 522812; `analyze_ad_annual_522626.py`.
+
+**Headline.** The 405 residual locations carry more frequent and much earlier
+fire threshold events, together with a markedly higher rate of sustained
+decline. Per-patch annual pairing supports a temporal association between fire
+and decline. A high event base rate, overlapping response windows and
+environmental confounding all limit how far that can be read as cause. None of
+it represents the decline process after the HDM fix.
+
+| group | n | established, median yr | fire events per patch, mean | first fire event, median yr | sustained declines |
+|---|---|---|---|---|---|
+| 405 residual | 405 | 7 | 10.3 | 8 | 404 |
+| 193 coastal, mapping repaired | 193 | 7 | 2.0 | 18 | 15 |
+| healthy sample | 2000 | 7 | 1.9 | 18 | 7 |
+
+Every patch in all three groups reached LAI 1.0 at some point, so none failed to
+establish. The **median** establishment year is 7 in each group; the individual
+years are not identical and the spread was not audited patch by patch.
+
+**Coastal mapping repair, verified in a running model.** From annual record 2
+onward, zero land cells out of 75,920 read a flagged forcing value, against 194
+before. All 194 previously affected cells show positive GPP, minimum FSDS about
+160 W/m2 and maximum TBOT about 25 C, against a constant FSDS of -1111 and TBOT
+of 122.9 before. The first annual record carries FSDS identically zero on every
+land cell; that is a cold-start artifact of the first history interval, not
+sentinel forcing, and it is excluded rather than counted.
+
+**The 194 against 193 count is reconciled.** Of the 194 flagged land cells, 193
+host a selected pine patch and 1 does not, because the patch mask requires PFT
+1, natural landunit and gridcell weight above 0.05. The 598 low-LAI pine patches
+split exactly into 193 plus 405.
+
+**What the 193 repaired patches do, and what that does not settle.** Their fire
+frequency now matches the healthy sample, 2.0 events per patch against 1.9, with
+the first event at median year 18 in both. Their sustained decline rate does
+not match: **15 of 193, 7.8%, against 7 of 2000, 0.35%**. The forcing and
+productivity side of the coastal repair passes. Whether the vegetation response
+of the two groups is equivalent is a separate question and is not settled here.
+
+**Per-patch pairing, and why the count is weak evidence.** For the 405: 397 have
+a fire in a year before the decline, 7 have one in the same year and are counted
+`same_year_order_unresolved`, none has fire only after, and 1 shows no sustained
+decline. The gap between the decline year and the most recent preceding fire has
+all three quartiles at 1 year.
+
+That 397 out of 404 is close to uninformative on its own. At a mean of 10.3
+events in 30 years, some earlier fire is nearly certain for any decline date, and
+a fire in the immediately preceding year has a base rate near one in three from
+frequency alone. The between-group contrast in the table carries more weight
+than the pairing count. Even that contrast is an association, not an independent
+dose-response result: the groups were defined by final low LAI in a **different**
+simulation, and environmental conditions can drive fire and decline together.
+
+**Leaf carbon retained after a fire event**, over the following three years,
+averages 0.72 for events before a patch's decline and 0.50 for events after it.
+A ratio below 1 shows net loss following fire, not that fire caused all of it.
+At this event frequency the three-year response windows also overlap between
+successive events, so the values are not independent.
+
+**Timing of the decline.** Declines cluster in years 9 and 18 and 19 for the 405,
+with 356 of 404 before the carbon-only phase ends at year 25. The 15 coastal and
+7 healthy declines all fall at about year 27, which coincides with nitrogen
+limitation resuming at year 26; coincidence in time is not attribution, and the
+run ends at year 30, too early to say whether that decline recovers or persists.
+
+**Excess respiration is excluded as the initiator of the early decline.** XR,
+recovered exactly as `AR - MR - GR` for the non-crop `nu_com='RD'` branch, is
+zero to numerical noise of order 1e-14 through year 26, and `CPOOL` is zero over
+the same span, as expected inside the carbon-only phase. The 405 decline over
+years 8 to 20, when XR is zero. From year 27 XR appears, and the healthy sample
+carries roughly ten times more of it than the residual group, so it tracks having
+carbon rather than losing it. This bounds **excess** respiration only.
+Maintenance and growth respiration remain present and are reported as MR and GR.
+
+**The lumped leaf loss term follows the fire years.** Non-litterfall loss,
+`LEAFC_LOSS - LEAFC_TO_LITTER`, is about 3% of total leaf loss in quiet years,
+36% in year 8 and 49% in year 18. Splitting fire from background mortality still
+requires `M_LEAFC_TO_FIRE`, `M_LEAFC_TO_LITTER_FIRE` and `M_LEAFC_TO_LITTER`,
+all registered `default='inactive'` and absent from this case.
+
+**Two analysis defects found and fixed between 522807 and 522812**, recorded
+because both would have produced confident wrong numbers. A plain "first year
+below LAI 0.5" returned year 1 for every patch in all three groups, because a
+cold start puts everything below any threshold in year 1. The decline is now
+dated against each patch's own running peak, requires three consecutive years
+below half of it, and pairs fire event by event rather than by the single
+largest fire of the record.
+
+
 ## 6. A limit on every timing statement above
 
 The spin-ups write `hist_nhtfrq = -175200, hist_mfilt = 1`: **one 20-year mean
@@ -367,7 +474,14 @@ Ten points is also too coarse to judge AD convergence: it cannot distinguish
 monotonic approach from oscillation on a sub-20-year scale. The final spin-up is
 better at 23 points over 441 years, but has the same blind spot below 20 years.
 
-**Diagnostic run 522626 addresses this.**
+**Diagnostic run 522626 addressed this, and it has run.** See the new subsection
+at the end of section 5 for what it settled. One statement this section
+downgraded can now be made from annual data, for the old-HDM run only: the 405
+residual patches do establish first and then decline, reaching a mean peak leaf
+carbon of 190 gC/m2 before any sustained drop, so "they establish and then fail"
+is measured rather than inferred in that run. Configuration below.
+
+
 `20260910_ADdiag_annual_ICB1850CNRDCTCBC_ad_spinup` is a `--keepexe` clone of the
 original AD spin-up - so the *unfixed* HDM reader, where the collapse actually
 happens - configured for 30 years with `hist_nhtfrq = -8760, hist_mfilt = 30`, annual
@@ -376,6 +490,47 @@ output, on 20 nodes of `parallel`. It also adds `LEAFN`, `FROOTN`, `LIVESTEMN`,
 both tapes. Section 7 explains the additional fields needed for respiration.
 
 ## 7. What is still open
+
+### Status after jobs 522626 and 522812
+
+Written so the two are not confused. Everything below refers to the 4 km chain.
+
+**Settled.**
+
+- The coastal mapping repair works in a running model: zero flagged land cells
+  from annual record 2 onward, and positive GPP with physical TBOT and FSDS at
+  all 194 previously affected cells.
+- The 194 gridcell against 193 patch count: 193 of the 194 flagged cells host a
+  selected pine patch, 1 does not.
+- Excess respiration is not the initiator of the early decline, since XR and
+  `CPOOL` are zero through year 26 while the 405 decline over years 8 to 20.
+- Under the old HDM, the 405 establish first and then decline, and they carry
+  roughly five times the fire event frequency of healthy pine, starting about
+  ten years earlier.
+
+**Not settled, and specifically not settled by these two jobs.**
+
+- Whether the 405 still decline, and by what process, once the HDM fix and the
+  mapping fix are both active. Job 522626 runs the pre-fix executable, so every
+  date in it belongs to the old fire regime.
+- Whether fire causes the decline rather than accompanying it. The pairing count
+  has a high base rate, the three-year response windows overlap at this event
+  frequency, the grouping was defined by final low LAI in a different
+  simulation, and environment can drive fire and decline together.
+- Whether the 193 repaired coastal patches are now equivalent to healthy pine.
+  Their fire frequency matches; their sustained decline rate does not, 7.8%
+  against 0.35%.
+- What the year-27 decline seen in all three groups is. It coincides with
+  nitrogen limitation resuming at year 26, which is not attribution, and the run
+  ends at year 30, too early to tell a recoverable excursion from a persistent
+  loss.
+- The split of fire from background mortality in the leaf budget, which needs
+  the three `default='inactive'` fields.
+- Strict per-year leaf carbon closure, which needs end-of-year state rather than
+  annual means.
+
+The forward plan for all of these is [RERUN_VERIFICATION_PLAN.md](RERUN_VERIFICATION_PLAN.md).
+
 
 ### Zero-carbon patches and surviving low-LAI patches must be separated
 
@@ -413,12 +568,15 @@ Leaf replacement must use actual allocation and total losses, including litter,
 background mortality, fire and harvest, with other transfers and numerical
 truncation included where applicable.
 
-Job 522626 is documented as an annual diagnostic with tissue N pools,
-XSMRPOOL, LEAFC_ALLOC, LEAFC_LOSS and LEAFC_TO_LITTER. Current scheduler status
-was not rechecked in this edit. These fields help the leaf budget, but XSMRPOOL
-alone does not diagnose XR. Verify availability of XR, CPOOL and individual
-tissue respiration before treating the run as a complete respiration diagnosis.
-Annual means cannot resolve every within-year limitation or collapse event.
+Job 522626 ran and completed; job 522812 analysed it. `XR` is not on its tape
+but is recoverable exactly as `AR - MR - GR` for this non-crop `nu_com='RD'`
+configuration, so no new run was needed. **Resolved for the early decline:**
+excess respiration is not its initiator, since XR and `CPOOL` are both zero
+through year 26 while the 405 decline over years 8 to 20. **Still open:**
+this bounds excess respiration only. Maintenance and growth respiration are
+present throughout and their contribution to the low-biomass state has not been
+quantified; nor has any of this been repeated under the corrected HDM. Annual
+means still cannot resolve within-year limitation or ordering.
 
 ### Recovery and prevention
 

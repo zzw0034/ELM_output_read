@@ -75,8 +75,16 @@ def record_years(dataset):
     tb = np.ma.filled(np.asarray(dataset.variables['time_bounds'][:], dtype=float), np.nan)
     length = tb[:, 1] - tb[:, 0]
     years = (np.asarray(mcdate, dtype=int) // 10000) - 1
-    complete = length > 0
-    return years, complete, length
+    # "Covers time" is not the same as "covers the sampling interval". The first
+    # record of job 522626 spans 0.0417 days, a single one-hour model step at
+    # midnight on 0001-01-01, so it is neither zero-length nor a year. FSDS is
+    # zero in it because the sun is down, which is physics, not a defect. The
+    # expected interval is taken as the modal record length rather than
+    # hardcoded, so a tape at a different frequency still works.
+    finite = length[np.isfinite(length) & (length > 0)]
+    expected = float(np.bincount(np.round(finite).astype(int)).argmax()) if finite.size else np.nan
+    complete = np.isfinite(length) & (np.abs(length - expected) <= 0.5)
+    return years, complete, length, expected
 
 
 def index_records(paths):
@@ -88,18 +96,16 @@ def index_records(paths):
     year. Duplicates, gaps and zero-length records are reported, never guessed
     at: the first occurrence of a year wins and the collision is recorded.
     """
-    table, duplicates, zero_length, odd_length = {}, [], [], []
+    table, duplicates, odd_length = {}, [], []
     for path in sorted(paths):
         with nc.Dataset(path) as d:
-            years, complete, length = record_years(d)
+            years, complete, length, expected = record_years(d)
         for i, (y, ok, L) in enumerate(zip(years, complete, length)):
             entry = {'file': Path(path).name, 'index': int(i),
                      'year': int(y), 'interval_days': float(L)}
             if not ok:
-                zero_length.append(entry)
+                odd_length.append({**entry, 'expected_days': expected})
                 continue
-            if abs(L - 365.0) > 1e-6:
-                odd_length.append(entry)
             if int(y) in table:
                 duplicates.append({**entry, 'kept': table[int(y)][2]})
                 continue
@@ -109,9 +115,8 @@ def index_records(paths):
             if y not in table] if present else []
     audit = {'files': sorted(Path(q).name for q in paths),
              'years_present': [int(present[0]), int(present[-1])] if present else [],
-             'n_years': len(present), 'gaps': gaps,
-             'duplicates': duplicates, 'zero_length_records': zero_length,
-             'records_not_365_days': odd_length}
+             'n_years': len(present), 'gaps': gaps, 'duplicates': duplicates,
+             'records_excluded_wrong_interval': odd_length}
     return table, audit
 
 
@@ -223,21 +228,21 @@ def coastal_audit(diag_run, ref_run, out):
     rows = []
     for path in tape_paths(diag_run, DIAG_CASE, 'h0'):
         with nc.Dataset(path) as h0:
-            yrs, ok, length = record_years(h0)
+            yrs, ok, length, _ = record_years(h0)
         rows.extend((int(yrs[i]), bool(ok[i]), float(length[i]), path, i)
                     for i in range(len(yrs)))
     for year, ok, length, path, i in sorted(rows, key=lambda r: (r[0], not r[1])):
         with nc.Dataset(path) as h0:
             bad, tbot, fsds, gpp = forcing_flags(h0, i, land)
-        # A record is excluded only when the FILE says it covers no time, never
-        # because of its position. In job 522626 the first record is the nstep-0
-        # dump with time_bounds [0, 0]: FSDS is zero there because nothing was
-        # accumulated, which is arithmetic, not an anomaly. An all-zero FSDS
-        # inside a record that DOES span a full year would be a real finding and
-        # must not be waved away as initialisation.
+        # A record is excluded only when the FILE says its interval is not a
+        # full sampling period, never because of its position. In job 522626 the
+        # first record spans one model hour at midnight on 0001-01-01: FSDS is
+        # zero there because the sun is down. An all-zero FSDS inside a record
+        # that DOES span a full year would be a real finding and must not be
+        # waved away as initialisation.
         per_year.append({
             'year': year, 'interval_days': length,
-            'covers_no_time': not ok, 'excluded_from_verdict': not ok,
+            'covers_full_interval': ok, 'excluded_from_verdict': not ok,
             'source_file': Path(path).name,
             'flagged_land_cells': int(bad.sum()),
             'previously_flagged_still_flagged': int(bad[pos].sum()),

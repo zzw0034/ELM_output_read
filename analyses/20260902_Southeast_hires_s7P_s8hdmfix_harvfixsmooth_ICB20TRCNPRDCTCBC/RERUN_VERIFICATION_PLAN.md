@@ -350,7 +350,7 @@ Required settings, each with a reason:
 | start | cold, `RUN_STARTDATE = 1-01-01` | no existing 4 km restart is usable; they all carry stranded evergreens |
 | `hist_dov2xy` | `.true.,.false.` | `h0` gridded for input checks, `h1` patch vector for per-PFT work |
 | `hist_nhtfrq` | `-8760,-8760,-8760` | annual; 20-year means are reconstructed offline |
-| third tape | `hist_fincl3` with `:I` fields, `hist_dov2xy(3) = .false.` | year-end state, without which the leaf budget cannot be closed strictly |
+| third tape | `hist_fincl3`, which writes `.h2.`, with `:I` fields, `hist_dov2xy(3) = .false.` | year-end state, without which the leaf budget cannot be closed strictly |
 
 Open for the user to set, deliberately not chosen here: `STOP_N`, `REST_N`,
 `RESUBMIT`, node count, and `-p`/`-q` pairing.
@@ -421,7 +421,8 @@ instantaneous sampling:
 ```
 hist_fincl3 = 'LEAFC:I', 'LEAFC_STORAGE:I', 'LEAFC_XFER:I', 'CPOOL:I',
               'XSMRPOOL:I', 'TLAI:I', 'TOTVEGC:I'
-hist_nhtfrq(3) = -8760 ;  hist_mfilt(3) = 200 ;  hist_dov2xy(3) = .false.
+hist_nhtfrq(3) = -8760 ;  hist_mfilt(3) = 50 ;  hist_dov2xy(3) = .false.
+! tape numbering is offset by one: fincl1 -> h0, fincl2 -> h1, fincl3 -> h2
 ```
 
 Seven patch-vector fields is about 83 MB per model year, roughly 17 GB over 200
@@ -615,7 +616,7 @@ One batch job, reading output that already exists.
    `LEAFC_ALLOC - LEAFC_LOSS` against the year-to-year change in annual-mean
    `LEAFC`, plus `LEAFC_LOSS - LEAFC_TO_LITTER` as one lumped non-litterfall
    loss term. Checkable once, at year 31, against the restart state. Not
-   answerable from this run at all, and needing the `h3` instantaneous tape from
+   answerable from this run at all, and needing the `h2` instantaneous tape from
    Experiment A: strict per-year closure, and the size of the
    `PrecisionControl` truncation term. That inventory is a deliverable of this
    job, not a footnote.

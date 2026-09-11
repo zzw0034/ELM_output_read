@@ -529,7 +529,23 @@ Written so the two are not confused. Everything below refers to the 4 km chain.
 - Strict per-year leaf carbon closure, which needs end-of-year state rather than
   annual means.
 
-The forward plan for all of these is [RERUN_VERIFICATION_PLAN.md](RERUN_VERIFICATION_PLAN.md).
+**How the two fixes stand.** Each has single-factor support. The HDM fix was
+verified in job 522373: HDM reads correctly at a domain mean near 5.128 against
+0.000 in the control, and pine stranding falls from 8.9% to 0.9%. The mapping
+fix was verified in job 522626: zero flagged land cells and positive GPP at all
+194 previously affected cells. What does not exist is a run with **both** fixes
+active, so the combined vegetation state is unverified. That is a gap in joint
+verification, not an absence of evidence for either fix.
+
+**What the combined experiment will and will not settle.** It is the only way to
+measure the combined vegetation outcome, and it supplies the per-PFT fire and
+mortality fluxes that the residual diagnosis needs. It does not guarantee causal
+attribution on its own: if the 405 largely recover, the mechanism that was
+removing them is inferred rather than isolated, and if they do not, the
+counterfactual in the plan becomes the next step.
+
+The forward plan for all of these is [RERUN_VERIFICATION_PLAN.md](RERUN_VERIFICATION_PLAN.md),
+and the case configuration is [AD_RERUN_CASE_CONFIG.md](AD_RERUN_CASE_CONFIG.md).
 
 
 ### Zero-carbon patches and surviving low-LAI patches must be separated

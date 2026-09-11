@@ -158,8 +158,12 @@ def coastal_audit(diag_run, ref_run, out):
             raise ValueError('Flagged cells not found in the diagnostic land mask')
         for t in range(nt):
             bad, tbot, fsds, gpp = forcing_flags(h0, t, diag_land)
+            # The first annual record carries FSDS identically zero on EVERY land
+            # cell, which is a cold-start artifact of the first history interval,
+            # not sentinel forcing. Reported, never counted.
             per_year.append({
                 'year': t + 1,
+                'excluded_from_verdict': bool(t == 0),
                 'flagged_land_cells': int(bad.sum()),
                 'previously_flagged_still_flagged': int(bad[pos].sum()),
                 'previously_flagged_with_positive_gpp': int((gpp[pos] > 0).sum()),
@@ -235,16 +239,38 @@ def patch_timeline(diag_run, groups, out):
     return series, meta, local, take
 
 
-def first_crossing(series, rows, field, threshold, below=True):
-    """First year each patch crosses a threshold; NaN if it never does."""
-    years = sorted(series)
-    out = np.full(len(rows), np.nan)
-    for y in years:
-        v = series[y][field][rows]
-        hit = (v < threshold) if below else (v > threshold)
-        new = np.isnan(out) & hit
-        out[new] = y
-    return out
+def decline_timing(series, rows, establish=1.0, drop_fraction=0.5):
+    """When each patch established, peaked, and then lost half its own peak.
+
+    A cold start puts EVERY patch below any LAI threshold in year 1, so a plain
+    "first year below 0.5" test returns year 1 for healthy and dying patches
+    alike and measures nothing. Establishment is therefore required first, and
+    the decline is measured against each patch's OWN peak rather than a fixed
+    level.
+    """
+    years = np.array(sorted(series))
+    lai = np.vstack([series[y]['TLAI'][rows] for y in years])
+    leafc = np.vstack([series[y]['LEAFC'][rows] for y in years])
+    fire = np.vstack([series[y]['fire_gC_m2_yr'][rows] for y in years])
+    n = lai.shape[1]
+    established = np.full(n, np.nan)
+    peak_year = np.full(n, np.nan)
+    half_year = np.full(n, np.nan)
+    worst_fire_year = np.full(n, np.nan)
+    for i in range(n):
+        above = np.flatnonzero(lai[:, i] >= establish)
+        if not len(above):
+            continue
+        established[i] = years[above[0]]
+        k = int(np.nanargmax(leafc[:, i]))
+        peak_year[i] = years[k]
+        after = np.flatnonzero(leafc[k:, i] < drop_fraction * leafc[k, i])
+        if len(after):
+            half_year[i] = years[k + after[0]]
+        if np.isfinite(fire[:, i]).any():
+            worst_fire_year[i] = years[int(np.nanargmax(fire[:, i]))]
+    return {'established_year': established, 'peak_leafc_year': peak_year,
+            'half_of_peak_year': half_year, 'largest_fire_year': worst_fire_year}
 
 
 def stats(a):
@@ -384,18 +410,23 @@ def main():
             'by_year': {str(y): {f: stats(series[y][f][rows]) for f in fields}
                         for y in sorted(series)},
         }
-        lai_cross = first_crossing(series, rows, 'TLAI', LOW_LAI)
-        zero_leaf = first_crossing(series, rows, 'LEAFC', 1e-6)
+        timing = decline_timing(series, rows)
+        declined = np.isfinite(timing['half_of_peak_year'])
+        lead = (timing['half_of_peak_year'] - timing['largest_fire_year'])[declined]
         report['timing'][name] = {
-            'first_year_tlai_below_%.1f' % LOW_LAI: stats(lai_cross),
-            'never_crossed': int(np.isnan(lai_cross).sum()),
-            'first_year_leafc_below_1e-6': stats(zero_leaf),
-            'crossed_before_year_%d' % (CARBON_ONLY_YEARS + 1):
-                int(np.nansum(lai_cross <= CARBON_ONLY_YEARS)),
-            'crossed_after_carbon_only_ends':
-                int(np.nansum(lai_cross > CARBON_ONLY_YEARS)),
-            'crossed_after_fuel_switch_year_%d' % FUEL_SWITCH_YEAR:
-                int(np.nansum(lai_cross > FUEL_SWITCH_YEAR)),
+            'never_established_lai_1.0': int(np.isnan(timing['established_year']).sum()),
+            'established_year': stats(timing['established_year']),
+            'peak_leafc_year': stats(timing['peak_leafc_year']),
+            'half_of_peak_year': stats(timing['half_of_peak_year']),
+            'n_lost_half_of_peak': int(declined.sum()),
+            'largest_fire_year': stats(timing['largest_fire_year']),
+            'half_of_peak_minus_largest_fire_year': stats(lead),
+            'fire_at_or_before_the_drop': int(np.sum(lead >= 0)),
+            'fire_after_the_drop': int(np.sum(lead < 0)),
+            'declined_before_carbon_only_ends_year_%d' % CARBON_ONLY_YEARS:
+                int(np.nansum(timing['half_of_peak_year'] <= CARBON_ONLY_YEARS)),
+            'declined_after_carbon_only_ends':
+                int(np.nansum(timing['half_of_peak_year'] > CARBON_ONLY_YEARS)),
         }
 
     rows = local['residual']

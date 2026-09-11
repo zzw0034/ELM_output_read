@@ -61,13 +61,43 @@ def main():
 
     h0 = sorted(R.glob(f'{CASE}.elm.h0.*.nc'))[0]
     h1 = sorted(R.glob(f'{CASE}.elm.h1.*.nc'))[0]
-    h2 = sorted(R.glob(f'{CASE}.elm.h2.*.nc'))[0]
-    rst = sorted(R.glob(f'{CASE}.elm.r.*.nc'))[-1]
+
+    # Pair h2 with the restart written at the SAME instant, by date. Taking the
+    # last of each would compare different times once the run has several files:
+    # hist_mfilt caps a file at 50 records, one of which is the short
+    # initialisation record, so a 50-year segment spills its final year into the
+    # next file while restarts land on REST_N boundaries.
+    restarts = {int(q.name.split('.elm.r.')[1][:10].replace('-', '')[:8]): q
+                for q in R.glob(f'{CASE}.elm.r.*.nc')}
+    h2, h2_index, h2_date_sel, rst = None, None, None, None
+    for q in sorted(R.glob(f'{CASE}.elm.h2.*.nc')):
+        with nc.Dataset(q) as d:
+            dates = np.asarray(d.variables['mcdate'][:], dtype=int)
+        for i, dt in enumerate(dates):
+            if int(dt) in restarts and (h2_date_sel is None or int(dt) >= h2_date_sel):
+                h2, h2_index, h2_date_sel = q, int(i), int(dt)
+                rst = restarts[int(dt)]
+    if h2 is None:
+        raise SystemExit('no h2 snapshot shares a date with any restart; '
+                         'available restarts: %r' % sorted(restarts))
 
     # ---- record structure -------------------------------------------------
+    all_h0 = sorted(R.glob(f'{CASE}.elm.h0.*.nc'))
+    per_file = []
+    for q in all_h0:
+        with nc.Dataset(q) as d:
+            o, m, L, e, c = full_year_records(d)
+            per_file.append({'file': q.name, 'records': int(len(L)),
+                             'full_year_records': int(len(o)),
+                             'model_years': [int(m[o[0]] // 10000) - 1,
+                                             int(m[o[-1]] // 10000) - 1] if len(o) else [],
+                             'short_records': [round(float(L[i]), 4)
+                                               for i in range(len(L))
+                                               if abs(L[i] - e) > 0.5]})
     with nc.Dataset(h0) as d:
         ok, mcdate, length, expected, cal = full_year_records(d)
         rep['checks']['record_structure'] = {
+            'files_on_this_tape': per_file,
             'calendar': cal, 'expected_interval_days': expected,
             'n_records': int(len(length)),
             'full_year_record_indices': [int(i) for i in ok],
@@ -138,7 +168,7 @@ def main():
         h2_date = np.asarray(d.variables['mcdate'][:], dtype=int)
         h2_methods = {v: getattr(d.variables[v], 'cell_methods', None)
                       for v in d.variables if v in ('LEAFC', 'TLAI', 'CPOOL')}
-        k = int(np.argmax(h2_date))          # last snapshot
+        k = h2_index                          # the snapshot matching the restart
         h2_leafc = read(d, 'LEAFC', k)
         h2_tlai = read(d, 'TLAI', k)
         h2_ix = read(d, 'pfts1d_ixy').astype(int)
@@ -157,7 +187,8 @@ def main():
     same_len = len(h2_leafc) == len(r_leafc)
     identity = bool(same_len and np.array_equal(h2_ix, r_ix)
                     and np.array_equal(h2_jy, r_jy) and np.array_equal(h2_veg, r_veg))
-    res = {'h2_snapshot_mcdate': snapshot_date, 'restart_file': rst.name,
+    res = {'h2_file': h2.name, 'h2_record_index': h2_index,
+           'h2_snapshot_mcdate': snapshot_date, 'restart_file': rst.name,
            'restart_date_from_name': restart_date,
            'dates_match': snapshot_date == restart_date,
            'h2_cell_methods': h2_methods,

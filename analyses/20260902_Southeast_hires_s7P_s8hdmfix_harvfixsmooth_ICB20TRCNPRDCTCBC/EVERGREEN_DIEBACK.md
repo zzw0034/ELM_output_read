@@ -119,6 +119,41 @@ This explains the PFT selectivity, the binary distribution and the one-way
 behaviour. It does not by itself explain what pushes a given patch over, nor
 exactly what holds a stranded patch where it sits - see sections 3 and 7.
 
+### Measured in the same gridcells, under the same fires
+
+Added 2026-09-11 from the AD rerun, job 523210. Pine and broadleaf deciduous
+temperate tree both occupy all 405 residual gridcells and burn in the same
+fires, so the comparison controls disturbance, climate and soil exactly. Annual
+means, states in gC/m^2 and fluxes in gC/m^2/yr:
+
+| model year | pine LAI | storage | storage to leaf | CPOOL to leaf | leaf fire loss | | decid LAI | storage | storage to leaf | CPOOL to leaf | leaf fire loss |
+|---|---|---|---|---|---|---|---|---|---|---|---|
+| 6 | 1.78 | **0.00** | **0.00** | 171.8 | 0.9 | | 1.03 | 156.8 | 63.0 | **0.00** | 0.3 |
+| **7** | 1.60 | **0.00** | **0.00** | 99.6 | **53.1** | | 1.61 | 204.5 | 94.0 | **0.00** | 2.8 |
+| 9 | 0.92 | **0.00** | **0.00** | 55.5 | 13.7 | | 2.12 | 217.3 | 123.3 | **0.00** | 13.6 |
+| **17** | 1.10 | **0.00** | **0.00** | 66.4 | **63.6** | | 2.05 | 219.1 | 159.2 | **0.00** | **60.8** |
+| 19 | 0.53 | **0.00** | **0.00** | 36.6 | 6.4 | | 1.87 | 198.7 | 105.3 | **0.00** | 4.6 |
+| 30 | 0.06 | **0.00** | **0.00** | 2.0 | 3.8 | | 1.41 | 155.4 | 88.5 | **0.00** | 14.6 |
+| 49 | 0.03 | **0.00** | **0.00** | 3.0 | 0.1 | | 1.73 | 163.3 | 95.4 | **0.00** | 2.3 |
+
+In model year 17 the two PFTs lose almost the same leaf carbon to fire, 63.6
+against 60.8. Everything after that differs.
+
+**Pine's `LEAFC_STORAGE` and `LEAFC_XFER_TO_LEAFC` are exactly 0.00 in every
+year, without exception.** Its only leaf source is `CPOOL_TO_LEAFC`, carbon
+fixed in the current year. Deciduous is the mirror image: `CPOOL_TO_LEAFC` is
+exactly 0.00 every year, and it rebuilds from a storage pool of 160 to 260 that
+releases 90 to 160 per year **regardless of how much leaf area is currently
+standing**.
+
+The ratchet is visible in pine's `CPOOL_TO_LEAFC`: 171.8, then 99.6 when the
+year-7 fire lands, 55.5, recovering to 106 by year 16, then 66.4 after the
+year-17 fire, 36.6, 22.3, 2.0. Less leaf gives less photosynthesis gives less
+carbon to allocate to leaf. Deciduous drops from 84.6 to 60.1 at the same fire
+and is back to 48.2 the next year on a 91.7 flush.
+
+This is the section-2 mechanism measured rather than inferred from the source.
+
 ## 3. The triggers differ by resolution, and both are our own configuration
 
 ### 4 km: fire, from an HDM reader that failed silently
@@ -443,6 +478,92 @@ below half of it, and pairs fire event by event rather than by the single
 largest fire of the record.
 
 
+### The AD rerun with both fixes: jobs 522930 and 523140
+
+The production rerun, `20260910_Southeast_hires_30n_hdmfix_mapfix_ICB1850CNRDCTCBC_ad_spinup`,
+30 nodes, 3840 ranks, cold start, corrected HDM reader **and** repaired
+`zone_mappings.txt` together for the first time. Analysis job 523199 reads only
+the first closed segment file, model years 1 to 49. The run continues to year
+200; everything here is provisional on that.
+
+**The two populations end up in opposite places.**
+
+| group | TLAI at model year 49 | verdict |
+|---|---|---|
+| 193 coastal, forcing repaired | **1.962** | recovered; healthy control is 1.977 |
+| 405 residual | **0.032** | still declining, essentially as before |
+
+**Why the HDM fix cannot help the 405.** Their 1850 human population density,
+read from the model's own `HDM` field:
+
+| group | median HDM | mean | fraction below 0.5 |
+|---|---|---|---|
+| 405 residual | **0.048** | 0.051 | **100%** |
+| 193 coastal | 0.745 | 1.236 | 23% |
+| healthy pine | **4.162** | 4.926 | 5.6% |
+
+Every one of the 405 sits where population density is about one eighty-seventh
+of the healthy-pine median. Population drives both human ignition and
+suppression, so a corrected reader delivers them what a broken reader delivered
+everywhere: nearly nothing. The HDM repair is real and domain-wide, and
+physically inert in exactly these places. That is also why job 522373, which had
+the HDM fix, left this residual behind.
+
+**The leaf budget closes exactly.** Year-end state from the instantaneous `h2`
+tape against the integrated fluxes gives a closure residual of **0.000 gC/m^2 in
+every year**, to machine precision. No missing term, harvest zero, truncation
+negligible at these magnitudes. That licenses the split below, which job 522626
+could not make.
+
+| model year | state change | total loss | fire | background mortality | litterfall | fire share |
+|---|---|---|---|---|---|---|
+| 6 | +55.1 | 116.7 | 0.9 | 3.4 | 112.5 | 0.7% |
+| **7** | **-57.6** | 157.1 | **53.1** | 3.0 | 101.0 | **31.4%** |
+| 10 | +29.1 | 68.0 | 1.5 | 1.9 | 64.6 | 3.6% |
+| **17** | **-68.8** | 135.2 | **63.6** | 2.1 | 69.5 | **37.3%** |
+| 25 | -20.9 | 43.2 | 18.1 | 0.7 | 24.4 | 29.7% |
+
+The two deepest declines are the two fire years. Background mortality is a
+rounding term throughout. Litterfall is always the largest single flux, but it
+scales with standing leaf carbon, so it is turnover rather than a driver; what
+changes in a decline year is fire.
+
+**Per-PFT outcome, by region.** Fraction not healthy, meaning zero leaf carbon
+plus surviving low-LAI, on 20-year windows built from annual records.
+
+| population | years 1-20 | years 21-40 | years 41-49 | old chain, final |
+|---|---|---|---|---|
+| pine, whole domain | 0.14% | 0.52% | **0.55%** | 9.0% |
+| pine, Florida box | 1.29% | 4.77% | 5.00% | - |
+| pine, south of 26 N | 23.5% | 40.5% | **40.7%** | 42.4% |
+| broadleaf evergreen shrub, whole domain | 13.2% | 2.6% | **2.4%** | 22.6% under HDM-only |
+| every deciduous PFT, whole domain | 0% | 0% | 0% | - |
+
+The domain number improves by more than an order of magnitude. South of 26 N is
+essentially unchanged. Reporting only the first row would be the error this
+record has warned about throughout. The 41-49 window is nine years, not twenty.
+
+**Where the 405 actually are.** Two clusters, not one. The earlier
+characterisation as south Florida was incomplete.
+
+| cluster | n | extent |
+|---|---|---|
+| south Florida, Big Cypress and the Everglades | **291** | 25.19 to 26.65 N, -81.35 to -80.65 |
+| Florida Big Bend and panhandle coast | **114** | 29.19 to 30.10 N, -85.27 to -83.02 |
+
+Map: `outputs/residual_405_map.png`, produced by
+`plot_residual_405_map_local.py`. What both clusters share is that almost nobody
+lived there in 1850.
+
+**Inference, labelled as such.** The two configuration errors are gone and what
+remains is pine in genuinely unpopulated, fire-prone country. Whether that fire
+is itself correct is not established here. If it is, the residual is not a
+configuration bug but the section-2 absorbing state meeting a real disturbance
+regime, and no input repair can remove it. Distinguishing "the fire is wrong"
+from "the fire is right and recovery is broken" is exactly what the no-fire
+counterfactual in the plan would test, and it is the first result that gives
+that experiment a specific question.
+
 ## 6. A limit on every timing statement above
 
 The spin-ups write `hist_nhtfrq = -175200, hist_mfilt = 1`: **one 20-year mean
@@ -510,24 +631,44 @@ Written so the two are not confused. Everything below refers to the 4 km chain.
 
 **Not settled, and specifically not settled by these two jobs.**
 
-- Whether the 405 still decline, and by what process, once the HDM fix and the
-  mapping fix are both active. Job 522626 runs the pre-fix executable, so every
-  date in it belongs to the old fire regime.
+- ~~Whether the 405 still decline once both fixes are active.~~ **Answered
+  2026-09-11: they do**, reaching TLAI 0.032 by model year 49 against 1.977 for
+  healthy pine, because their 1850 population density is about 0.05 and HDM
+  suppression therefore cannot reach them. See section 5.
+- Whether the fire that removes them is itself correct. This is now the live
+  question and the one the no-fire counterfactual would answer.
 - Whether fire causes the decline rather than accompanying it. The pairing count
   has a high base rate, the three-year response windows overlap at this event
   frequency, the grouping was defined by final low LAI in a different
   simulation, and environment can drive fire and decline together.
-- Whether the 193 repaired coastal patches are now equivalent to healthy pine.
-  Their fire frequency matches; their sustained decline rate does not, 7.8%
-  against 0.35%.
+- ~~Whether the 193 repaired coastal patches are equivalent to healthy pine.~~
+  **Answered 2026-09-11: yes in the rerun**, TLAI 1.962 against 1.977 for the
+  healthy control at model year 49. The 7.8% against 0.35% decline-rate gap seen
+  in job 522626 does not carry over to the run where their forcing is repaired
+  from the start.
 - What the year-27 decline seen in all three groups is. It coincides with
   nitrogen limitation resuming at year 26, which is not attribution, and the run
   ends at year 30, too early to tell a recoverable excursion from a persistent
   loss.
-- The split of fire from background mortality in the leaf budget, which needs
-  the three `default='inactive'` fields.
-- Strict per-year leaf carbon closure, which needs end-of-year state rather than
-  annual means.
+- ~~The split of fire from background mortality.~~ **Done**: the rerun carries
+  the three fields and fire is 31 to 37 percent of leaf loss in decline years
+  against 1 to 4 percent in quiet ones.
+- ~~Strict per-year leaf carbon closure.~~ **Done**: the instantaneous `h2` tape
+  closes the budget to 0.000 gC/m^2 per year.
+- Whether the residual is stable through model year 200, and whether prognostic
+  phosphorus at final spin-up re-strands anything. Both need stages that have
+  not run.
+
+**Updated 2026-09-11 by the AD rerun.** Both fixes now act in one run. Settled
+since the list below was written: the combined vegetation outcome exists, the
+193 coastal patches recover fully, the 405 do not and the reason is that their
+1850 population density is near zero so HDM suppression cannot reach them, the
+leaf budget closes exactly, fire is the proximate loss term in the decline
+years at 31 to 37 percent of total leaf loss, and the pine-versus-deciduous
+contrast is measured in the same gridcells rather than inferred from source.
+Still open: whether that fire is itself correct, whether the residual is stable
+to model year 200, and every later-stage question. The paragraphs below stand
+except where the new subsection in section 5 supersedes them.
 
 **How the two fixes stand.** Each has single-factor support. The HDM fix was
 verified in job 522373: HDM reads correctly at a domain mean near 5.128 against

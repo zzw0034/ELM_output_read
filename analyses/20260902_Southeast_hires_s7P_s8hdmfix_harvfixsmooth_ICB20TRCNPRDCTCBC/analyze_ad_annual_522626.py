@@ -93,7 +93,7 @@ def index_records(paths):
         with nc.Dataset(path) as d:
             years, complete, length = record_years(d)
         for i, (y, ok, L) in enumerate(zip(years, complete, length)):
-            entry = {'file': pathlib.Path(path).name, 'index': int(i),
+            entry = {'file': Path(path).name, 'index': int(i),
                      'year': int(y), 'interval_days': float(L)}
             if not ok:
                 zero_length.append(entry)
@@ -103,11 +103,11 @@ def index_records(paths):
             if int(y) in table:
                 duplicates.append({**entry, 'kept': table[int(y)][2]})
                 continue
-            table[int(y)] = (path, int(i), pathlib.Path(path).name)
+            table[int(y)] = (path, int(i), Path(path).name)
     present = sorted(table)
     gaps = [y for y in range(present[0], present[-1] + 1)
             if y not in table] if present else []
-    audit = {'files': sorted(pathlib.Path(q).name for q in paths),
+    audit = {'files': sorted(Path(q).name for q in paths),
              'years_present': [int(present[0]), int(present[-1])] if present else [],
              'n_years': len(present), 'gaps': gaps,
              'duplicates': duplicates, 'zero_length_records': zero_length,
@@ -238,7 +238,7 @@ def coastal_audit(diag_run, ref_run, out):
         per_year.append({
             'year': year, 'interval_days': length,
             'covers_no_time': not ok, 'excluded_from_verdict': not ok,
-            'source_file': pathlib.Path(path).name,
+            'source_file': Path(path).name,
             'flagged_land_cells': int(bad.sum()),
             'previously_flagged_still_flagged': int(bad[pos].sum()),
             'previously_flagged_with_positive_gpp': int((gpp[pos] > 0).sum()),

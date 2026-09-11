@@ -49,9 +49,8 @@ All five, with the evidence behind each. Throughput is measured, not assumed.
 
 | measurement | value | source |
 |---|---|---|
-| 20 nodes, `parallel` + `BL`, annual dual-tape output | **13.05 model-yr/h** | job 522626, 30 yr in 02:17:54 |
-| 12 nodes, dedicated partition, 20-year-mean output | 6.24 model-yr/h | job 522373, 80 yr in 12:49:30 |
-| per node | 0.652 against 0.520 model-yr/h | the same two jobs |
+| 20 nodes, `parallel` + `BL`, annual dual-tape output, **model years 1-30** | 13.05 model-yr/h | job 522626, 30 yr in 02:17:54 |
+| 12 nodes, dedicated partition, 20-year-mean output, **model years 1-80** | 6.24 model-yr/h | job 522373, 80 yr in 12:49:30 |
 | memory actually needed | about 75 g per node | `elm_setup_and_run_guide.md` §16.0 |
 | one `elm.r` restart, 4 km | **13.83 GiB**, 14.85 GB | job 522626 |
 | `elm.rh0` / `elm.rh1` | effectively zero | job 522626 |
@@ -67,16 +66,54 @@ All five, with the evidence behind each. Throughput is measured, not assumed.
 | `STOP_OPTION` / `STOP_N` | **`nyears` / 50** | 4 segments of 50 model years |
 | `RESUBMIT` | **3** | segments minus one |
 | `REST_OPTION` / `REST_N` | **`nyears` / 25** | 8 restarts, at model years 25 through 200 |
-| `JOB_WALLCLOCK_TIME` | **08:00:00** | about 2.1 times the estimated 3.83 h per segment |
+| `JOB_WALLCLOCK_TIME` | **10:00:00** | about 1.9 times the estimated 5.4 h of the longest segment |
 
-Total: 200 model years, about **15.3 h** of compute across 4 segments.
+Total: 200 model years, about **21 h** of compute across 4 segments.
+
+### Where 21 h comes from, and why it is not 15 h
+
+Extrapolating 522626's 13.05 model-yr/h to 200 years gives 15.3 h. That is too
+optimistic, because 25 of its 30 years were carbon-only and cheaper than a full
+year. Solving the two measured jobs as a two-point model, with per-year node
+costs `c_ad` for carbon-only years and `c_full` for the rest:
+
+| | equation | result |
+|---|---|---|
+| job 522626 | `25·c_ad + 5·c_full = 45.96` node-h | `c_ad = 1.41` node-h per model year |
+| job 522373 | `25·c_ad + 55·c_full = 153.9` node-h | `c_full = 2.16` node-h per model year |
+
+A full-physics year costs about **1.5 times** a carbon-only year. For 200 years
+that is 413 node-h, which on 20 nodes is **20.7 h**:
+
+| segment | model years | estimate |
+|---|---|---|
+| 1 | 1-50, of which 25 carbon-only | 4.5 h |
+| 2, 3, 4 | 51-200, all full physics | 5.4 h each |
+
+This assumes node scaling is linear between the 12-node and 20-node jobs, which
+is the one thing these two measurements cannot verify. Treat 21 h as an estimate
+with a stated assumption. Per `elm_setup_and_run_guide.md` §7, the number to
+trust is the production job's own GPTL snapshots under
+`$RUNDIR/timing/checkpoints/`, read during its first hour. Adjust
+`JOB_WALLCLOCK_TIME` from that, not from this table.
 
 ### Why each value
 
-**20 nodes on `parallel`, not the dedicated partition.** The parallel pool under
-the `BL` constraint measured faster per node than the dedicated partition did,
-0.652 against 0.520 model-yr/h. It also leaves the 20-node dedicated partition
-free rather than occupying all of it for 16 hours. `-q hpcl-cli185` is required
+**20 nodes on `parallel`, not the dedicated partition, and not because it is
+faster.** The two partitions are the same hardware: `sinfo` reports
+`blc161-180` and `blc081-101` alike as 128-core nodes with features `IB,HDR,BL`.
+Only memory differs, 515 GB on the dedicated nodes against 257 GB on the
+parallel ones, and the measured requirement is about 75 GB per node, so the
+extra capacity buys nothing here. An earlier version of this file claimed the
+parallel pool was faster per node, 0.652 against 0.520 model-yr/h. That
+comparison was confounded and the claim is withdrawn: the two jobs differ in
+node count, output frequency, and which model years they ran, the last of which
+matters most because the first 25 years are carbon-only and cheaper.
+
+The real reasons to prefer `parallel` are that it draws on 206 nodes rather than
+20, that it leaves the project's dedicated partition free instead of occupying
+all of it for a day, and that it is what `elm_setup_and_run_guide.md` §16.0
+recommends for 4 km production. `-q hpcl-cli185` is required
 because `normal` caps a user at 2000 CPUs and 2560 would pend forever.
 `--constraint=BL` avoids the 84-core `pfc` nodes and their mixed-generation
 InfiniBand, which hangs E3SM. `--mem=200g` filters unusable node specs while
@@ -85,22 +122,21 @@ the real need is about 75 g. Validated with `sbatch --test-only`, which
 allocated 2560 processors on `blc[081-093,095-101]`.
 
 **Segment length 50 years.** This trades queue waits against failure loss. Four
-segments of 3.83 h lose at most 3.83 h of compute to a crash and take four
-queue waits. Eight segments of 25 years would halve the loss and double the
-waits. Fifty years is the middle, and it keeps the whole run inside one working
-day if the queue cooperates.
+segments of 4.5 to 5.4 h lose at most one segment to a crash and take four queue
+waits. Eight segments of 25 years would halve the loss and double the waits.
+Fifty years is the middle.
 
 **Restart every 25 years, not every segment and not every year.** History
 frequency and restart frequency are deliberately decoupled. Annual diagnostics
 need no annual restart; the leaf budget is closed by the instantaneous history
 tape in section 4, not by restart files. `REST_N = 25` gives one restart at each
 segment boundary, which resubmission requires, plus one mid-segment, which caps
-a crash at about 1.9 h of lost compute. `STOP_N` must stay an integer multiple
+a crash at about 2.7 h of lost compute. `STOP_N` must stay an integer multiple
 of `REST_N`, and 50 is 2 times 25. Year 25 also happens to be the end of the
 carbon-only phase, so one exact state lands on that boundary for free.
 
 Restart storage is the price: 8 sets at 14.85 GB is **119 GB**. Choosing
-`REST_N = 50` would cut that to 59 GB and raise the worst-case loss to 3.83 h.
+`REST_N = 50` would cut that to 59 GB and raise the worst-case loss to 5.4 h.
 Do not assume the full set survives: `elm_setup_and_run_guide.md` §15.9 records
 a case that kept 7 restarts at roughly 29-year spacing against a documented
 `REST_N = 20`. Check with `ls $RUNDIR/*.elm.r.*.nc` before relying on any of

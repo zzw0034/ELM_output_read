@@ -85,7 +85,7 @@ below LAI 0.5.
 
 **Set early, then frozen.** At 4 km the stranded fraction reads 1.0% in the
 years 1-20 mean, 6.6% for 21-40, 8.9% for 61-80, then locks at 9.0-9.1% through
-441 years of final spin-up and all 174 transient years. So the outcome is
+440 years of final spin-up and all 174 transient years. So the outcome is
 settled inside the first eighty AD years and never moves again. Note these are
 20-year means, not snapshots - which window a patch first shows up in is not
 when it collapsed, see section 6.
@@ -278,7 +278,7 @@ reference configuration of `20260519_Southeast_hires_ICB1850CNRDCTCBC_ad_spinup`
 The control climbs 1.0 to 8.9% while the experiment is flat at 0.9% from year 41
 onward, three checkpoints running. That matters because the control's 8.9% at
 year 81 is essentially its final value - it locks at 9.0-9.1% and does not move
-through 441 years of final spin-up and 174 transient years.
+through 440 years of final spin-up and 174 transient years.
 
 Of the 6104 patches the control has stranded by year 81, **90.4% are alive in
 the experiment**, at mean LAI 1.545 against 1.957 for pine that never came
@@ -692,7 +692,7 @@ the comparison holds.
 
 Ten points is also too coarse to judge AD convergence: it cannot distinguish
 monotonic approach from oscillation on a sub-20-year scale. The final spin-up is
-better at 23 points over 441 years, but has the same blind spot below 20 years.
+better at 23 points spanning 440 years, but has the same blind spot below 20 years.
 
 **Diagnostic run 522626 addressed this, and it has run.** See the new subsection
 at the end of section 5 for what it settled. One statement this section

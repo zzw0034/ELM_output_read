@@ -341,7 +341,11 @@ therefore **h2**, not h3.
  hist_mfilt    = 50, 50, 50
 ```
 
-`hist_mfilt = 50` matches `STOP_N`, so each segment writes one file per tape.
+`hist_mfilt = 50` controls records per file; it does not reset at each resubmit
+boundary. Because the run writes one short initialisation record before the
+annual records, the completed 200-year run produced four 50-record files and a
+final one-record file per tape. Analyses must merge every file on a tape and use
+`mcdate` and `time_bounds` rather than file position to identify complete years.
 
 **Tape 1, `hist_fincl1`, gridded**: keep the reference 57-field list unchanged
 and add `FAREA_BURNED`. `HDM`, `TBOT` and `FSDS` are already in it, which is what

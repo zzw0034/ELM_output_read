@@ -15,7 +15,7 @@ Three things stand out. It is **binary**, not graded - at 4 km, 9.0% of pine
 patches sit below LAI 0.01 and 90.9% above 1.0, with 0.5% in between. It is
 **one-way** - 26 recoveries across ~800 model years and 63,000 patches. And it
 is **set early** - the dead fraction reaches 8.9% by AD year 81 and then does
-not move through 441 years of final spin-up and 174 transient years.
+not move through 440 years of final spin-up and 174 transient years.
 
 Our reading is that `CNEvergreenPhenology` sets `bgtr = 0` and has no onset
 event, so an evergreen's leaves come only from current allocation, which

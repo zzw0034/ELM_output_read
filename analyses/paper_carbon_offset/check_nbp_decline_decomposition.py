@@ -23,12 +23,9 @@ for that. See NBP_RESIDUAL_REVIEW_20260915.md.
 
 Variables used:
   NEP                       gC/m2/s, native
+  NBP                       gC/m2/s, native
   PFT_FIRE_CLOSS            gC/m2/s, fire loss
-  WOOD_HARVESTC             gC/m2/s, harvest to product pools
-  DWT_CONV_CFLUX_DRIBBLED   gC/m2/s, land-use conversion loss (dribbled
-                             through the year -- use this one, not
-                             DWT_CONV_CFLUX_GRC which is a once-a-year spike
-                             that does not day-weight sensibly)
+  LAND_USE_FLUX             gC/m2/s, conversion plus product-pool loss
 
 Usage: python check_nbp_decline_decomposition.py [0.5deg|4km]
 """
@@ -41,8 +38,7 @@ from common import (HALFDEG, HALFDEG_SUBDIR, FOURKM, FOURKM_SUBDIR,
                     SEC_PER_YEAR_NOLEAP, h0_files, year_of, area_weights,
                     day_weighted_annual_mean, domain_total_PgC)
 
-VARS = ["NEP", "NBP", "PFT_FIRE_CLOSS", "WOOD_HARVESTC",
-        "DWT_CONV_CFLUX_DRIBBLED", "LAND_USE_FLUX"]
+VARS = ["NEP", "NBP", "PFT_FIRE_CLOSS", "LAND_USE_FLUX"]
 
 WINDOWS = [
     (2024, 2043),
@@ -88,13 +84,11 @@ def main():
     def summarize(label, d, mask):
         nep = np.nanmean(d["NEP_PgC"][mask])
         fire = np.nanmean(d["PFT_FIRE_CLOSS_PgC"][mask])
-        harv = np.nanmean(d["WOOD_HARVESTC_PgC"][mask])
-        luc = np.nanmean(d["DWT_CONV_CFLUX_DRIBBLED_PgC"][mask])
         land_use_flux = np.nanmean(d["LAND_USE_FLUX_PgC"][mask])
         nbp_native = np.nanmean(d["NBP_PgC"][mask])
         col_fire = nep - land_use_flux - nbp_native
         decomp_fire = col_fire - fire
-        return dict(label=label, NEP=nep, fire=fire, harvest=harv, landuse=luc,
+        return dict(label=label, NEP=nep, fire=fire,
                     land_use_flux=land_use_flux, NBP_native=nbp_native,
                     col_fire=col_fire, decomp_fire=decomp_fire)
 

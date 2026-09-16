@@ -140,12 +140,19 @@ def main():
     hist_full_cum = np.cumsum(np.nan_to_num(hist["NBP_domaintotal"]))
     hist_full_end = float(hist_full_cum[-1])
 
+    # 2026-09-16: history line/offset is panel-A-only here too (mirrors
+    # the split-figure convention above) -- panel B's management practices
+    # only diverge from 2024, and with DF's steep drop already dominating
+    # that axis, adding the full 1850-2023 history line there is clutter
+    # with no new information (it would just repeat panel A's black line).
     fig2b, (axA3, axB3) = plt.subplots(1, 2, figsize=(15, 6), sharey=False)
     for ax, group, title in [(axA3, SSP_GROUP, "A. Four SSP baselines"),
                               (axB3, MGMT_GROUP, "B. SSP3-7.0 management practices\n"
                                                  "(Default shown as reference)")]:
-        ax.plot(hist["year"], hist_full_cum, color="k", lw=1.3,
-                 label="Historical (1850-2023)", zorder=10)
+        if group is SSP_GROUP:
+            ax.plot(hist["year"], hist_full_cum, color="k", lw=1.3,
+                     label="Historical (1850-2023)", zorder=10)
+        offset = hist_full_end if group is SSP_GROUP else 0.0
         for label in group:
             if label not in series_by_scenario:
                 continue
@@ -153,18 +160,17 @@ def main():
             style = dict(FUTURE_STYLE[label])
             if label == "SSP3-7.0" and group is MGMT_GROUP:
                 style = dict(color="k", ls="-")
-            cum = hist_full_end + np.cumsum(np.nan_to_num(d["NBP_domaintotal"]))
+            cum = offset + np.cumsum(np.nan_to_num(d["NBP_domaintotal"]))
             lw = 2.0 if (label == "SSP3-7.0" and group is MGMT_GROUP) else 1.5
             ax.plot(d["year"], cum, lw=lw, label=label, **style)
         ax.axhline(0, color="gray", lw=0.6)
         ax.set_xlabel("year")
         ax.set_title(title, fontsize=11)
         ax.grid(alpha=0.3)
-        ax.legend(fontsize=7, loc="lower right")
+        ax.legend(fontsize=7, loc="lower right" if group is SSP_GROUP else "best")
     axA3.set_ylabel("Cumulative domain NBP since 1850 (PgC)\n"
                      "(historical 1850-2023, then each scenario's own future trajectory)")
-    axB3.set_ylabel("Cumulative domain NBP since 1850 (PgC)\n"
-                     "(historical 1850-2023, then each management practice's own future trajectory)")
+    axB3.set_ylabel("Cumulative domain NBP since 2024 (PgC)\n(each case's own trajectory, not a difference)")
     fig2b.suptitle("SEUS 0.5°: cumulative net carbon balance, full history 1850–2100", fontsize=13)
     fig2b.tight_layout()
     fig2b.savefig(os.path.join(OUTDIR, "future_scenario_cumulative_nbp_full_history.png"), dpi=150)

@@ -175,6 +175,55 @@ def main():
     fig2b.tight_layout()
     fig2b.savefig(os.path.join(OUTDIR, "future_scenario_cumulative_nbp_full_history.png"), dpi=150)
     plt.close(fig2b)
+
+    # Poster-ready 3-panel combination (2026-09-16, user request): the
+    # full-history panel A (big picture, but its wide y-range compresses
+    # the future SSP spread), the tail-only panel A (same 2014-2023 splice
+    # as future_scenario_cumulative_nbp_split.png, zoomed in enough to see
+    # the SSP lines separate), and panel B (management practices, DF
+    # included). One figure, large fonts throughout for poster viewing
+    # distance -- this does not replace the two figures above, which stay
+    # as the smaller-font, standalone versions.
+    TS = 20   # title
+    LS = 17   # axis label
+    TK = 14   # tick label
+    LG = 13   # legend
+
+    fig3panel, (pA1, pA2, pB) = plt.subplots(1, 3, figsize=(24, 7.5))
+    panel_specs = [
+        (pA1, SSP_GROUP, "A. Four SSP baselines\n(full history)",
+         hist["year"], hist_full_cum, "Historical (1850-2023)", hist_full_end,
+         "Cumulative domain NBP\nsince 1850 (PgC)"),
+        (pA2, SSP_GROUP, "A. Four SSP baselines\n(recent history, zoomed in)",
+         hist_tail_years, hist_cum, "Historical (2014-2023)", hist_cum_end,
+         "Cumulative domain NBP\nsince 2014 (PgC)"),
+        (pB, MGMT_GROUP, "B. SSP3-7.0 management practices\n(Default shown as reference)",
+         None, None, None, 0.0,
+         "Cumulative domain NBP\nsince 2024 (PgC)"),
+    ]
+    for ax, group, title, hyears, hcum, hlabel, offset, ylabel in panel_specs:
+        if hyears is not None:
+            ax.plot(hyears, hcum, color="k", lw=2.2, label=hlabel, zorder=10)
+        for label in group:
+            if label not in series_by_scenario:
+                continue
+            d = series_by_scenario[label]
+            style = dict(FUTURE_STYLE[label])
+            if label == "SSP3-7.0" and group is MGMT_GROUP:
+                style = dict(color="k", ls="-")
+            cum = offset + np.cumsum(np.nan_to_num(d["NBP_domaintotal"]))
+            lw = 3.0 if (label == "SSP3-7.0" and group is MGMT_GROUP) else 2.2
+            ax.plot(d["year"], cum, lw=lw, label=label, **style)
+        ax.axhline(0, color="gray", lw=0.8)
+        ax.set_xlabel("year", fontsize=LS)
+        ax.set_ylabel(ylabel, fontsize=LS)
+        ax.set_title(title, fontsize=TS)
+        ax.tick_params(axis="both", labelsize=TK)
+        ax.grid(alpha=0.3)
+        ax.legend(fontsize=LG, loc="best")
+    fig3panel.tight_layout()
+    fig3panel.savefig(os.path.join(OUTDIR, "future_scenario_cumulative_nbp_poster_3panel.png"), dpi=200)
+    plt.close(fig3panel)
     print(f"\nFull 1850-2023 cumulative NBP: {hist_full_end:+.3f} PgC "
           f"(min {hist_full_cum.min():+.3f} PgC at year {int(hist['year'][np.argmin(hist_full_cum)])})")
 

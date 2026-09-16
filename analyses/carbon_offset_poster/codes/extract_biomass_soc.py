@@ -96,7 +96,17 @@ def main():
           f"(expected {n_expected})")
     assert len(files) == n_expected, "expected exactly one h0 file per year"
 
-    need_vars = ["TOTVEGC_ABG", "DZSOI"] + SOC_POOLS
+    # DZSOI (soil layer thickness, static) is only written on the run's
+    # *first* h0 file, confirmed absent from later years' files (e.g. the
+    # 2014 file has no DZSOI even though 1850 does) -- read it once from
+    # whichever is the case's earliest h0 file, independent of the
+    # year-min/year-max window used for the biomass/SOC data itself.
+    all_files = find_h0_files(args.run_dir)
+    with xr.open_dataset(all_files[0]) as ds0:
+        dzsoi = ds0["DZSOI"].load()
+    print(f"  [{args.tag}] read DZSOI from {os.path.basename(all_files[0])}")
+
+    need_vars = ["TOTVEGC_ABG"] + SOC_POOLS
     weights = None
     levdim = None
     lat = lon = None
@@ -118,7 +128,7 @@ def main():
         if weights is None:
             levdim = ds["SOIL1C_vr"].dims[1]
             expected_nlev = ds["SOIL1C_vr"].sizes[levdim]
-            weights = layer_weights_0_30cm(ds["DZSOI"], expected_nlev)
+            weights = layer_weights_0_30cm(dzsoi, expected_nlev)
             lat = ds["lat"].values
             lon = ds["lon"].values
             print(f"  [{args.tag}] 0-30cm layer weights (m): {np.round(weights, 4).tolist()}  "
@@ -129,6 +139,11 @@ def main():
 
     biomass_mean = xr.concat(biomass_years, dim="year").mean(dim="year", skipna=True) / 1000.0  # kgC/m^2
     soc_mean = xr.concat(soc_years, dim="year").mean(dim="year", skipna=True) / 1000.0  # kgC/m^2
+
+    # TOTVEGC_ABG carries NaN over ocean/inactive gridcells, but the raw
+    # SOIL1-4C_vr pools are hard 0.0 there (not NaN) -- reuse the biomass
+    # NaN pattern as the land mask so ocean isn't saved as a real 0.0 SOC.
+    soc_mean = soc_mean.where(~np.isnan(biomass_mean))
 
     print(f"  [{args.tag}] TOTVEGC_ABG {args.year_min}-{args.year_max} mean [kgC/m^2]  "
           f"min={float(biomass_mean.min()):.3f} max={float(biomass_mean.max()):.3f} "

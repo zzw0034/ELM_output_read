@@ -79,10 +79,29 @@ def main():
     MGMT_GROUP = ["SSP3-7.0", "SSP3-7.0 RF (reforest)", "SSP3-7.0 DF (deforest counterfactual)",
                   "SSP3-7.0 RH (reduced harvest)"]
 
+    # Historical context line for panel A only (2026-09-16): the transient
+    # run's own cumulative NBP over its last decade (2014-2023), same "tail"
+    # window used for the historical line in the first figure above. Panel
+    # A's four SSP-baseline lines are then OFFSET to start from where this
+    # historical line ends in 2024, so panel A reads as one continuous
+    # accumulation (2014-2100) rather than four lines that visually reset to
+    # zero at 2024. Panel B is left as-is (each management practice's own
+    # cumsum since 2024, no history splice) -- SSP3-7.0's management
+    # variants don't diverge before 2024 anyway, and splicing history in
+    # would just duplicate panel A's black line with no new information.
+    hist_tail_mask = hist["year"] >= 2014
+    hist_tail_years = hist["year"][hist_tail_mask]
+    hist_cum = np.cumsum(np.nan_to_num(hist["NBP_domaintotal"][hist_tail_mask]))
+    hist_cum_end = float(hist_cum[-1])
+
     fig2, (axA, axB) = plt.subplots(1, 2, figsize=(15, 6), sharey=False)
     for ax, group, title in [(axA, SSP_GROUP, "A. Four SSP baselines"),
                               (axB, MGMT_GROUP, "B. SSP3-7.0 management practices\n"
                                                 "(Default shown as reference)")]:
+        if group is SSP_GROUP:
+            ax.plot(hist_tail_years, hist_cum, color="k", lw=1.8,
+                     label="Historical (2014-2023)", zorder=10)
+        offset = hist_cum_end if group is SSP_GROUP else 0.0
         for label in group:
             if label not in series_by_scenario:
                 continue
@@ -90,7 +109,7 @@ def main():
             style = dict(FUTURE_STYLE[label])
             if label == "SSP3-7.0" and group is MGMT_GROUP:
                 style = dict(color="k", ls="-")  # reference line, not a management practice
-            cum = np.cumsum(np.nan_to_num(d["NBP_domaintotal"]))
+            cum = offset + np.cumsum(np.nan_to_num(d["NBP_domaintotal"]))
             lw = 2.0 if (label == "SSP3-7.0" and group is MGMT_GROUP) else 1.5
             ax.plot(d["year"], cum, lw=lw, label=label, **style)
         ax.axhline(0, color="gray", lw=0.6)
@@ -98,7 +117,9 @@ def main():
         ax.set_title(title, fontsize=11)
         ax.grid(alpha=0.3)
         ax.legend(fontsize=8)
-    axA.set_ylabel("Cumulative domain NBP since 2024 (PgC)\n(each case's own trajectory, not a difference)")
+    axA.set_ylabel("Cumulative domain NBP since 2014 (PgC)\n"
+                    "(historical 2014-2023, then each scenario's own future trajectory)")
+    axB.set_ylabel("Cumulative domain NBP since 2024 (PgC)\n(each case's own trajectory, not a difference)")
 
     fig2.suptitle("SEUS 0.5°: cumulative net carbon balance, 2024–2100", fontsize=13)
     fig2.tight_layout()
@@ -135,6 +156,22 @@ def main():
         end = d["year"] >= 2091
         print(f"  {label}: GPP={np.nanmean(d['GPP'][end]):.1f} NBP={np.nanmean(d['NBP'][end]):+.2f} "
               f"TOTVEGC={np.nanmean(d['TOTVEGC'][end]):.1f} TOTSOMC={np.nanmean(d['TOTSOMC'][end]):.1f}")
+
+    # Historical vs. future accumulated carbon, for the poster's Panel-3
+    # bullet points (2026-09-16). "Accumulated" = sum of domain-total NBP
+    # (PgC) over the window; "rate" = mean of the domain-MEAN NBP
+    # (gC/m2/yr) over the same window, in kgC/m2/yr (+ve = sink).
+    print(f"\nHistorical accumulated carbon (2014-2023, {hist_tail_years.size} yr):")
+    hist_rate_gm2yr = np.nanmean(hist["NBP"][hist_tail_mask])
+    print(f"  cumulative NBP = {hist_cum_end:+.3f} PgC   "
+          f"mean rate = {hist_rate_gm2yr/1000.0:+.4f} kgC/m^2/yr")
+
+    print("\nFuture accumulated carbon (2024-2100, per scenario):")
+    for label, d in series_by_scenario.items():
+        cum_2100 = float(np.cumsum(np.nan_to_num(d["NBP_domaintotal"]))[-1])
+        rate_gm2yr = np.nanmean(d["NBP"])
+        print(f"  {label}: cumulative NBP = {cum_2100:+.3f} PgC   "
+              f"mean rate = {rate_gm2yr/1000.0:+.4f} kgC/m^2/yr")
 
     print(f"\nFigures written to {OUTDIR}")
 

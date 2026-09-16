@@ -126,6 +126,52 @@ def main():
     fig2.savefig(os.path.join(OUTDIR, "future_scenario_cumulative_nbp_split.png"), dpi=150)
     plt.close(fig2)
 
+    # Full-history variant (2026-09-16, user request): a SEPARATE figure
+    # using the ENTIRE 1850-2023 historical trajectory instead of just the
+    # 2014-2023 tail, both panels this time (not just A) -- a complete
+    # "since the model's beginning" picture. Kept as its own file, not a
+    # replacement for future_scenario_cumulative_nbp_split.png above (the
+    # poster-ready version): the full record is a genuinely different
+    # story (SEUS was a net carbon SOURCE for most of 1850-2023, bottoming
+    # out around -4.6 PgC circa 1956 from historical land clearing, and had
+    # only recovered to -1.3 PgC by 2023 -- it does not cross back to being
+    # a net sink until partway through the future period), and forcing it
+    # onto the same clean axis as the poster panel would misrepresent both.
+    hist_full_cum = np.cumsum(np.nan_to_num(hist["NBP_domaintotal"]))
+    hist_full_end = float(hist_full_cum[-1])
+
+    fig2b, (axA3, axB3) = plt.subplots(1, 2, figsize=(15, 6), sharey=False)
+    for ax, group, title in [(axA3, SSP_GROUP, "A. Four SSP baselines"),
+                              (axB3, MGMT_GROUP, "B. SSP3-7.0 management practices\n"
+                                                 "(Default shown as reference)")]:
+        ax.plot(hist["year"], hist_full_cum, color="k", lw=1.3,
+                 label="Historical (1850-2023)", zorder=10)
+        for label in group:
+            if label not in series_by_scenario:
+                continue
+            d = series_by_scenario[label]
+            style = dict(FUTURE_STYLE[label])
+            if label == "SSP3-7.0" and group is MGMT_GROUP:
+                style = dict(color="k", ls="-")
+            cum = hist_full_end + np.cumsum(np.nan_to_num(d["NBP_domaintotal"]))
+            lw = 2.0 if (label == "SSP3-7.0" and group is MGMT_GROUP) else 1.5
+            ax.plot(d["year"], cum, lw=lw, label=label, **style)
+        ax.axhline(0, color="gray", lw=0.6)
+        ax.set_xlabel("year")
+        ax.set_title(title, fontsize=11)
+        ax.grid(alpha=0.3)
+        ax.legend(fontsize=7, loc="lower right")
+    axA3.set_ylabel("Cumulative domain NBP since 1850 (PgC)\n"
+                     "(historical 1850-2023, then each scenario's own future trajectory)")
+    axB3.set_ylabel("Cumulative domain NBP since 1850 (PgC)\n"
+                     "(historical 1850-2023, then each management practice's own future trajectory)")
+    fig2b.suptitle("SEUS 0.5°: cumulative net carbon balance, full history 1850–2100", fontsize=13)
+    fig2b.tight_layout()
+    fig2b.savefig(os.path.join(OUTDIR, "future_scenario_cumulative_nbp_full_history.png"), dpi=150)
+    plt.close(fig2b)
+    print(f"\nFull 1850-2023 cumulative NBP: {hist_full_end:+.3f} PgC "
+          f"(min {hist_full_cum.min():+.3f} PgC at year {int(hist['year'][np.argmin(hist_full_cum)])})")
+
     # 2091-2100 end-of-century summary bar chart for TOTVEGC and TOTSOMC deltas
     # relative to 2024.
     fig3, axs3 = plt.subplots(1, 2, figsize=(12, 5))

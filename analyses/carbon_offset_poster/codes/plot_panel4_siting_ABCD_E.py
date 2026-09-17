@@ -37,21 +37,61 @@ import numpy as np
 import xarray as xr
 
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "..", "paper_carbon_offset"))
-from common import (FOURKM, FOURKM_SUBDIR, SEC_PER_YEAR_NOLEAP, h0_files,
-                     year_of, area_weights, day_weighted_annual_mean, load_mean_map)
+from common import (FOURKM, SEC_PER_YEAR_NOLEAP, year_of, area_weights,
+                     day_weighted_annual_mean)
 
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 POSTER_DIR = os.path.dirname(SCRIPT_DIR)
 OUT_DIR = os.path.join(POSTER_DIR, "outputs")
 
 Y0, Y1 = 2091, 2100
-CASES, SUBDIR = FOURKM, FOURKM_SUBDIR
+CASES = FOURKM
 MANAGED, POTENTIAL_LABEL = "SSP3-7.0 RF", "Reforestation offset (RF - Default)"
 
+# 2026-09-17: paper_carbon_offset/common.py's FOURKM_SUBDIR="" + CASE_ROOT
+# (/scratch/hpcl-cli185/zw5/cime_output_dirs) is stale for these 4km future
+# cases -- confirmed gone from scratch (moved/cleaned since the 2026-09-15
+# fig05 run that last used it successfully). The durable copy lives here
+# instead (same location already used by extract_biomass_soc.py for the
+# 4km historical case), verified to have complete h0 output through 2100
+# for both "SSP3-7.0" and "SSP3-7.0 RF". Do not confuse with the *separate*
+# 20260917-dated case dirs under e3sm_cases/ (a concurrent, unrelated
+# rerun in progress today per this session's own memory note -- different
+# case-name prefix, no overlap with what's read here).
+FOURKM_RUN_ROOT = "/projects/hpcl-cli185/proj-shared/zw5/e3sm_run/20260901_before_seus_rerun"
 
-def load_year_stack(case, var, y0, y1, subdir):
+
+def case_run_dir(case):
+    return os.path.join(FOURKM_RUN_ROOT, case, "run")
+
+
+def h0_files_here(case):
+    import glob
+    d = case_run_dir(case)
+    return sorted(glob.glob(os.path.join(d, f"{case}.elm.h0.*.nc")))
+
+
+def load_mean_map_here(case, var, y0, y1):
+    files = [f for f in h0_files_here(case) if y0 <= year_of(f) <= y1]
+    if not files:
+        raise ValueError(f"no h0 files for {case} in [{y0},{y1}] under {case_run_dir(case)}")
+    stack, lat, lon = [], None, None
+    for f in files:
+        ds = xr.open_dataset(f, decode_times=False)
+        tb = ds["time_bounds"].values if "time_bounds" in ds else None
+        vals = day_weighted_annual_mean(ds[var], tb)
+        if ds[var].attrs.get("units", "").strip() == "gC/m^2/s":
+            vals = vals * SEC_PER_YEAR_NOLEAP
+        stack.append(vals)
+        if lat is None:
+            lat, lon = ds["lat"].values, ds["lon"].values
+        ds.close()
+    return lon, lat, np.nanmean(np.stack(stack, axis=0), axis=0)
+
+
+def load_year_stack(case, var, y0, y1):
     """Per-year maps (not the decadal mean) -- needed for interannual CV."""
-    files = [f for f in h0_files(case, subdir) if y0 <= year_of(f) <= y1]
+    files = [f for f in h0_files_here(case) if y0 <= year_of(f) <= y1]
     stack = []
     for f in files:
         ds = xr.open_dataset(f, decode_times=False)
@@ -100,17 +140,17 @@ def main():
     risk_case = CASES[MANAGED]
 
     print("  loading offset maps ...")
-    lon, lat, ec_def = load_mean_map(CASES["SSP3-7.0"], "TOTECOSYSC", Y0, Y1, subdir=SUBDIR)
-    _, _, ec_man = load_mean_map(CASES[MANAGED], "TOTECOSYSC", Y0, Y1, subdir=SUBDIR)
+    lon, lat, ec_def = load_mean_map_here(CASES["SSP3-7.0"], "TOTECOSYSC", Y0, Y1)
+    _, _, ec_man = load_mean_map_here(CASES[MANAGED], "TOTECOSYSC", Y0, Y1)
     potential = ec_man - ec_def
 
     print("  loading vulnerability maps ...")
-    _, _, fire_loss = load_mean_map(risk_case, "PFT_FIRE_CLOSS", Y0, Y1, subdir=SUBDIR)
-    _, _, ec_risk = load_mean_map(risk_case, "TOTECOSYSC", Y0, Y1, subdir=SUBDIR)
-    _, _, btran = load_mean_map(risk_case, "BTRAN", Y0, Y1, subdir=SUBDIR)
-    ec_stack = load_year_stack(risk_case, "TOTECOSYSC", Y0, Y1, SUBDIR)
+    _, _, fire_loss = load_mean_map_here(risk_case, "PFT_FIRE_CLOSS", Y0, Y1)
+    _, _, ec_risk = load_mean_map_here(risk_case, "TOTECOSYSC", Y0, Y1)
+    _, _, btran = load_mean_map_here(risk_case, "BTRAN", Y0, Y1)
+    ec_stack = load_year_stack(risk_case, "TOTECOSYSC", Y0, Y1)
 
-    ds0 = xr.open_dataset(h0_files(CASES["SSP3-7.0"], SUBDIR)[0], decode_times=False)
+    ds0 = xr.open_dataset(h0_files_here(CASES["SSP3-7.0"])[0], decode_times=False)
     w = area_weights(ds0)
     ds0.close()
     land = w > 0

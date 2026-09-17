@@ -1,6 +1,10 @@
 """
-Poster Panel 2: biomass and soil organic carbon (0-30 cm), one row x three
-columns (0.5 deg ELM | 4 km ELM | observations), colorbar along the bottom.
+Poster Panel 2: biomass and soil organic carbon (0-30 cm), colorbar along
+the bottom. Produces two variants of each:
+  - three columns (0.5 deg ELM | 4 km ELM | observations)
+  - two columns (4 km ELM | observations only, 2026-09-17 addition), for a
+    poster slot that wants just the high-res-vs-obs comparison without the
+    0.5deg column.
 
 Runs **locally** (not via ssh/Slurm) with the venv that has cartopy/rioxarray
 -- same one used by
@@ -143,8 +147,8 @@ def panel(ax, da, title, cmap, vmin=None, vmax=None, norm=None):
     return mesh
 
 
-def make_three_panel_figure(panels, cbar_label, out_path, figsize, extend="both"):
-    """1 row x 3 columns, shared horizontal colorbar along the bottom.
+def make_panel_figure(panels, cbar_label, out_path, figsize, extend="both"):
+    """1 row x N columns (N = len(panels)), shared horizontal colorbar along the bottom.
     Let matplotlib place the colorbar relative to the actual (aspect-
     locked) geoaxes rather than a hardcoded figure-fraction box -- a fixed
     box leaves a large blank gap because cartopy shrinks each PlateCarree
@@ -182,7 +186,7 @@ def main():
     ])
     biomass_norm = quantile_boundary_norm(combined, n_levels=50)
 
-    make_three_panel_figure(
+    make_panel_figure(
         panels=[
             {"data": elm_halfdeg_biomass, "title": "0.5° ELM (2014-2020 mean)", "cmap": "viridis", "norm": biomass_norm},
             {"data": elm_4km_biomass, "title": "4 km ELM (2014-2020 mean)", "cmap": "viridis", "norm": biomass_norm},
@@ -191,6 +195,25 @@ def main():
         cbar_label="Aboveground biomass (kg C m$^{-2}$)",
         out_path=os.path.join(OUT_DIR, "panel2_biomass_0.5deg_4km_obs.png"),
         figsize=(15, 6),
+        extend="neither",
+    )
+
+    # ---- Biomass, 4km-only variant (2026-09-17): drop 0.5deg, keep just
+    # 4km ELM vs obs. Recomputes its own quantile norm from only the two
+    # fields actually plotted, rather than reusing biomass_norm above
+    # (which was fit including 0.5deg's more compressed value range) --
+    # the color scale should reflect what's on the page, not a dropped
+    # panel's influence on it.
+    combined_4km = np.concatenate([elm_4km_biomass.values.ravel(), esacci.values.ravel()])
+    biomass_norm_4km = quantile_boundary_norm(combined_4km, n_levels=50)
+    make_panel_figure(
+        panels=[
+            {"data": elm_4km_biomass, "title": "4 km ELM (2014-2020 mean)", "cmap": "viridis", "norm": biomass_norm_4km},
+            {"data": esacci, "title": "ESA-CCI obs (2014-2020 mean)", "cmap": "viridis", "norm": biomass_norm_4km},
+        ],
+        cbar_label="Aboveground biomass (kg C m$^{-2}$)",
+        out_path=os.path.join(OUT_DIR, "panel2_biomass_4km_obs.png"),
+        figsize=(10, 6),
         extend="neither",
     )
 
@@ -203,7 +226,7 @@ def main():
     soc_vmax = float(np.nanpercentile(combined_soc, 98))
     print(f"SOC 0-30cm shared color scale: 0 to {soc_vmax:.2f} kgC/m^2 (98th pct of all 3 panels)")
 
-    make_three_panel_figure(
+    make_panel_figure(
         panels=[
             {"data": elm_halfdeg_soc, "title": "0.5° ELM (2014-2020 mean)", "cmap": BRBG_NO_WHITE, "vmin": 0, "vmax": soc_vmax},
             {"data": elm_4km_soc, "title": "4 km ELM (2014-2020 mean)", "cmap": BRBG_NO_WHITE, "vmin": 0, "vmax": soc_vmax},
@@ -212,6 +235,22 @@ def main():
         cbar_label="SOC 0-30cm (kg C m$^{-2}$)",
         out_path=os.path.join(OUT_DIR, "panel2_soc_0_30cm_0.5deg_4km_obs.png"),
         figsize=(15, 6),
+    )
+
+    # ---- SOC, 4km-only variant (2026-09-17): drop 0.5deg, keep just 4km
+    # ELM vs SoilGrids. Own vmax from just these two fields, same reasoning
+    # as the biomass 4km-only variant above.
+    combined_soc_4km = np.concatenate([elm_4km_soc.values.ravel(), soilgrids.values.ravel()])
+    soc_vmax_4km = float(np.nanpercentile(combined_soc_4km, 98))
+    print(f"SOC 0-30cm (4km-only) color scale: 0 to {soc_vmax_4km:.2f} kgC/m^2 (98th pct of 2 panels)")
+    make_panel_figure(
+        panels=[
+            {"data": elm_4km_soc, "title": "4 km ELM (2014-2020 mean)", "cmap": BRBG_NO_WHITE, "vmin": 0, "vmax": soc_vmax_4km},
+            {"data": soilgrids, "title": "SoilGrids obs", "cmap": BRBG_NO_WHITE, "vmin": 0, "vmax": soc_vmax_4km},
+        ],
+        cbar_label="SOC 0-30cm (kg C m$^{-2}$)",
+        out_path=os.path.join(OUT_DIR, "panel2_soc_0_30cm_4km_obs.png"),
+        figsize=(10, 6),
     )
 
 

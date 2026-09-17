@@ -220,7 +220,13 @@ def main():
         ax.set_title(title, fontsize=TS)
         ax.tick_params(axis="both", labelsize=TK)
         ax.grid(alpha=0.3)
-        ax.legend(fontsize=LG, loc="best")
+        if ax is pB:
+            # 2026-09-16: nudge panel B's legend right/down from the
+            # default "best" placement, which sat too close to the
+            # Default/RH cluster near y=0.
+            ax.legend(fontsize=LG, loc="center right", bbox_to_anchor=(0.99, 0.32))
+        else:
+            ax.legend(fontsize=LG, loc="best")
     fig3panel.tight_layout()
     fig3panel.savefig(os.path.join(OUTDIR, "future_scenario_cumulative_nbp_poster_3panel.png"), dpi=200)
     plt.close(fig3panel)

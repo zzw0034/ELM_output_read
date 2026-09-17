@@ -212,6 +212,18 @@ def main():
     plt.close(fig)
     print(f"Figure written to {out_abcd}")
 
+    # Sanity-check numbers against the original fig05 run's printed output
+    # (thresholds 2940 gC/m2 / 0.494, shares 33.6/16.4/16.4/33.6%) -- same
+    # case, same year window, only the data path changed, so these should
+    # match closely if the proj-shared copy really is the same underlying
+    # run output.
+    print(f"\nthresholds: potential median {p_med:.0f} gC/m2, vulnerability median {v_med:.3f}")
+    for q, lab in enumerate(qlabels):
+        m = land & (quad == q)
+        share = 100 * np.nansum(w[m]) / np.nansum(w[land])
+        mean_p = np.nansum(potential[m] * w[m]) / np.nansum(w[m]) if m.sum() else np.nan
+        print(f"  {lab.replace(chr(10),' '):28s} {share:5.1f}%  mean potential {mean_p:7.0f} gC/m2")
+
     # ------------------------------------------------------------- E: scatter
     figE, axE = plt.subplots(figsize=(8, 7))
     pv, vv, wv, qv = potential[land], vuln[land], w[land], quad[land]

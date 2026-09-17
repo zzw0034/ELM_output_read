@@ -94,12 +94,17 @@ def main():
     hist_cum = np.cumsum(np.nan_to_num(hist["NBP_domaintotal"][hist_tail_mask]))
     hist_cum_end = float(hist_cum[-1])
 
-    fig2, (axA, axB) = plt.subplots(1, 2, figsize=(15, 6), sharey=False)
+    # 2026-09-17 (user request): poster-legible fonts, thicker lines, no
+    # figure-level suptitle (the panel "A./B." titles stay -- they're the
+    # navigation labels the poster bullets refer to by letter).
+    PTS, PLS, PTK, PLG = 16, 15, 13, 12  # panel title / axis label / tick / legend
+
+    fig2, (axA, axB) = plt.subplots(1, 2, figsize=(15, 6.5), sharey=False)
     for ax, group, title in [(axA, SSP_GROUP, "A. Four SSP baselines"),
                               (axB, MGMT_GROUP, "B. SSP3-7.0 management practices\n"
                                                 "(Default shown as reference)")]:
         if group is SSP_GROUP:
-            ax.plot(hist_tail_years, hist_cum, color="k", lw=1.8,
+            ax.plot(hist_tail_years, hist_cum, color="k", lw=2.6,
                      label="Historical (2014-2023)", zorder=10)
         offset = hist_cum_end if group is SSP_GROUP else 0.0
         for label in group:
@@ -110,18 +115,20 @@ def main():
             if label == "SSP3-7.0" and group is MGMT_GROUP:
                 style = dict(color="k", ls="-")  # reference line, not a management practice
             cum = offset + np.cumsum(np.nan_to_num(d["NBP_domaintotal"]))
-            lw = 2.0 if (label == "SSP3-7.0" and group is MGMT_GROUP) else 1.5
+            lw = 3.2 if (label == "SSP3-7.0" and group is MGMT_GROUP) else 2.6
             ax.plot(d["year"], cum, lw=lw, label=label, **style)
-        ax.axhline(0, color="gray", lw=0.6)
-        ax.set_xlabel("year")
-        ax.set_title(title, fontsize=11)
+        ax.axhline(0, color="gray", lw=1.0)
+        ax.set_xlabel("year", fontsize=PLS)
+        ax.set_title(title, fontsize=PTS)
+        ax.tick_params(axis="both", labelsize=PTK)
         ax.grid(alpha=0.3)
-        ax.legend(fontsize=8)
+        ax.legend(fontsize=PLG)
     axA.set_ylabel("Cumulative domain NBP since 2014 (PgC)\n"
-                    "(historical 2014-2023, then each scenario's own future trajectory)")
-    axB.set_ylabel("Cumulative domain NBP since 2024 (PgC)\n(each case's own trajectory, not a difference)")
+                    "(historical 2014-2023, then each scenario's own future trajectory)",
+                    fontsize=PLS)
+    axB.set_ylabel("Cumulative domain NBP since 2024 (PgC)\n(each case's own trajectory, not a difference)",
+                    fontsize=PLS)
 
-    fig2.suptitle("SEUS 0.5°: cumulative net carbon balance, 2024–2100", fontsize=13)
     fig2.tight_layout()
     fig2.savefig(os.path.join(OUTDIR, "future_scenario_cumulative_nbp_split.png"), dpi=150)
     plt.close(fig2)

@@ -123,11 +123,13 @@ def main():
         ax.tick_params(axis="both", labelsize=PTK)
         ax.grid(alpha=0.3)
         ax.legend(fontsize=PLG)
-    axA.set_ylabel("Cumulative domain NBP since 2014 (PgC)\n"
-                    "(historical 2014-2023, then each scenario's own future trajectory)",
-                    fontsize=PLS)
-    axB.set_ylabel("Cumulative domain NBP since 2024 (PgC)\n(each case's own trajectory, not a difference)",
-                    fontsize=PLS)
+    # 2026-09-17: shortened from the longer explanatory two-line labels --
+    # at the bigger poster font size the old second line ("historical
+    # 2014-2023, then each scenario's own future trajectory") ran off the
+    # left edge of the figure. The legend's "Historical (2014-2023)" entry
+    # already covers that context.
+    axA.set_ylabel("Cumulative domain NBP\nsince 2014 (PgC)", fontsize=PLS)
+    axB.set_ylabel("Cumulative domain NBP\nsince 2024 (PgC)", fontsize=PLS)
 
     fig2.tight_layout()
     fig2.savefig(os.path.join(OUTDIR, "future_scenario_cumulative_nbp_split.png"), dpi=150)

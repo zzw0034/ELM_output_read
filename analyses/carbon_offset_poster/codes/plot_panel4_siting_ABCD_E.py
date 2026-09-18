@@ -176,25 +176,38 @@ def main():
                "high potential,\nhigh risk", "HIGH potential,\nLOW risk"]
 
     # ------------------------------------------------------- 2x2: A, B, C, D
-    fig = plt.figure(figsize=(13, 12))
+    # 2026-09-18 (user request): D had no colorbar (just an in-axes legend),
+    # so it rendered visibly larger than A/B/C once fig.colorbar(ax=...)
+    # shrank each of THEIR map axes to make room for a colorbar beneath it.
+    # Fix: an explicit GridSpec with a dedicated, fixed-height colorbar row
+    # under EVERY map (including D's, left blank) -- all four map axes then
+    # get an identical cell size regardless of what's drawn below them.
+    from matplotlib.colors import ListedColormap, BoundaryNorm
+    from matplotlib.gridspec import GridSpec
+
+    fig = plt.figure(figsize=(13, 12.5))
+    gs = GridSpec(4, 2, figure=fig, height_ratios=[10, 1, 10, 1], hspace=0.35, wspace=0.15)
+    map_slots = {"A": gs[0, 0], "B": gs[0, 1], "C": gs[2, 0], "D": gs[2, 1]}
+    cbar_slots = {"A": gs[1, 0], "B": gs[1, 1], "C": gs[3, 0]}  # D's [3, 1] stays blank
+
     specs = [
-        (1, potential, f"A. {POTENTIAL_LABEL}\n2091-2100 (gC m$^{{-2}}$)", "YlGn"),
-        (2, fire_pct, "B. Fire risk: annual fire C loss\nas % of standing stock", "OrRd"),
-        (3, vuln, "C. Composite vulnerability\n(fire + drought + interannual CV, rank-normalised)", "magma_r"),
+        ("A", potential, f"A. {POTENTIAL_LABEL}\n2091-2100 (gC m$^{{-2}}$)", "YlGn"),
+        ("B", fire_pct, "B. Fire risk: annual fire C loss\nas % of standing stock", "OrRd"),
+        ("C", vuln, "C. Composite vulnerability\n(fire + drought + interannual CV, rank-normalised)", "magma_r"),
     ]
-    for pos, field, title, cmap in specs:
-        ax = fig.add_subplot(2, 2, pos, projection=ccrs.PlateCarree())
+    for key, field, title, cmap in specs:
+        ax = fig.add_subplot(map_slots[key], projection=ccrs.PlateCarree())
         make_axes(ax)
         vmax = np.nanpercentile(field[land], 99)
         vmin = np.nanpercentile(field[land], 1)
         pc = ax.pcolormesh(lon, lat, field, transform=ccrs.PlateCarree(),
                            cmap=cmap, vmin=vmin, vmax=vmax, shading="auto")
-        cb = fig.colorbar(pc, ax=ax, orientation="horizontal", pad=0.05, shrink=0.85)
-        cb.ax.tick_params(labelsize=8)
         ax.set_title(title, fontsize=10)
+        cax = fig.add_subplot(cbar_slots[key])
+        cb = fig.colorbar(pc, cax=cax, orientation="horizontal")
+        cb.ax.tick_params(labelsize=8)
 
-    from matplotlib.colors import ListedColormap, BoundaryNorm
-    ax = fig.add_subplot(2, 2, 4, projection=ccrs.PlateCarree())
+    ax = fig.add_subplot(map_slots["D"], projection=ccrs.PlateCarree())
     make_axes(ax)
     ax.pcolormesh(lon, lat, quad, transform=ccrs.PlateCarree(),
                   cmap=ListedColormap(qcolors), norm=BoundaryNorm([-0.5, 0.5, 1.5, 2.5, 3.5], 4),
@@ -206,9 +219,8 @@ def main():
     fig.suptitle("SEUS 4km SSP3-7.0: where to site carbon-offset projects (Reforestation)\n"
                  "vulnerability scored in the post-intervention run, not in Default",
                  fontsize=13)
-    fig.tight_layout()
     out_abcd = os.path.join(OUT_DIR, "panel4_siting_RF_4km_ABCD.png")
-    fig.savefig(out_abcd, dpi=150)
+    fig.savefig(out_abcd, dpi=150, bbox_inches="tight")
     plt.close(fig)
     print(f"Figure written to {out_abcd}")
 

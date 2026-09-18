@@ -216,9 +216,9 @@ def main():
     ax.legend(handles, qlabels, fontsize=7.5, loc="lower left", ncol=2)
     ax.set_title("D. Siting quadrants\n(split at area-weighted medians)", fontsize=10)
 
-    fig.suptitle("SEUS 4km SSP3-7.0: where to site carbon-offset projects (Reforestation)\n"
-                 "vulnerability scored in the post-intervention run, not in Default",
-                 fontsize=13)
+    # 2026-09-18 (user request): no figure-level suptitle. Kept the
+    # "A./B./C./D." panel titles -- the poster caption/bullets reference
+    # panels by letter.
     out_abcd = os.path.join(OUT_DIR, "panel4_siting_RF_4km_ABCD.png")
     fig.savefig(out_abcd, dpi=150, bbox_inches="tight")
     plt.close(fig)

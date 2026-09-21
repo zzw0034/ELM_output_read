@@ -140,8 +140,22 @@ cause — the step persists when all map overlays are removed.
    aggregate or latitudinal-gradient analysis that spans it.
 3. Sensitivity to the artifact scales with grass fraction:
    DF ≫ Default ≈ RH > RF.
-4. The artifact is present in both 4 km case families (same parameter file,
-   same code) and is expected in the 0.5° runs as well (not yet verified).
+4. The artifact is present in both 4 km case families **and in the 0.5°
+   runs** (all share the same parameter file). At 0.5° the grid rows sit at
+   …30.25, 30.75, 31.25, 31.75…, so the 30.833°N threshold falls between
+   the 30.75 and 31.25 rows; ELM evaluates daylength at the cell centre, so
+   the 30.75 row stays winter-active and the 31.25 row is force-dormant.
+   Verified (SSP5-8.5, 2091–2100 mean, 30.75 → 31.25 row step):
+
+   | | January | July |
+   |---|---|---|
+   | Default | 1578 → 1180 (**−25 %**) | 4491 → 4403 (−2 %) |
+   | DF | 2099 → 813 (**−61 %**) | 4452 → 4089 (−8 %) |
+
+   Same signature as 4 km — a large January step at the threshold row
+   boundary that nearly vanishes in July, scaling with grass fraction. Only
+   the spatial expression differs: a thin line on the 0.042° grid, a single
+   coarse row boundary on the 0.5° grid.
 5. Removing it would require changing `crit_dayl_stress` (e.g. back to the
    code default of 21600 s) and **re-running**, and should not be done
    before establishing why the value was set to 36000 s in the first place
@@ -311,8 +325,20 @@ Default 这一次模拟**——同一批格点、同样的气候/土壤/可执�
 2. **`Default − DF` 的碳收益估计在跨越这条线时有人为不连续**，做区域汇总（尤其是
    南北跨线的区域平均、或做纬度梯度分析）时会被这个阈值污染。
 3. **草本占比越高的情景受影响越大**：DF ≫ Default ≈ RH > RF。
-4. 这条线在**新旧两族 4km 模拟里都存在**（20260908 族与 20260915/17 族），因为用的是
-   同一份 paramfile 和同一段代码。0.5° 的模拟大概率同样有（未验证）。
+4. 这条线在**新旧两族 4km 模拟里都存在**（20260908 族与 20260915/17 族），**0.5° 的
+   模拟也有**（已于 2026-09-21 验证）——三者共用同一份 paramfile 和同一段代码。
+
+   0.5° 的网格行在 …30.25, 30.75, **31.25**, 31.75…，阈值 30.833°N 正好落在 30.75
+   与 31.25 两行之间。ELM 按格点中心纬度算日长，所以 30.75 行冬季保持活跃、31.25 行
+   被强制休眠。实测（SSP5-8.5，2091-2100 平均，30.75 → 31.25 行）：
+
+   | | 1月 | 7月 |
+   |---|---|---|
+   | Default | 1578 → 1180（**−25%**） | 4491 → 4403（−2%） |
+   | DF | 2099 → 813（**−61%**） | 4452 → 4089（−8%） |
+
+   签名与 4km 完全一致：1月在阈值行边界上巨幅跳变、7月几乎消失、幅度随草本占比缩放。
+   差别只在空间表现形式——4km（0.042° 网格）是一条细线，0.5° 是一个粗行边界。
 5. 若要消除，需要改 paramfile 里的 `crit_dayl_stress`（例如改回代码默认的 21600 s），
    但那会改变所有草本的物候行为，**必须重跑**，且需要先确认 36000 s 这个值当初是为
    什么设的（2017 年就在这份 paramfile 里了，早于本项目）。

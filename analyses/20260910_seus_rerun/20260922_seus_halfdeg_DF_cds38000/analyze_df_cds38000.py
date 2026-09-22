@@ -1,34 +1,40 @@
 """
 Did raising crit_dayl_stress 36000 s -> 38000 s remove the 30.833N GPP step
-from the 0.5-deg DF runs, and what did it cost?
+from the 0.5-deg future runs, and what did it cost?
 
 Background: ../../CRIT_DAYL_STRESS_ARTIFACT.md. With crit_dayl_stress = 36000 s
 (10.0 h) every stress-deciduous PFT is force-dormant each winter north of
 30.833N and never south of it. 38000 s (10.56 h) moves that latitude to 23.4N,
 south of the whole domain, so every cell crosses the threshold each winter.
 
-Only the four DF cases were rerun (2026-09-22). Default keeps 36000 s. The
-old and new DF runs share executable, finidat, land use and forcing; the
-paramfile is the ONLY difference (lnd_in diff = one line). Hence:
+Four runs per SSP (2026-09-22):
+  Default     original Default, 36000 s
+  oldDF       original DF, 36000 s
+  newDF       DF rerun at 38000 s          (first round, DF only)
+  newDefault  Default rerun at 38000 s     (second round, option A)
+Each rerun is a --keepexe clone of its original: same executable, finidat
+(transient 2024 restart), land use and forcing; the paramfile is the ONLY
+difference (lnd_in diff = one line). So newX - oldX is the pure parameter
+effect on run X, split by PFT from h1.
 
-    (Default - newDF) - (Default - oldDF) = oldDF - newDF
-
-i.e. the change in the DF "carbon benefit" caused by the parameter is exactly
-oldDF - newDF, and it can be split by PFT from h1.
+The quantity of interest is the DF carbon benefit Default - DF, under three
+pairings:
+  both 36000   Default    - oldDF   (original)
+  DF only      Default    - newDF   (first round; mixes parameters)
+  both 38000   newDefault - newDF   (option A)
 
 Crops are NOT an isolated control: create_crop_landunit = .false., so crop
 PFT 15 shares the natural-vegetation soil column with the grass that DF adds.
-Default - DF on crops is therefore not zero even with identical parameters;
-use newDF - oldDF, not newDF - Default, to isolate the parameter.
 
-Three questions, all for 4 SSPs:
-  1. Row step 30.75 -> 31.25N in January / July GPP, gridcell (h0) and
-     grass-only (h1): old DF vs new DF vs Default. Plus the full transect, to
-     check no new step appeared elsewhere.
-  2. newDF - oldDF domain-total GPP / NPP split by PFT type (h1), for an
-     early decade and the last decade.
-  3. Carbon benefit Default - DF (NBP annual, cumulative 2024-2100, and
-     TOTECOSYSC at end of 2100), old vs new.
+Questions, all for 4 SSPs:
+  1. Row step 30.75 -> 31.25N in Jan / Jul GPP for each run (grid cell h0,
+     grass-only h1), the step in each pairing's Default - DF difference
+     profile against that profile's own row-to-row noise, and the full Jan
+     transect to check no new step appeared elsewhere.
+  2. Parameter effect by PFT (h1): newDF - oldDF and newDefault - Default,
+     domain-total GPP / NPP, early and last decade.
+  3. Carbon benefit for the three pairings: GPP, cumulative NBP 2024-2100,
+     TOTECOSYSC at end of 2100.
 
 Output conventions:
   - Monthly h0/h1 files: file "<case>.elm.h?.YYYY-02-01-00000.nc" holds the
@@ -59,12 +65,26 @@ CASE_ROOT = "/scratch/hpcl-cli185/zw5/cime_output_dirs/20260910_seus_rerun"
 SSPS = ["ssp119", "ssp245", "ssp370", "ssp585"]
 SSP_LABEL = {"ssp119": "SSP1-1.9", "ssp245": "SSP2-4.5",
              "ssp370": "SSP3-7.0", "ssp585": "SSP5-8.5"}
-RUNS = ["Default", "oldDF", "newDF"]
+RUNS = ["Default", "oldDF", "newDF", "newDefault"]
 RUN_STYLE = {
-    "Default": dict(color="black", ls="-", label="Default (36000 s)"),
-    "oldDF": dict(color="tab:red", ls="--", label="DF, crit_dayl_stress 36000 s"),
-    "newDF": dict(color="tab:blue", ls="-", label="DF, crit_dayl_stress 38000 s"),
+    "Default": dict(color="black", ls="-", label="Default, 36000 s"),
+    "oldDF": dict(color="tab:red", ls="--", label="DF, 36000 s"),
+    "newDF": dict(color="tab:blue", ls="--", label="DF, 38000 s"),
+    "newDefault": dict(color="tab:green", ls="-", label="Default, 38000 s"),
 }
+# Default - DF carbon benefit under three pairings
+PAIRS = {
+    "both 36000": ("Default", "oldDF"),
+    "DF only 38000": ("Default", "newDF"),
+    "both 38000": ("newDefault", "newDF"),
+}
+PAIR_STYLE = {
+    "both 36000": dict(color="tab:red", ls="--"),
+    "DF only 38000": dict(color="tab:orange", ls=":"),
+    "both 38000": dict(color="tab:blue", ls="-"),
+}
+# parameter effect = new - old for the same land use
+PARAM_EFFECT = {"DF": ("oldDF", "newDF"), "Default": ("Default", "newDefault")}
 
 
 def case_name(run, ssp):
@@ -76,6 +96,8 @@ def case_name(run, ssp):
         return f"{date}_seus_halfdeg_future_{ssp}_DF_dt3600"
     if run == "newDF":
         return f"20260922_seus_halfdeg_future_{ssp}_DF_cds38000_dt3600"
+    if run == "newDefault":
+        return f"20260922_seus_halfdeg_future_{ssp}_cds38000_dt3600"
     raise ValueError(run)
 
 
@@ -252,6 +274,20 @@ def h1_pft_summary(case, years, weights, var, months=(JAN, JUL)):
 
 # ---------------------------------------------------------------- main
 
+def pair_profile(rows, pair, ssp, m):
+    a, b = PAIRS[pair]
+    return rows[(a, ssp, m)] - rows[(b, ssp, m)]
+
+
+def step_and_noise(profile, i_s, i_n):
+    """Step across the threshold rows, and the median |adjacent-row change|
+    of the same profile excluding that pair (its own row-to-row noise)."""
+    d = np.diff(profile)
+    step = profile[i_n] - profile[i_s]
+    others = np.delete(d, i_s)
+    return step, float(np.nanmedian(np.abs(others)))
+
+
 def main():
     os.makedirs(OUTDIR, exist_ok=True)
     report = []
@@ -264,6 +300,7 @@ def main():
     i_s = int(np.argmin(np.abs(lat - LAT_SOUTH)))
     i_n = int(np.argmin(np.abs(lat - LAT_NORTH)))
     assert abs(lat[i_s] - LAT_SOUTH) < 1e-6 and abs(lat[i_n] - LAT_NORTH) < 1e-6
+    assert i_n == i_s + 1
     say(f"grid {len(lat)} x {len(lon)}; threshold rows {lat[i_s]} (i={i_s}) -> {lat[i_n]} (i={i_n})")
     say(f"domain land area (area*landfrac) = {W.sum():.0f} km^2")
 
@@ -274,17 +311,13 @@ def main():
                        if not os.path.exists(hist_file(c, t, y))]
             if missing:
                 raise RuntimeError(f"{c}: {len(missing)} missing history files")
-    say("all 12 cases x 77 years x h0/h1 present")
+    say(f"all {len(RUNS) * len(SSPS)} cases x 77 years x h0/h1 present")
 
-    # ---------------------------------------------------- 1. row step
-    say("\n" + "=" * 78)
-    say(f"1. ROW STEP {LAT_SOUTH}N -> {LAT_NORTH}N, GPP {LATE} mean (gC/m2/yr, monthly values annualised)")
-    say("=" * 78)
-    rows = {}        # (run, ssp, month) -> row-mean profile, h0 grid cell
+    # ---------------------------------------------------- read everything
+    rows = {}        # (run, ssp, month|"ann") -> row-mean profile, grid cell
     grass_rows = {}  # (run, ssp, month) -> row profile, grass PFTs only
-    pft_tot = {}     # (run, ssp, period) -> {itype: PgC/yr}
+    pft_tot = {}     # (run, ssp, period, var) -> {itype: PgC/yr}
     maps585 = {}
-    step_csv = []
     for s in SSPS:
         for r in RUNS:
             c = case_name(r, s)
@@ -304,6 +337,13 @@ def main():
                 ntot, _, _ = h1_pft_summary(c, yrs, W, "NPP", months=())
                 pft_tot[(r, s, per, "NPP")] = ntot
 
+    # ---------------------------------------------------- 1a. per-run row step
+    say("\n" + "=" * 78)
+    say(f"1a. ROW STEP {LAT_SOUTH}N -> {LAT_NORTH}N per run, GPP {LATE} mean "
+        "(gC/m2/yr, monthly values annualised)")
+    say("=" * 78)
+    step_csv = []
+    for s in SSPS:
         say(f"\n--- {SSP_LABEL[s]} ---")
         say(f"{'':34s}{'Jan south':>10s}{'Jan north':>10s}{'step':>9s}{'%':>7s}"
             f"{'Jul south':>11s}{'Jul north':>10s}{'step':>9s}{'%':>7s}")
@@ -312,65 +352,83 @@ def main():
                 vals = []
                 for m in (JAN, JUL):
                     a, b = src[(r, s, m)][i_s], src[(r, s, m)][i_n]
-                    vals += [a, b, b - a, 100 * (b - a) / a]
+                    pct = 100 * (b - a) / a if abs(a) > 1e-9 else np.nan
+                    vals += [a, b, b - a, pct]
                     step_csv.append(dict(ssp=s, run=r, level=label,
                                          month="Jan" if m == JAN else "Jul",
-                                         south=a, north=b, step=b - a,
-                                         step_pct=100 * (b - a) / a))
-                say(f"  {label:20s} {r:8s}    "
+                                         south=a, north=b, step=b - a, step_pct=pct))
+                say(f"  {label:20s} {r:10s}  "
                     f"{vals[0]:10.0f}{vals[1]:10.0f}{vals[2]:+9.0f}{vals[3]:+7.1f}"
                     f" {vals[4]:10.0f}{vals[5]:10.0f}{vals[6]:+9.0f}{vals[7]:+7.1f}")
+    say("\n(% steps on values near 0 -- e.g. 38000 s grass in January -- are not meaningful)")
 
-    # full January transect for the new DF: is there a new step anywhere?
+    # ---------------------------------------------------- 1b. Default - DF step
+    say("\n" + "=" * 78)
+    say("1b. STEP IN THE Default - DF DIFFERENCE PROFILE across the threshold rows")
+    say("    noise = median |adjacent-row change| of the same profile, other rows")
+    say("=" * 78)
+    pair_csv = []
+    for m, mname in ((JAN, "Jan"), (JUL, "Jul"), ("ann", "annual")):
+        say(f"\n{mname} GPP, {LATE}")
+        say(f"{'':10s}" + "".join(f"{p:>24s}" for p in PAIRS))
+        say(f"{'':10s}" + "".join(f"{'step':>12s}{'noise':>12s}" for _ in PAIRS))
+        for s in SSPS:
+            line = f"{SSP_LABEL[s]:10s}"
+            for p in PAIRS:
+                st, nz = step_and_noise(pair_profile(rows, p, s, m), i_s, i_n)
+                line += f"{st:+12.0f}{nz:12.0f}"
+                pair_csv.append(dict(ssp=s, month=mname, pairing=p, step=st, noise=nz))
+            say(line)
+
+    # ---------------------------------------------------- 1c. full transect
     for s in SSPS:
         say(f"\n{SSP_LABEL[s]}: January grid-cell GPP transect, {LATE} "
             f"(d = change from the row to the south)")
-        say(f"{'lat':>7s}{'old DF':>9s}{'d':>7s}{'new DF':>9s}{'d':>7s}{'Default':>9s}{'d':>7s}")
+        say(f"{'lat':>7s}" + "".join(f"{r:>11s}{'d':>7s}" for r in RUNS))
         for i in range(len(lat)):
             line = f"{lat[i]:7.2f}"
-            for r in ("oldDF", "newDF", "Default"):
+            for r in RUNS:
                 prof = rows[(r, s, JAN)]
                 d = f"{prof[i] - prof[i - 1]:+7.0f}" if i > 0 else f"{'':7s}"
-                line += f"{prof[i]:9.0f}{d}"
+                line += f"{prof[i]:11.0f}{d}"
             say(line + ("   <== old threshold" if i == i_n else ""))
     say("")
     for s in SSPS:
-        for r in ("oldDF", "newDF"):
-            prof = rows[(r, s, JAN)]
-            d = np.diff(prof)
+        for r in RUNS:
+            d = np.diff(rows[(r, s, JAN)])
             k = int(np.nanargmin(d))
-            say(f"  {SSP_LABEL[s]} {r}: largest adjacent-row DROP in Jan GPP is "
+            say(f"  {SSP_LABEL[s]} {r:10s}: largest adjacent-row DROP in Jan GPP is "
                 f"{d[k]:+.0f} between {lat[k]:.2f} and {lat[k + 1]:.2f}N")
 
-    # ---------------------------------------------------- 2. newDF - oldDF by PFT
+    # ---------------------------------------------------- 2. parameter effect by PFT
     say("\n" + "=" * 78)
-    say("2. newDF - oldDF DOMAIN TOTAL BY PFT (PgC/yr), from h1")
-    say("   = the change in the DF carbon benefit caused by the parameter alone")
+    say("2. PARAMETER EFFECT BY PFT (new - old, same land use), domain total PgC/yr, h1")
     say("=" * 78)
-    for var in ("GPP", "NPP"):
-        for per in PERIODS:
-            say(f"\n{var}, {per} mean   (* = stress-deciduous)")
-            say(f"{'PFT':>22s}" + "".join(f"{SSP_LABEL[s]:>22s}" for s in SSPS))
-            say(f"{'':>22s}" + "".join(f"{'old':>8s}{'new-old':>9s}{'%':>5s}" for _ in SSPS))
-            for t in PFT_NAMES:
-                olds = [pft_tot[("oldDF", s, per, var)][t] for s in SSPS]
-                news = [pft_tot[("newDF", s, per, var)][t] for s in SSPS]
-                if max(abs(x) for x in olds + news) < 5e-5:
-                    continue
-                star = "*" if t in STRESS_DECID else " "
-                line = f"{star}{t:2d} {PFT_NAMES[t]:>18s}"
-                for o, n in zip(olds, news):
-                    pct = 100 * (n - o) / o if abs(o) > 1e-9 else np.nan
-                    line += f"{o:8.4f}{n - o:+9.4f}{pct:+5.0f}"
-                say(line)
-            for label, sel in (("stress-decid total", STRESS_DECID),
-                               ("all PFTs", set(PFT_NAMES))):
-                line = f"{label:>22s}"
-                for s in SSPS:
-                    o = sum(pft_tot[("oldDF", s, per, var)][t] for t in sel)
-                    n = sum(pft_tot[("newDF", s, per, var)][t] for t in sel)
-                    line += f"{o:8.4f}{n - o:+9.4f}{100 * (n - o) / o:+5.0f}"
-                say(line)
+    for landuse, (old, new) in PARAM_EFFECT.items():
+        for var in ("GPP", "NPP"):
+            for per in PERIODS:
+                say(f"\n{landuse}: {new} - {old}, {var}, {per} mean   (* = stress-deciduous)")
+                say(f"{'PFT':>22s}" + "".join(f"{SSP_LABEL[s]:>22s}" for s in SSPS))
+                say(f"{'':>22s}" + "".join(f"{'old':>8s}{'new-old':>9s}{'%':>5s}" for _ in SSPS))
+                for t in PFT_NAMES:
+                    olds = [pft_tot[(old, s, per, var)][t] for s in SSPS]
+                    news = [pft_tot[(new, s, per, var)][t] for s in SSPS]
+                    if max(abs(x) for x in olds + news) < 5e-5:
+                        continue
+                    star = "*" if t in STRESS_DECID else " "
+                    line = f"{star}{t:2d} {PFT_NAMES[t]:>18s}"
+                    for o, n in zip(olds, news):
+                        pct = 100 * (n - o) / o if abs(o) > 1e-9 else np.nan
+                        line += f"{o:8.4f}{n - o:+9.4f}{pct:+5.0f}"
+                    say(line)
+                for label, sel in (("stress-decid total", STRESS_DECID),
+                                   ("all PFTs", set(PFT_NAMES))):
+                    line = f"{label:>22s}"
+                    for s in SSPS:
+                        o = sum(pft_tot[(old, s, per, var)][t] for t in sel)
+                        n = sum(pft_tot[(new, s, per, var)][t] for t in sel)
+                        line += f"{o:8.4f}{n - o:+9.4f}{100 * (n - o) / o:+5.0f}"
+                    say(line)
     pft_csv = []
     for var in ("GPP", "NPP"):
         for per in PERIODS:
@@ -384,7 +442,7 @@ def main():
 
     # ---------------------------------------------------- 3. carbon benefit
     say("\n" + "=" * 78)
-    say("3. CARBON BENEFIT Default - DF (h0, area*landfrac)")
+    say("3. CARBON BENEFIT Default - DF under the three pairings (h0, area*landfrac)")
     say("=" * 78)
     series = {}
     for s in SSPS:
@@ -394,44 +452,44 @@ def main():
             series[(r, s, "GPP")] = h0_domain_series(c, "GPP", W)
             series[(r, s, "TOTECOSYSC_dec")] = h0_domain_series(c, "TOTECOSYSC", W, stock_month=11)
     late = np.isin(YEARS_ALL, PERIODS[LATE])
-    say(f"{'':10s}{'':8s}{'GPP ' + LATE:>14s}{'NBP ' + LATE:>14s}{'cum NBP':>12s}{'dTOTECOSYSC':>13s}")
-    say(f"{'':10s}{'':8s}{'PgC/yr':>14s}{'PgC/yr':>14s}{'2024-2100 PgC':>14s}{'Dec2100 PgC':>11s}")
+    say(f"{'':10s}{'':15s}{'dGPP ' + LATE:>15s}{'cum dNBP':>15s}{'dTOTECOSYSC':>13s}")
+    say(f"{'':10s}{'':15s}{'PgC/yr':>15s}{'2024-2100 PgC':>15s}{'Dec2100 PgC':>13s}")
     ben_csv = []
     for s in SSPS:
         res = {}
-        for r in ("oldDF", "newDF"):
-            dg = series[("Default", s, "GPP")] - series[(r, s, "GPP")]
-            dn = series[("Default", s, "NBP")] - series[(r, s, "NBP")]
-            de = series[("Default", s, "TOTECOSYSC_dec")] - series[(r, s, "TOTECOSYSC_dec")]
-            res[r] = (dg[late].mean(), dn[late].mean(), dn.sum(), de[-1])
-            say(f"{SSP_LABEL[s]:10s}{r:8s}{res[r][0]:14.4f}{res[r][1]:14.4f}{res[r][2]:14.3f}{res[r][3]:11.3f}")
-        chg = [100 * (res["newDF"][k] - res["oldDF"][k]) / res["oldDF"][k] for k in range(4)]
-        say(f"{'':10s}{'change':8s}" + "".join(f"{c:+13.1f}%" for c in chg[:2])
-            + f"{chg[2]:+13.1f}%{chg[3]:+10.1f}%")
-        for r in ("oldDF", "newDF"):
-            ben_csv.append(dict(ssp=s, df_run=r, dGPP_late=res[r][0], dNBP_late=res[r][1],
-                                cumNBP_2024_2100=res[r][2], dTOTECOSYSC_dec2100=res[r][3]))
+        for p, (a, b) in PAIRS.items():
+            dg = series[(a, s, "GPP")] - series[(b, s, "GPP")]
+            dn = series[(a, s, "NBP")] - series[(b, s, "NBP")]
+            de = series[(a, s, "TOTECOSYSC_dec")] - series[(b, s, "TOTECOSYSC_dec")]
+            res[p] = (dg[late].mean(), dn.sum(), de[-1])
+            ref = res["both 36000"]
+            chg = "" if p == "both 36000" else (
+                f"   vs both 36000: cum NBP {100 * (res[p][1] - ref[1]) / ref[1]:+.1f}%, "
+                f"TOTECOSYSC {100 * (res[p][2] - ref[2]) / ref[2]:+.1f}%")
+            say(f"{SSP_LABEL[s]:10s}{p:15s}{res[p][0]:15.4f}{res[p][1]:15.3f}{res[p][2]:13.3f}{chg}")
+            ben_csv.append(dict(ssp=s, pairing=p, default_run=a, df_run=b,
+                                dGPP_late=res[p][0], cumNBP_2024_2100=res[p][1],
+                                dTOTECOSYSC_dec2100=res[p][2]))
 
-    # h0 vs h1 consistency check for the domain totals
     say("\nCheck: h1 exact PFT sum vs h0 area*landfrac total, GPP " + LATE)
     for s in SSPS:
         for r in RUNS:
             h1sum = sum(pft_tot[(r, s, LATE, "GPP")].values())
             h0sum = series[(r, s, "GPP")][late].mean()
-            say(f"  {SSP_LABEL[s]} {r:8s} h1 {h1sum:.4f}  h0 {h0sum:.4f}  ratio {h1sum / h0sum:.4f}")
+            say(f"  {SSP_LABEL[s]} {r:10s} h1 {h1sum:.4f}  h0 {h0sum:.4f}  ratio {h1sum / h0sum:.4f}")
 
     # ---------------------------------------------------- write tables
     with open(os.path.join(OUTDIR, "summary.txt"), "w") as f:
         f.write("\n".join(report) + "\n")
-    for name, rowsout in (("row_step.csv", step_csv), ("pft_totals.csv", pft_csv),
-                          ("carbon_benefit.csv", ben_csv)):
+    for name, rowsout in (("row_step.csv", step_csv), ("pair_step.csv", pair_csv),
+                          ("pft_totals.csv", pft_csv), ("carbon_benefit.csv", ben_csv)):
         with open(os.path.join(OUTDIR, name), "w", newline="") as f:
             wr = csv.DictWriter(f, fieldnames=list(rowsout[0].keys()))
             wr.writeheader()
             wr.writerows(rowsout)
 
     # ---------------------------------------------------- figures
-    # Fig 1: transects
+    # Fig 1: per-run transects
     fig, axes = plt.subplots(3, 4, figsize=(20, 13), sharex=True)
     panels = [("Jan GPP, grid cell", rows, JAN), ("Jul GPP, grid cell", rows, JUL),
               ("Jan GPP, grass PFTs 13/14 only", grass_rows, JAN)]
@@ -446,53 +504,69 @@ def main():
                 ax.set_ylabel("gC m$^{-2}$ yr$^{-1}$")
             if i == 2:
                 ax.set_xlabel("latitude (row centre, N)")
-    axes[0, 0].legend(fontsize=9, loc="lower left")
+    axes[0, 0].legend(fontsize=9, loc="upper right")
     fig.suptitle(f"Row-mean GPP across the old 30.833N threshold (dotted), {LATE} mean", fontsize=13)
     fig.tight_layout()
     fig.savefig(os.path.join(OUTDIR, "row_transect_gpp.png"), dpi=130)
     plt.close(fig)
 
-    # Fig 2: SSP5-8.5 maps
-    land = W > 0
-    fig, axes = plt.subplots(1, 4, figsize=(22, 5))
-    jan_max = np.nanmax([np.nanmax(maps585[("oldDF", JAN)]), np.nanmax(maps585[("newDF", JAN)])])
-    d_jan = np.where(land, maps585[("newDF", JAN)] - maps585[("oldDF", JAN)], np.nan)
-    d_ann = np.where(land, maps585[("newDF", "ann")] - maps585[("oldDF", "ann")], np.nan)
-    specs = [
-        (np.where(land, maps585[("oldDF", JAN)], np.nan), "old DF, Jan GPP", "viridis", 0, jan_max),
-        (np.where(land, maps585[("newDF", JAN)], np.nan), "new DF, Jan GPP", "viridis", 0, jan_max),
-        (d_jan, "new - old DF, Jan GPP", "RdBu", -np.nanmax(np.abs(d_jan)), np.nanmax(np.abs(d_jan))),
-        (d_ann, "new - old DF, annual GPP", "RdBu", -np.nanmax(np.abs(d_ann)), np.nanmax(np.abs(d_ann))),
-    ]
-    for ax, (fld, title, cmap, vmin, vmax) in zip(axes, specs):
-        pc = ax.pcolormesh(lon, lat, fld, cmap=cmap, vmin=vmin, vmax=vmax, shading="auto")
-        ax.axhline(THRESHOLD_LAT_OLD, color="k", ls="--", lw=0.8)
-        ax.set_title(title, fontsize=11)
-        ax.set_aspect("equal")
-        fig.colorbar(pc, ax=ax, shrink=0.8, label="gC m$^{-2}$ yr$^{-1}$")
-    fig.suptitle(f"SSP5-8.5 DF, {LATE} mean (dashed = old threshold 30.833N)", fontsize=13)
+    # Fig 2: Default - DF difference transects, the three pairings
+    fig, axes = plt.subplots(3, 4, figsize=(20, 13), sharex=True)
+    for i, (m, mname) in enumerate(((JAN, "Jan"), (JUL, "Jul"), ("ann", "annual"))):
+        for j, s in enumerate(SSPS):
+            ax = axes[i, j]
+            for p in PAIRS:
+                ax.plot(lat, pair_profile(rows, p, s, m), marker="o", ms=3,
+                        label=f"Default - DF, {p}", **PAIR_STYLE[p])
+            ax.axvline(THRESHOLD_LAT_OLD, color="gray", ls=":", lw=1)
+            ax.axhline(0, color="gray", lw=0.6)
+            ax.set_title(f"{SSP_LABEL[s]} - {mname} GPP, Default - DF", fontsize=10)
+            if j == 0:
+                ax.set_ylabel("gC m$^{-2}$ yr$^{-1}$")
+            if i == 2:
+                ax.set_xlabel("latitude (row centre, N)")
+    axes[0, 0].legend(fontsize=9)
+    fig.suptitle(f"Row-mean Default - DF GPP difference, {LATE} mean", fontsize=13)
     fig.tight_layout()
-    fig.savefig(os.path.join(OUTDIR, "maps_ssp585_gpp.png"), dpi=130)
+    fig.savefig(os.path.join(OUTDIR, "pair_transect_gpp.png"), dpi=130)
     plt.close(fig)
 
-    # Fig 3: carbon benefit
+    # Fig 3: SSP5-8.5 difference maps, the three pairings
+    land = W > 0
+    fig, axes = plt.subplots(2, 3, figsize=(20, 9))
+    for i, key in enumerate((JAN, "ann")):
+        flds = [np.where(land, maps585[(a, key)] - maps585[(b, key)], np.nan)
+                for a, b in PAIRS.values()]
+        vmax = np.nanmax([np.nanmax(np.abs(f)) for f in flds])
+        for j, (p, fld) in enumerate(zip(PAIRS, flds)):
+            ax = axes[i, j]
+            pc = ax.pcolormesh(lon, lat, fld, cmap="RdBu", vmin=-vmax, vmax=vmax, shading="auto")
+            ax.axhline(THRESHOLD_LAT_OLD, color="k", ls="--", lw=0.8)
+            ax.set_title(f"Default - DF, {p}: {'Jan' if key == JAN else 'annual'} GPP", fontsize=11)
+            ax.set_aspect("equal")
+            fig.colorbar(pc, ax=ax, shrink=0.8, label="gC m$^{-2}$ yr$^{-1}$")
+    fig.suptitle(f"SSP5-8.5, {LATE} mean (dashed = old threshold 30.833N)", fontsize=13)
+    fig.tight_layout()
+    fig.savefig(os.path.join(OUTDIR, "maps_ssp585_default_minus_df.png"), dpi=130)
+    plt.close(fig)
+
+    # Fig 4: carbon benefit
     fig, axes = plt.subplots(2, 4, figsize=(20, 8), sharex=True)
     yrs = np.array(YEARS_ALL)
     for j, s in enumerate(SSPS):
-        for r in ("oldDF", "newDF"):
-            dn = series[("Default", s, "NBP")] - series[(r, s, "NBP")]
-            st = dict(RUN_STYLE[r])
-            st["label"] = "Default - " + st["label"]
-            axes[0, j].plot(yrs, dn, **st)
-            axes[1, j].plot(yrs, np.cumsum(dn), **st)
+        for p, (a, b) in PAIRS.items():
+            dn = series[(a, s, "NBP")] - series[(b, s, "NBP")]
+            axes[0, j].plot(yrs, dn, label=f"Default - DF, {p}", **PAIR_STYLE[p])
+            axes[1, j].plot(yrs, np.cumsum(dn), label=f"Default - DF, {p}", **PAIR_STYLE[p])
         axes[0, j].axhline(0, color="gray", lw=0.6)
         axes[0, j].set_title(f"{SSP_LABEL[s]}: annual NBP benefit", fontsize=10)
         axes[1, j].set_title(f"{SSP_LABEL[s]}: cumulative NBP benefit", fontsize=10)
         axes[1, j].set_xlabel("year")
     axes[0, 0].set_ylabel("PgC yr$^{-1}$")
     axes[1, 0].set_ylabel("PgC")
-    axes[0, 0].legend(fontsize=8)
-    fig.suptitle("Avoided-deforestation carbon benefit (Default - DF), old vs new crit_dayl_stress", fontsize=13)
+    axes[1, 0].legend(fontsize=8)
+    fig.suptitle("Avoided-deforestation carbon benefit (Default - DF) under three crit_dayl_stress pairings",
+                 fontsize=13)
     fig.tight_layout()
     fig.savefig(os.path.join(OUTDIR, "carbon_benefit_nbp.png"), dpi=130)
     plt.close(fig)

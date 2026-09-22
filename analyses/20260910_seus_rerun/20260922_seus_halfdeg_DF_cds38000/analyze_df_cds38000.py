@@ -317,7 +317,7 @@ def main():
     rows = {}        # (run, ssp, month|"ann") -> row-mean profile, grid cell
     grass_rows = {}  # (run, ssp, month) -> row profile, grass PFTs only
     pft_tot = {}     # (run, ssp, period, var) -> {itype: PgC/yr}
-    maps585 = {}
+    maps = {}        # (run, ssp, JAN|"ann") -> 2-D GPP field
     for s in SSPS:
         for r in RUNS:
             c = case_name(r, s)
@@ -325,9 +325,8 @@ def main():
             rows[(r, s, JAN)] = row_means(mon[JAN], W)
             rows[(r, s, JUL)] = row_means(mon[JUL], W)
             rows[(r, s, "ann")] = row_means(ann, W)
-            if s == "ssp585":
-                maps585[(r, JAN)] = mon[JAN]
-                maps585[(r, "ann")] = ann
+            maps[(r, s, JAN)] = mon[JAN]
+            maps[(r, s, "ann")] = ann
             for per, yrs in PERIODS.items():
                 tot, grows, _gmap = h1_pft_summary(c, yrs, W, "GPP")
                 pft_tot[(r, s, per, "GPP")] = tot
@@ -531,11 +530,62 @@ def main():
     fig.savefig(os.path.join(OUTDIR, "pair_transect_gpp.png"), dpi=130)
     plt.close(fig)
 
-    # Fig 3: SSP5-8.5 difference maps, the three pairings
     land = W > 0
+
+    # Fig 3a: old vs new per land use, 1x4 like the first-round maps_ssp585_gpp.png
+    #   Jan:    old Jan | new Jan | new-old Jan | new-old annual   (SSP5-8.5 only)
+    #   annual: old ann | new ann | new-old ann | new-old ann (%)  (every SSP)
+    def old_new_maps(old_fld, new_fld, titles, fname, suptitle, fourth):
+        old_fld = np.where(land, old_fld, np.nan)
+        new_fld = np.where(land, new_fld, np.nan)
+        diff = new_fld - old_fld
+        vmax = np.nanmax([np.nanmax(old_fld), np.nanmax(new_fld)])
+        dmax = np.nanmax(np.abs(diff))
+        if fourth == "pct":
+            with np.errstate(invalid="ignore", divide="ignore"):
+                f4 = np.where(np.abs(old_fld) > 1e-9, 100 * diff / old_fld, np.nan)
+            f4max, f4label = np.nanmax(np.abs(f4)), "%"
+        else:
+            f4 = np.where(land, fourth, np.nan)
+            f4max, f4label = np.nanmax(np.abs(f4)), "gC m$^{-2}$ yr$^{-1}$"
+        specs = [(old_fld, "viridis", 0, vmax, "gC m$^{-2}$ yr$^{-1}$"),
+                 (new_fld, "viridis", 0, vmax, "gC m$^{-2}$ yr$^{-1}$"),
+                 (diff, "RdBu", -dmax, dmax, "gC m$^{-2}$ yr$^{-1}$"),
+                 (f4, "RdBu", -f4max, f4max, f4label)]
+        fig, axes = plt.subplots(1, 4, figsize=(22, 5))
+        for ax, title, (fld, cmap, vmin, vmx, lab) in zip(axes, titles, specs):
+            pc = ax.pcolormesh(lon, lat, fld, cmap=cmap, vmin=vmin, vmax=vmx, shading="auto")
+            ax.axhline(THRESHOLD_LAT_OLD, color="k", ls="--", lw=0.8)
+            ax.set_title(title, fontsize=11)
+            ax.set_aspect("equal")
+            fig.colorbar(pc, ax=ax, shrink=0.8, label=lab)
+        fig.suptitle(suptitle, fontsize=13)
+        fig.tight_layout()
+        fig.savefig(os.path.join(OUTDIR, fname), dpi=130)
+        plt.close(fig)
+
+    for landuse, (old, new) in PARAM_EFFECT.items():
+        s = "ssp585"
+        old_new_maps(maps[(old, s, JAN)], maps[(new, s, JAN)],
+                     [f"old {landuse}, Jan GPP", f"new {landuse}, Jan GPP",
+                      f"new - old {landuse}, Jan GPP", f"new - old {landuse}, annual GPP"],
+                     f"maps_{s}_gpp_jan_{landuse}.png",
+                     f"{SSP_LABEL[s]} {landuse}, {LATE} mean, 36000 s (old) vs 38000 s (new) "
+                     f"(dashed = old threshold 30.833N)",
+                     maps[(new, s, "ann")] - maps[(old, s, "ann")])
+        for s in SSPS:
+            old_new_maps(maps[(old, s, "ann")], maps[(new, s, "ann")],
+                         [f"old {landuse}, annual GPP", f"new {landuse}, annual GPP",
+                          f"new - old {landuse}, annual GPP", f"new - old {landuse}, annual GPP (%)"],
+                         f"maps_{s}_gpp_annual_{landuse}.png",
+                         f"{SSP_LABEL[s]} {landuse}, {LATE} mean, 36000 s (old) vs 38000 s (new) "
+                         f"(dashed = old threshold 30.833N)",
+                         "pct")
+
+    # Fig 3b: SSP5-8.5 Default - DF difference maps, the three pairings
     fig, axes = plt.subplots(2, 3, figsize=(20, 9))
     for i, key in enumerate((JAN, "ann")):
-        flds = [np.where(land, maps585[(a, key)] - maps585[(b, key)], np.nan)
+        flds = [np.where(land, maps[(a, "ssp585", key)] - maps[(b, "ssp585", key)], np.nan)
                 for a, b in PAIRS.values()]
         vmax = np.nanmax([np.nanmax(np.abs(f)) for f in flds])
         for j, (p, fld) in enumerate(zip(PAIRS, flds)):

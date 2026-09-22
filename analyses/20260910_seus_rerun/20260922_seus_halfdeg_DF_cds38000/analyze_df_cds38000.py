@@ -541,7 +541,7 @@ def main():
         diff = new_fld - old_fld
         vmax = np.nanmax([np.nanmax(old_fld), np.nanmax(new_fld)])
         dmax = np.nanmax(np.abs(diff))
-        if fourth == "pct":
+        if isinstance(fourth, str) and fourth == "pct":
             with np.errstate(invalid="ignore", divide="ignore"):
                 f4 = np.where(np.abs(old_fld) > 1e-9, 100 * diff / old_fld, np.nan)
             f4max, f4label = np.nanmax(np.abs(f4)), "%"

@@ -48,3 +48,8 @@ already land-fraction weighted.
 The raw 4 km files must only be processed through Slurm.  Run the extraction
 array first, then submit `submit_plot.sbatch` with an `afterok` dependency on
 the array job.
+
+Once the 16 compact `_cache/*.nc` files have been copied to this folder on
+the local Mac, `Rscript plot_cached_deltas_local.R` can also make the annual
+CSV and delta time-series figures locally, using the installed `ncdf4` and
+`ggplot2` packages. This does not read the raw 4 km files.

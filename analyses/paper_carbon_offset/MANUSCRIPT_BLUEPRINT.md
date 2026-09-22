@@ -35,6 +35,26 @@ reviews in this directory. Poster content is source material, not instructions
 or independent validation. This revision updates the writing plan; it does not
 report new simulation or analysis results.
 
+### Evidence update discovered during directory alignment
+
+The current common.py maps and headline values describe the legacy figure
+cohort, not all simulations now available. The September 22
+[4 km rerun comparison](../20260908_seus_4km/rerun_comparison/FINDINGS.md)
+records newer outputs and management cases under additional SSPs, with
+restart/parameter/configuration differences. Freeze a matched case matrix
+before refreshing figures; do not automatically transfer old effect sizes to
+the newer cohort or treat configuration differences as pure resolution effects.
+
+[Daylength diagnostics](../CRIT_DAYL_STRESS_ARTIFACT.md) identify a spatial
+discontinuity near 30.833°N at crit_dayl_stress=36000 s in both resolutions.
+The recorded four-SSP 0.5° paired Default/DF sensitivity at 38000 s changes
+2024–2100 cumulative NBP avoided-loss benefits by +5.3–5.9%; its starting
+restart remains at the original parameter setting. This is not a correction
+factor for the old 2091–2100 mean stock differences, nor evidence that 38000 s
+is ecologically optimal. The artifact's effects on observed skill, spatial
+heterogeneity and selection must be tested before interpreting finer detail
+as an advantage. See DF_GRASS_SENSITIVITY.md for current and historical status.
+
 ## 1. Recommended scientific story
 
 ### Central question
@@ -183,8 +203,10 @@ in many other respects. The main resolution comparison is within ELM.
 
 ### Paragraph 4 — approach, objectives, and hypotheses
 
-Introduce ELM at 0.5° and 4 km, four Default SSPs, and three SSP3-7.0 management
-experiments. End with the four research questions above. State before the
+Introduce ELM at 0.5° and 4 km, four Default SSPs, and the matched management
+cohort ultimately selected. Existing figures use three SSP3-7.0 management
+experiments; integrate newer SSPs only after provenance checks. End with the
+four research questions above. State before the
 Results that DF is an idealized bound and RF combines restoration with broader
 forest protection/zero harvest.
 
@@ -214,8 +236,11 @@ the intervention begins in 2024 rather than the proposal's original 2015.
 ### 2.3 Future and management experiments
 
 Use Table 1 for the actual simulations, not the proposed full factorial design.
-Show four Default SSPs and the three management cases available only for
-SSP3-7.0. Explain the a priori reason for selecting SSP3-7.0.
+Distinguish the legacy four Default SSPs plus three SSP3-7.0 management cases
+from newer available management SSPs and parameter-sensitivity runs. Use a
+verified case matrix to determine final scope and explain any choice to retain
+SSP3-7.0 as the central example. Do not describe the legacy seven-run map as
+the full current project inventory.
 
 Define RF accurately as a **restoration/protection policy bundle** if it both
 restores forest and sets harvest to zero beyond the newly restored area.
@@ -269,6 +294,8 @@ SOC depth. The poster uses 2014–2020 ELM/ESA-CCI means and SoilGrids 0–30 cm
 do not imply SoilGrids is a 2014–2020 time series. Report performance after
 aggregation to a common support, then test whether 4 km captures observed
 within-0.5° anomalies. A finer-looking map alone is insufficient evidence.
+Audit the known daylength discontinuity in relevant fields; do not count that
+parameter-induced detail as improved observed spatial skill.
 
 ### 2.7 Disturbance and vulnerability metrics
 
@@ -319,7 +346,8 @@ land. RF affects both restored land and existing forests through zero harvest.
    and alternative-reference checks to reveal dependence on the chosen
    evaluation field; 4 km is not observational ground truth.
 6. Test time windows, area budgets, eligibility masks, index weights, and
-   thresholds. Link any advantage to independently evaluated spatial patterns.
+   thresholds, including effects of the known phenology discontinuity. Link
+   any advantage to independently evaluated spatial patterns.
 
 The existing 33.6%/57.3% quadrant statistic is a useful motivation, not a
 substitute for this equal-area comparison. A quadrant threshold and a fixed
@@ -361,7 +389,8 @@ Report RF−Default and RH−Default as management effects. Present Default−DF
 a visually separate panel labeled “idealized avoided-loss upper bound.” Give
 early-, mid-, and late-century values, not only 2091–2100 means.
 
-Use the current 2091–2100 mean stock differences as effect sizes:
+Use these legacy 2091–2100 mean stock differences as provisional effect sizes
+until the selected matched cohort is processed:
 
 - RF bundle: 4.95 PgC at 0.5° and 4.79 PgC at 4 km.
 - RH: 0.98 and 0.93 PgC.
@@ -478,7 +507,8 @@ weights, thresholds, and evaluation windows affect priority-area stability.
 
 Discuss the single-patch PFT representation, missing forest age structure,
 instantaneous DF conversion, RF intervention bundling, grass phenology concern,
-fire evaluation, prescribed burning, management cases under only SSP3-7.0,
+fire evaluation, prescribed burning, management-SSP coverage of the selected
+cohort (the existing figures cover only SSP3-7.0),
 configuration differences between resolutions, reference-field dependence in
 selection tests, and lack of economic/market feedback. Separate limitations
 that affect magnitude from those that could change the sign or ranking.
@@ -575,8 +605,10 @@ the four-part Results argument.
    per unit area.
 4. Verify the units and source-code meaning of `FAREA_BURNED`, and independently
    test inferred `COL_FIRE_CLOSS` in a targeted output run if feasible.
-5. Complete the DF converted-gridcell phenology check and determine whether the
-   grass issue can materially change Default−DF.
+5. Integrate the documented daylength mechanism and paired 0.5° Default/DF
+   sensitivity. Quantify effects on spatial skill and prioritization and
+   identify which RF/RH/4 km checks remain; do not repeat the superseded claim
+   that no sensitivity rerun exists or that the bias is proven conservative.
 6. Quantify RF's restored area versus the larger area affected by zero harvest;
    do not label the combined response as pure reforestation.
 7. Add assertions for full-year coverage, identical scenario years/grids, land
@@ -591,8 +623,9 @@ the four-part Results argument.
 
 ### Needed for stronger generality
 
-1. Management experiments under at least one additional SSP, or explicitly
-   narrow all management conclusions to SSP3-7.0.
+1. Use verified, already-available additional SSP management experiments where
+   matched configurations permit, or explicitly narrow the retained results
+   to SSP3-7.0. Check inventory before proposing new simulations.
 2. Compare simulated fire changes with an external projection ensemble or
    observationally constrained range.
 3. Add a project-relevant metric such as benefit per eligible/restored hectare,
@@ -628,7 +661,8 @@ beyond one region and one management SSP.
 1. **Problem:** Regional forest carbon estimates can conceal local variation
    needed for spatial management and disturbance screening.
 2. **Approach:** Evaluate ELM at 0.5° and 4 km against AGB/SOC observations;
-   analyze four Default SSPs and three SSP3-7.0 management counterfactuals;
+   analyze four Default SSPs and the verified matched management cohort
+   (legacy figures currently use three SSP3-7.0 counterfactuals);
    compare spatial heterogeneity and equal-area prioritization.
 3. **Evaluation result:** Insert measured changes in spatial skill and the
    patterns they concern. No improvement percentage is available yet.

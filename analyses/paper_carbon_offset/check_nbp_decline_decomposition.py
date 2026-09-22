@@ -1,5 +1,9 @@
 """
 Diagnose why mean future SEUS NBP is lower than the model's 2014-2023 mean.
+Supporting analysis for new Main Figure 4 / Results 3.3 and the supplement;
+the high-resolution manuscript argument is in MANUSCRIPT_BLUEPRINT.md.
+This diagnostic retains common.py's legacy cohort; it has not been rerun
+against the newer cases by the September 22 editorial update.
 This script separates a persistent change in NEP / land-use flux from fire
 losses and identifies whether a few event years dominate the full-period
 mean.
@@ -27,7 +31,8 @@ Variables used:
   PFT_FIRE_CLOSS            gC/m2/s, fire loss
   LAND_USE_FLUX             gC/m2/s, conversion plus product-pool loss
 
-Usage: python check_nbp_decline_decomposition.py [0.5deg|4km]
+Usage inside an approved Slurm allocation:
+    python check_nbp_decline_decomposition.py [0.5deg|4km]
 """
 import sys
 

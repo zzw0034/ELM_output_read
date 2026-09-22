@@ -40,7 +40,10 @@ already land-fraction weighted.
   the early/end-of-century windows of each future case.
 - `summary.csv` with paired early and recent/end-period means, absolute
   changes, and percent changes.
+- `annual_series.csv` with old, new, and new-minus-old values for every year.
 - `RESULTS.md` with a compact human-readable summary.
+- `FINDINGS.md` with interpretation of temporal and spatial differences.
+- Seven `delta_timeseries_*.png` figures showing new minus old by year.
 
 The raw 4 km files must only be processed through Slurm.  Run the extraction
 array first, then submit `submit_plot.sbatch` with an `afterok` dependency on

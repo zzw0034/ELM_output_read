@@ -71,6 +71,28 @@ def plot_time_series(data: dict[str, dict[str, xr.Dataset]]) -> None:
         plt.close(fig)
 
 
+def plot_delta_time_series(data: dict[str, dict[str, xr.Dataset]]) -> None:
+    """Show small paired changes that are hard to see in overlaid lines."""
+    for var, (label, units, _, _) in VAR_SPECS.items():
+        fig, axes = plt.subplots(4, 2, figsize=(15, 14), sharex=False)
+        for ax, (key, spec) in zip(axes.flat, CASES.items()):
+            old = data[OLD][key]
+            new = data[NEW][key]
+            years = old["year"].values
+            if not np.array_equal(years, new["year"].values):
+                raise ValueError(f"{key}: year coordinates differ between families")
+            delta = new[var].values - old[var].values
+            ax.plot(years, delta, color="tab:purple", lw=1.1)
+            ax.axhline(0, color="0.25", lw=0.7)
+            ax.set_title(spec["label"], fontsize=10)
+            ax.set_ylabel(f"new - old ({units})", fontsize=8)
+            ax.grid(alpha=0.25)
+        fig.suptitle(f"SEUS 4 km rerun effect by year: {label}", fontsize=14)
+        fig.tight_layout()
+        fig.savefig(OUTPUT_DIR / f"delta_timeseries_{var}.png", dpi=170)
+        plt.close(fig)
+
+
 def map_axes(ax) -> None:
     ax.add_feature(cfeature.STATES.with_scale("50m"), edgecolor="0.35", linewidth=0.45)
     ax.add_feature(cfeature.COASTLINE.with_scale("50m"), linewidth=0.55)
@@ -232,7 +254,7 @@ def write_summary(data: dict[str, dict[str, xr.Dataset]]) -> None:
             "month by month using `time_bounds`; `FAREA_BURNED` is treated as s^-1. "
             "Positive deltas mean the newer rerun is larger.\n\n"
         )
-        handle.write("| case | period | variable | old | new | new-old | % vs |old| |\n")
+        handle.write("| case | period | variable | old | new | new-old | % vs abs(old) |\n")
         handle.write("|---|---:|---|---:|---:|---:|---:|\n")
         for row in selected:
             handle.write(
@@ -243,14 +265,33 @@ def write_summary(data: dict[str, dict[str, xr.Dataset]]) -> None:
         handle.write("\nSee `summary.csv` for early-period values and physical burned area (km2/yr).\n")
 
 
+def write_annual_series(data: dict[str, dict[str, xr.Dataset]]) -> None:
+    variables = list(VAR_SPECS) + ["burned_area_km2", "PFT_FIRE_CLOSS_PgC", "NBP_PgC"]
+    path = OUTPUT_DIR / "annual_series.csv"
+    with path.open("w", newline="") as handle:
+        writer = csv.writer(handle)
+        writer.writerow(["case_key", "case_label", "year", "variable", "old", "new", "new_minus_old"])
+        for key, spec in CASES.items():
+            old = data[OLD][key]
+            new = data[NEW][key]
+            years = old["year"].values
+            if not np.array_equal(years, new["year"].values):
+                raise ValueError(f"{key}: year coordinates differ between families")
+            for var in variables:
+                for year, a, b in zip(years, old[var].values, new[var].values):
+                    writer.writerow([key, spec["label"], int(year), var, float(a), float(b), float(b - a)])
+
+
 def main() -> None:
     OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
     data = load_all()
     validate_grids(data)
     plot_time_series(data)
+    plot_delta_time_series(data)
     for key in CASES:
         plot_case_maps(key, data)
     write_summary(data)
+    write_annual_series(data)
     for family in data:
         for ds in data[family].values():
             ds.close()

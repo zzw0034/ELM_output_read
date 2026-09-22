@@ -167,6 +167,32 @@ This is not a code bug. It is the physical consequence of a parameter
 choice, but it produces a spatial discontinuity that must be disclosed in
 any write-up and accounted for in regional statistics.
 
+### 2026-09-22 update: 0.5° rerun at 38000 s
+
+`crit_dayl_stress = 38000 s` (10.56 h, threshold latitude 23.4°N, south of
+the domain) was tested on the 0.5° futures (2024-2100, 4 SSPs), rerunning
+DF first and then Default. Each rerun differs from its original only in
+the paramfile. Results (2091-2100):
+
+- The step in `Default − DF` at 30.75→31.25°N falls to the profile's own
+  row-to-row noise **only when both runs use 38000 s**. January: +639 to +902
+  → −59 to −75 against noise of 48-94 gC m⁻² yr⁻¹. Annual: +218 to +287 →
+  +14 to +36. Rerunning DF alone leaves Default's own step in the difference,
+  reversed in sign, at about 40-55% of the original.
+- Cost 1: all stress-deciduous vegetation is now dormant through January
+  domain-wide. Annual GPP falls 15-25% south of the old threshold (DF) and
+  0-5% north of it. Keeping C3 grass dormant all winter in the far south is a
+  strong assumption.
+- Cost 2: the parameter lowers GPP more in DF (−6 to −8%, almost all grass)
+  than in Default (−3 to −4%). The avoided-deforestation benefit (cumulative
+  NBP 2024-2100) therefore grows by **+5.3 to +5.9%** (about 0.6 PgC) with
+  both runs at 38000 s, versus +7.3 to +8.4% with DF alone.
+- The starting restart was still spun up at 36000 s; the parameter changes
+  only from 2024.
+
+Details: the Chinese section "2026-09-22 更新" below, and
+`20260910_seus_rerun/20260922_seus_halfdeg_DF_cds38000/`.
+
 ---
 
 ## 一句话结论
@@ -342,6 +368,60 @@ Default 这一次模拟**——同一批格点、同样的气候/土壤/可执�
 5. 若要消除，需要改 paramfile 里的 `crit_dayl_stress`（例如改回代码默认的 21600 s），
    但那会改变所有草本的物候行为，**必须重跑**，且需要先确认 36000 s 这个值当初是为
    什么设的（2017 年就在这份 paramfile 里了，早于本项目）。
+
+## 2026-09-22 更新：0.5° 用 `crit_dayl_stress = 38000 s` 重跑的结果
+
+**做了什么。** 38000 s = 10.56 h，冬至日长等于它的纬度是 23.44°N，在整个研究区
+以南，所以每个格点每年冬天都会被强制休眠，不再有"南边从不休眠、北边休眠"的分界。
+新 paramfile：`/projects/hpcl-cli185/proj-shared/zw5/20260910_seus_rerun_inputs/clm_params_SEUS_c260922_cds38000.nc`
+（只改了这一个变量）。分两轮重跑 0.5° future（2024-2100，4 个 SSP），每个新
+case 都是原 case 的 `--keepexe` 克隆，`lnd_in` 与原 case 只差 `paramfile` 一行：
+
+| 轮次 | case | 源 case |
+|---|---|---|
+| 1：只改 DF | `20260922_seus_halfdeg_future_ssp*_DF_cds38000_dt3600` | `2026091{1,5}_..._DF_dt3600` |
+| 2：Default 也改（方案 A） | `20260922_seus_halfdeg_future_ssp*_cds38000_dt3600` | `20260911_..._ssp*_dt3600` |
+
+分析：`20260910_seus_rerun/20260922_seus_halfdeg_DF_cds38000/analyze_df_cds38000.py`
+（Slurm 作业 555823；第一轮只有 DF 时的输出存在本地 `outputs/round1_DF_only/`）。
+以下均为 2091-2100 平均。
+
+**1. 线在 `Default − DF` 里消失了——但只有两边都改才行。** 阈值两行
+（30.75 → 31.25°N）上 `Default − DF` 差值曲线的跳变，对比这条曲线在其他相邻行之间
+的正常起伏（中位数），格式为 跳变 / 起伏，单位 gC m⁻² yr⁻¹：
+
+| | 两边 36000 | 只改 DF | 两边 38000 |
+|---|---|---|---|
+| 1 月，SSP1-1.9 … SSP5-8.5 | +639/23 … +902/54 | −304/58 … −416/76 | **−59/69 … −75/75（在噪声内）** |
+| 全年 | +218/31 … +287/57 | −34/64 … +1/32 | **+14/51 … +36/35（在噪声内）** |
+
+只改 DF 时，Default 自身的台阶（1 月 −311 到 −423）原封不动地留在差值里，方向反过来，
+约为原来的 40-55%。7 月在阈值处 +25 到 +144 的落差在两种 38000 配对里几乎一样，与
+阈值无关。
+
+**2. 代价：南部的草冬天也休眠了。** 38000 s 下日长低于阈值的时间段在 25.25°N 为
+11/29-1/12，在 30.75°N 为 11/09-1/31，在 35.25°N 为 10/31-2/10，所以全域 1 月基本
+都是休眠状态：DF 的草在 30°N 以北 1 月 GPP ≈ 0，佛罗里达南部从 2000-3000 降到约
+400。年 GPP 减少集中在旧阈值以南（SSP5-8.5 DF 为 −15% 到 −25%，Default 在南佛罗
+里达和路易斯安那沿海最多 −20%），以北只有 0 到 −5%。模式里 DF 的草 85% 是 C3 草，
+而现实中东南部的 C3 冷季草冬季是活跃的，所以 38000 s 在南部是一个偏强的休眠假设。
+
+**3. 参数效应（新 − 旧，土地利用相同），全域 GPP：**
+- **DF：** −6% 到 −8%（几乎全部来自 stress-deciduous：C3 草为主，作物 −7% 到 −8%，
+  BDS 灌木 −8%）
+- **Default：** −3% 到 −4%（stress-deciduous 的 PFT 各 −7% 到 −9%，树木不变）
+- 作物**不是**干净的对照：`create_crop_landunit = .false.`，作物 PFT 15 与 DF 新增的草
+  共用自然植被土壤 column
+
+**4. 碳收益（`Default − DF`）变大，这部分来自参数。** 累计 NBP 2024-2100：两边
+36000 为 10.1-11.0 PgC；只改 DF 为 +7.3% 到 +8.4%；**两边 38000 为 +5.3% 到 +5.9%**
+（10.7-11.7 PgC，多约 0.55-0.65 PgC）。2100 年底的 TOTECOSYSC 差值结论相同
+（两边 38000 为 +5.0% 到 +5.7%）。原因是同一参数对 DF（几乎全是草）的影响比对
+Default 大。
+
+**结论。** 要让 `Default − DF` 里没有这条线，Default 和 DF 必须用同一个 38000 s；
+只改 DF 不够。代价是碳收益约 +5-6%，以及南部冬季休眠偏强，两者都需要在写作中说明。
+起点状态（transient 2024 restart）仍是 36000 s 下 spin-up 出来的，只从 2024 年换参数。
 
 ## 复现用的代码
 

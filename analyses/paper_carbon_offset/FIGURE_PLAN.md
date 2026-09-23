@@ -1,7 +1,9 @@
 # Figure plan — high-resolution ELM forest carbon manuscript
 
-Updated: 2026-09-22. The approved story is in
-[MANUSCRIPT_BLUEPRINT.md](MANUSCRIPT_BLUEPRINT.md). High-resolution ELM is
+Updated: 2026-09-23. The approved story is in
+[MANUSCRIPT_BLUEPRINT.md](MANUSCRIPT_BLUEPRINT.md); its 2026-09-23 decisions
+(new-rerun cohort, current outputs treated as 38000 s, HDM fire structure)
+govern. All figures are rebuilt from [CASE_MATRIX.md](CASE_MATRIX.md). High-resolution ELM is
 central throughout: observational skill → spatial heterogeneity/processes →
 consequences for prioritization. CMIP6/TRENDY provides concise regional context.
 
@@ -48,6 +50,9 @@ Compare SOC at 0–30 cm; SoilGrids is not a contemporaneous annual time series.
 Report bias, RMSE, spatial correlation and distribution agreement on common
 support. Independently test whether 4 km anomalies within 0.5° cells correspond
 to observed anomalies. Do not equate sharper spatial texture with accuracy.
+Show four columns — native 0.5° | downscaled 0.5° | native 4 km |
+observation — so skill from 4 km land cover (A→B) is separated from skill from
+running at 4 km (B→C).
 
 The 30.833°N daylength discontinuity must be identified in relevant fields.
 Its increased visibility at 4 km is not evidence of improved realism.
@@ -58,10 +63,8 @@ Use RF−Default and RH−Default as additional ecosystem storage, Default−DF 
 an idealized avoided-loss bound. RF includes restoration and broad protection/
 zero harvest. Report TOTECOSYSC differences separately from cumulative NBP.
 
-Existing 2091–2100 mean benefits (PgC; 0.5° / older 4 km) are RF 4.95/4.79,
-RH 0.98/0.93, DF 9.88/9.50. Treat these as legacy cohort values pending
-version harmonization, not final new-run estimates. Poster RF 5.9 and DF
-10.1 need variable/window/version reconciliation.
+Legacy 2091–2100 benefits (RF 4.95/4.79, RH 0.98/0.93, DF 9.88/9.50 PgC)
+and poster RF 5.9/DF 10.1 are void for the paper; recompute on the new cohort.
 
 Use three spatial representations: native 4 km, 4 km area-weighted to 0.5°,
 and native 0.5°. Distinguish averaging effects from differences in parameter
@@ -76,6 +79,11 @@ Use signed contributions, keeping litter/CWD distinct from belowground pools.
 
 Follow Methods 2.9 of the blueprint:
 
+- Coarse comparators: 4 km aggregated to 0.5° (primary; same simulation),
+  downscaled 0.5°, native 0.5°. Compare selection overlap across SSPs with
+  overlap across resolutions where management runs exist for several SSPs.
+- Report the fire component separately and repeat selections without it; its
+  spatial structure comes from the coarse HDM input.
 - Choose a common eligible domain and identical area budgets, initially 20%
   and 30%, then a selection curve. Regional land is not automatically land
   available for restoration, especially for the RF policy bundle.
@@ -91,9 +99,9 @@ Follow Methods 2.9 of the blueprint:
 - Test weights, thresholds, time windows, eligibility and phenology sensitivity.
   Do not assume that 4 km must outperform.
 
-The current 4 km RF quadrant covers 33.6% of land and 57.3% of potential
-(2.75/4.79 PgC). This is the high-potential AND low-vulnerability intersection,
-not the whole low-vulnerability half. It does not prove a resolution advantage.
+The legacy 4 km RF quadrant (33.6% of land, 57.3% of potential) is void for
+the paper. A quadrant is the high-potential AND low-vulnerability
+intersection, not the whole low-vulnerability half.
 
 Existing vulnerability is an equal-weight mean of cell-rank-normalized
 PFT_FIRE_CLOSS/TOTECOSYSC, annual 1−BTRAN, and non-detrended decadal stock CV.

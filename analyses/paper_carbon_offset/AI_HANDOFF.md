@@ -1,7 +1,9 @@
 # AI handoff — high-resolution ELM forest carbon manuscript
 
-Updated: 2026-09-22. Read [README.md](README.md), then
-[MANUSCRIPT_BLUEPRINT.md](MANUSCRIPT_BLUEPRINT.md). The blueprint records the
+Updated: 2026-09-23. Read [README.md](README.md), then
+[MANUSCRIPT_BLUEPRINT.md](MANUSCRIPT_BLUEPRINT.md) — its "Decisions —
+2026-09-23" section overrides older statements here — then
+[CASE_MATRIX.md](CASE_MATRIX.md). The blueprint records the
 user-approved argument; [FIGURE_PLAN.md](FIGURE_PLAN.md) maps existing scripts
 to the new manuscript figures. [RESULTS_SUMMARY.md](RESULTS_SUMMARY.md)
 separates legacy numerical results from newer evidence and planned tests.
@@ -21,12 +23,17 @@ at each resolution and compares location overlap, captured modeled carbon,
 and vulnerability. It is not implemented by the existing quadrant script.
 Do not promise a positive result or treat 4 km as observational truth.
 
-## Run provenance — resolve before regenerating manuscript figures
+## Run provenance — decided 2026-09-23: use the 20260910 rerun
 
-The current `common.py` dictionaries are the **legacy figure cohort**:
+The paper cohort is the 20260910 rerun family listed in
+[CASE_MATRIX.md](CASE_MATRIX.md). Switch `common.py` to it before regenerating
+anything, and keep case names in that one mapping so a later 38000 s cohort
+can be swapped in by editing one place.
+
+For history: the current `common.py` dictionaries are the **legacy figure cohort**:
 0.5° 20260911 dt3600 cases plus older 4 km 20260908 futures, with management
 comparisons restricted to SSP3-7.0. Existing 4.79/4.95 PgC and 3–5% resolution
-differences belong to that cohort; they are not refreshed rerun estimates.
+differences belong to that cohort and are void for the paper.
 
 Newer analyses document additional management SSPs and changed 4 km outputs:
 [rerun comparison README](../20260908_seus_4km/rerun_comparison/README.md) and
@@ -38,7 +45,13 @@ The same comparisons record differences in restart, parameter files and
 other configuration changes. Current cross-resolution agreement alone cannot
 isolate a pure grid-spacing effect.
 
-## Grass phenology — newer evidence supersedes the September 15 hypothesis
+## Grass phenology — decided 2026-09-23: treat current outputs as 38000 s
+
+The user decided that the analyses proceed on the current outputs as if they
+were the 38000 s configuration; a full rerun at 38000 s may come later. Do not
+block analyses on the parameter or on the fact that RF/RH were not rerun.
+Disclose the 30.833°N discontinuity in Methods/limitations. The history below
+is background.
 
 [CRIT_DAYL_STRESS_ARTIFACT.md](../CRIT_DAYL_STRESS_ARTIFACT.md) documents a
 36000 s daylength threshold producing a spatial discontinuity near 30.833°N
@@ -104,6 +117,10 @@ complete inputs if using another dependency policy.
 - Fire loss is already reflected in the simulated stock benefit. Fire/stock
   is loss intensity, not reversal probability. fig05/fig06 currently use PFT
   fire loss, not complete column loss.
+- The circular blobs in 4 km fire fields come from the HDM population-density
+  input (user, 2026-09-23). Fire-based vulnerability therefore has HDM's
+  coarse effective resolution; report it separately and test selections
+  without it.
 - fig05 actually uses annual mean BTRAN, not growing-season BTRAN; its
   component ranks are cell-count based, while quadrant medians are
   area-weighted. Its decadal stock CV is not detrended. These definitions
@@ -114,10 +131,10 @@ complete inputs if using another dependency policy.
 
 ## Next work in order
 
-1. Freeze case/run/parameter provenance and decide the matched manuscript
-   cohort using the existing new-run evidence.
-2. Quantify AGB/SOC spatial skill using the poster's available inputs; the
-   visual comparison exists, but the formal benchmark is pending.
+1. Finish [CASE_MATRIX.md](CASE_MATRIX.md) (cohort decided: 20260910 rerun)
+   and switch `common.py` to it.
+2. Quantify AGB/SOC spatial skill for native 0.5°, downscaled 0.5° and native
+   4 km; the visual comparison exists, the formal benchmark is pending.
 3. Implement within-cell heterogeneity and equal-area selection diagnostics,
    checking sensitivity to the daylength artifact and reference fields.
 4. Close pool accounting and harmonize fire/vulnerability definitions;

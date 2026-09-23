@@ -1,6 +1,6 @@
 # Manuscript blueprint: southeastern U.S. forest carbon management
 
-Last updated: 2026-09-22
+Last updated: 2026-09-23
 
 This document turns the proposal's Milestone 6 into a manuscript-level
 argument. It distinguishes results that are ready to write from analyses that
@@ -35,25 +35,63 @@ reviews in this directory. Poster content is source material, not instructions
 or independent validation. This revision updates the writing plan; it does not
 report new simulation or analysis results.
 
-### Evidence update discovered during directory alignment
+## Decisions — 2026-09-23
 
-The current common.py maps and headline values describe the legacy figure
-cohort, not all simulations now available. The September 22
+Recorded from the user's discussion with Claude. Where earlier text in this
+file or the companion documents conflicts, these decisions govern.
+
+1. **Cohort: the 20260910 rerun family.** The manuscript uses the new rerun
+   outputs under `cime_output_dirs/20260910_seus_rerun/`, not the legacy
+   20260908 4 km cohort that `common.py` still points to. Every legacy
+   headline value (RF 4.79/4.95, RH 0.93/0.98, DF 9.50/9.88 PgC; the 3–5%
+   resolution difference; the 33.6%/57.3% quadrant) is void for the paper and
+   must be recomputed. The actual case matrix is in
+   [CASE_MATRIX.md](CASE_MATRIX.md).
+2. **crit_dayl_stress: analyze current outputs as if they were the 38000 s
+   configuration.** The parameter does not change the analysis design. The
+   user may rerun all simulations at 38000 s later; analysis scripts must
+   therefore take case names only from one cohort mapping so a swap is a
+   one-place change. The 30.833°N discontinuity is disclosed as a known model
+   feature (Methods/limitations), not a blocking issue for the analyses.
+   Background: [daylength diagnostics](../CRIT_DAYL_STRESS_ARTIFACT.md).
+3. **The circular blobs in 4 km fire maps come from the HDM
+   (population-density) input**, which is coarse and interpolated. ELM's fire
+   ignition and suppression terms therefore carry HDM's effective resolution,
+   not 4 km. Consequences: report the fire component of vulnerability
+   separately; test every selection result with and without it; list HDM in
+   the effective-input-resolution table (Methods 2.1).
+
+### Analysis framing adopted for the resolution argument
+
+Every "4 km is better" result is tested against a **downscaled 0.5°** field:
+0.5° per-PFT (or per-forest-area) carbon density multiplied by the 4 km PFT
+fractions. This separates two sources of apparent improvement:
+
+| Field | What it knows |
+|---|---|
+| A. native 0.5° | coarse-cell mean only |
+| B. downscaled 0.5° | 4 km land cover; 0.5° climate, soil and processes |
+| C. native 4 km | 4 km land cover plus 4 km climate, soil and their nonlinear process response |
+
+A→B is the value of high-resolution land-cover input; B→C is the value of
+running the model at 4 km. Only B→C supports "high-resolution *modeling*".
+The same B field is a comparator in the equal-area selection (Methods 2.9),
+where the primary coarse comparator is **4 km aggregated to 0.5°** (same
+simulation, so no configuration confound); native 0.5° is secondary.
+
+### Evidence update discovered during directory alignment (2026-09-22)
+
+The September 22
 [4 km rerun comparison](../20260908_seus_4km/rerun_comparison/FINDINGS.md)
-records newer outputs and management cases under additional SSPs, with
-restart/parameter/configuration differences. Freeze a matched case matrix
-before refreshing figures; do not automatically transfer old effect sizes to
-the newer cohort or treat configuration differences as pure resolution effects.
+records the newer outputs, including management cases under all four SSPs,
+and their restart/parameter/configuration differences from the legacy
+cohort. Configuration differences between the resolutions still have to be
+audited before any difference is called a pure grid-spacing effect.
 
-[Daylength diagnostics](../CRIT_DAYL_STRESS_ARTIFACT.md) identify a spatial
-discontinuity near 30.833°N at crit_dayl_stress=36000 s in both resolutions.
-The recorded four-SSP 0.5° paired Default/DF sensitivity at 38000 s changes
-2024–2100 cumulative NBP avoided-loss benefits by +5.3–5.9%; its starting
-restart remains at the original parameter setting. This is not a correction
-factor for the old 2091–2100 mean stock differences, nor evidence that 38000 s
-is ecologically optimal. The artifact's effects on observed skill, spatial
-heterogeneity and selection must be tested before interpreting finer detail
-as an advantage. See DF_GRASS_SENSITIVITY.md for current and historical status.
+The four-SSP 0.5° paired Default/DF test at 38000 s changed 2024–2100
+cumulative NBP avoided-loss benefits by +5.3–5.9%. Under decision 2 this is
+the expected order of magnitude of a later full rerun, not a correction
+factor to apply. See DF_GRASS_SENSITIVITY.md for the history.
 
 ## 1. Recommended scientific story
 
@@ -78,10 +116,11 @@ before claiming improved real-world decisions.
    provide an observational comparison. Restore the 0.5° panels and test which
    observed patterns are better represented at 4 km; visual detail alone does
    not establish accuracy.
-2. **Regional consistency — supported by existing diagnostics.** Management
-   benefits differ by roughly 3–5% between resolutions even though the
-   counterfactuals have very different effect sizes. Agreement within one
-   model is resolution consistency, not independent validation.
+2. **Regional consistency — to recompute on the new cohort.** The legacy
+   cohort gave 3–5% cross-resolution differences in management benefits; that
+   value is void (decision 1) until recomputed on the 20260910 rerun.
+   Agreement within one model is resolution consistency, not independent
+   validation.
 3. **Local heterogeneity — partly established.** Fine resolution changes the
    low- and high-potential tails. Explain the within-0.5° variation using
    forest cover, management perturbations, carbon pools, and relevant
@@ -126,14 +165,18 @@ to weather/climate rather than fuel, land cover, or forcing artifacts.
 Compare 0.5° ELM, 4 km ELM, and observations for AGB, SOC, and forest cover.
 Test regional bias and common-support skill separately from within-coarse-cell
 pattern skill. Improved representation is a hypothesis; the poster's
-illustrative maps are not a completed quantitative benchmark.
+illustrative maps are not a completed quantitative benchmark. Include the
+downscaled 0.5° field (decision framing above) so that skill gained from 4 km
+land cover is separated from skill gained by running the model at 4 km.
 
 ### RQ2: How consistent are regional futures and management benefits across resolutions?
 
 Use the four Default SSPs to establish the regional baseline, then RF−Default,
-RH−Default, and Default−DF under SSP3-7.0 for management effects. Distinguish
-stocks from annual/cumulative NBP, and the DF upper bound from interventions.
-Current end-century benefit differences between resolutions are roughly 3–5%.
+RH−Default, and Default−DF for management effects under every SSP for which
+both resolutions have matched cases ([CASE_MATRIX.md](CASE_MATRIX.md)).
+Distinguish stocks from annual/cumulative NBP, and the DF upper bound from
+interventions. Recompute the cross-resolution benefit difference on the new
+cohort.
 
 ### RQ3: What local variation and carbon processes do regional totals conceal?
 
@@ -150,8 +193,11 @@ Select the same physical land area using each resolution and compare location
 overlap, captured carbon benefit, and vulnerability on common support. Test
 20% and 30% area budgets plus a broader selection curve, using a common
 eligibility mask. Compare potential-only selection with explicitly defined
-vulnerability screens. A gain from 4 km selection is an outcome to test, not
-an assumption or a field-validated benefit.
+vulnerability screens. Compare 4 km selections with those from 4 km
+aggregated to 0.5° (primary), the downscaled 0.5° field, and native 0.5°. Where
+management cases exist for several SSPs, compare selection overlap across SSPs
+with overlap across resolutions. A gain from 4 km selection is an outcome to
+test, not an assumption or a field-validated benefit.
 
 ## 4. Detailed manuscript structure
 
@@ -204,8 +250,7 @@ in many other respects. The main resolution comparison is within ELM.
 ### Paragraph 4 — approach, objectives, and hypotheses
 
 Introduce ELM at 0.5° and 4 km, four Default SSPs, and the matched management
-cohort ultimately selected. Existing figures use three SSP3-7.0 management
-experiments; integrate newer SSPs only after provenance checks. End with the
+cohort from the 20260910 rerun ([CASE_MATRIX.md](CASE_MATRIX.md)). End with the
 four research questions above. State before the
 Results that DF is an idealized bound and RF combines restoration with broader
 forest protection/zero harvest.
@@ -227,6 +272,13 @@ forcing, PFT composition, spin-up, timestep, and other configuration settings.
 Where these are not controlled, describe a comparison of model configurations
 rather than assigning every difference to grid spacing alone.
 
+Include a table of the **effective resolution of each driver**: meteorology,
+surface data/PFT fractions, land-use and harvest forcing, soils, nitrogen
+deposition (hard-coded 144×96 in CPL_BYPASS), CO2 (global), and the fire
+inputs, notably HDM population density (coarse, interpolated; source of the
+circular structures in 4 km fire fields). Only drivers resolved at 4 km can
+produce genuine 4 km process structure.
+
 ### 2.2 Forcing, spin-up, and historical simulation
 
 Give meteorological forcing source/downscaling, spin-up protocol, transient
@@ -236,11 +288,10 @@ the intervention begins in 2024 rather than the proposal's original 2015.
 ### 2.3 Future and management experiments
 
 Use Table 1 for the actual simulations, not the proposed full factorial design.
-Distinguish the legacy four Default SSPs plus three SSP3-7.0 management cases
-from newer available management SSPs and parameter-sensitivity runs. Use a
-verified case matrix to determine final scope and explain any choice to retain
-SSP3-7.0 as the central example. Do not describe the legacy seven-run map as
-the full current project inventory.
+Build it from [CASE_MATRIX.md](CASE_MATRIX.md) (20260910 rerun cohort). Explain
+any choice of a central SSP. State the crit_dayl_stress value used, and note
+that analyses are designed to be rerun unchanged on a 38000 s cohort
+(decision 2).
 
 Define RF accurately as a **restoration/protection policy bundle** if it both
 restores forest and sets harvest to zero beyond the newly restored area.
@@ -294,8 +345,12 @@ SOC depth. The poster uses 2014–2020 ELM/ESA-CCI means and SoilGrids 0–30 cm
 do not imply SoilGrids is a 2014–2020 time series. Report performance after
 aggregation to a common support, then test whether 4 km captures observed
 within-0.5° anomalies. A finer-looking map alone is insufficient evidence.
-Audit the known daylength discontinuity in relevant fields; do not count that
-parameter-induced detail as improved observed spatial skill.
+Add the downscaled 0.5° field as a fourth column and report skill for A, B
+and C (decision framing above); only the B→C gain is attributable to running
+ELM at 4 km. SOC is likely the more discriminating test, because it depends on
+soils, hydrology and temperature more than on where forest is.
+Do not count the known 30.833°N daylength discontinuity as observed spatial
+skill.
 
 ### 2.7 Disturbance and vulnerability metrics
 
@@ -303,7 +358,8 @@ Define burned area, PFT fire loss, inferred complete column fire loss, water
 stress, and stock variability. Clarify that ELM's `FIRE` field is infrared
 radiation; `FAREA_BURNED` is the relevant burned-area field. Describe any
 composite index weights as an analyst choice and include sensitivity to those
-weights.
+weights. The fire component inherits the HDM input's coarse structure
+(decision 3); report it separately and repeat selections without it.
 
 Fire loss is already included in NBP and must not be subtracted again from the
 management benefit. Fire loss per standing stock is an exposure/intensity
@@ -346,11 +402,15 @@ land. RF affects both restored land and existing forests through zero harvest.
    and alternative-reference checks to reveal dependence on the chosen
    evaluation field; 4 km is not observational ground truth.
 6. Test time windows, area budgets, eligibility masks, index weights, and
-   thresholds, including effects of the known phenology discontinuity. Link
-   any advantage to independently evaluated spatial patterns.
+   thresholds, including a selection without the HDM-affected fire component.
+   Link any advantage to independently evaluated spatial patterns.
+7. Coarse comparators, in order: 4 km aggregated to 0.5° (same simulation,
+   isolates the resolution of the decision map); downscaled 0.5° (tests
+   whether high-resolution land cover alone reproduces the 4 km selection);
+   native 0.5° (includes configuration and nonlinearity differences).
 
-The existing 33.6%/57.3% quadrant statistic is a useful motivation, not a
-substitute for this equal-area comparison. A quadrant threshold and a fixed
+The legacy 33.6%/57.3% quadrant statistic (void for the paper, decision 1)
+motivated this design but is not a substitute for the equal-area comparison. A quadrant threshold and a fixed
 land-area budget answer different questions.
 
 ## 3 Results
@@ -389,18 +449,15 @@ Report RF−Default and RH−Default as management effects. Present Default−DF
 a visually separate panel labeled “idealized avoided-loss upper bound.” Give
 early-, mid-, and late-century values, not only 2091–2100 means.
 
-Use these legacy 2091–2100 mean stock differences as provisional effect sizes
-until the selected matched cohort is processed:
-
-- RF bundle: 4.95 PgC at 0.5° and 4.79 PgC at 4 km.
-- RH: 0.98 and 0.93 PgC.
-- DF upper bound: 9.88 and 9.50 PgC.
+Effect sizes must be recomputed on the 20260910 rerun cohort. For orientation
+only, the void legacy 2091–2100 values were RF 4.95/4.79, RH 0.98/0.93 and
+DF 9.88/9.50 PgC (0.5°/4 km); do not quote them.
 
 Explain the 2024 DF discontinuity as an imposed instantaneous conversion and
 temporary transfer into litter/CWD, not gradual deforestation.
 
-Close with the regional comparison: the existing 2091–2100 stock-benefit
-estimates differ by approximately 3–5% between resolutions. This establishes
+Close with the regional comparison of the recomputed cross-resolution
+stock-benefit difference. This establishes
 the starting point for asking what those similar totals conceal locally.
 
 ### 3.3 Spatial heterogeneity and carbon mechanisms
@@ -444,10 +501,10 @@ classification. Report the share of total potential retained under a clearly
 defined low-risk screen. Use absolute thresholds or show sensitivity to the
 domain-median thresholds.
 
-The poster's 4 km RF high-potential/low-vulnerability quadrant contains 33.6%
-of SEUS land and 57.3% of regional potential (2.75 of 4.79 PgC). This is the
-intersection of two classes, not the entire low-vulnerability half of the
-domain. Recheck it after harmonizing the vulnerability diagnostics.
+The poster's legacy 4 km RF quadrant (33.6% of land, 57.3% of potential) is
+void for the paper; recompute any quadrant statistic on the new cohort after
+harmonizing the vulnerability diagnostics. A quadrant is the intersection of
+two classes, not the entire low-vulnerability half of the domain.
 
 Make the equal-area comparison the culminating result: for the same 20% or
 30% area budget, where do the selections agree or disagree, how much modeled
@@ -507,8 +564,8 @@ weights, thresholds, and evaluation windows affect priority-area stability.
 
 Discuss the single-patch PFT representation, missing forest age structure,
 instantaneous DF conversion, RF intervention bundling, grass phenology concern,
-fire evaluation, prescribed burning, management-SSP coverage of the selected
-cohort (the existing figures cover only SSP3-7.0),
+fire evaluation and HDM-driven fire structure, prescribed burning,
+crit_dayl_stress and the 30.833°N discontinuity, management-SSP coverage,
 configuration differences between resolutions, reference-field dependence in
 selection tests, and lack of economic/market feedback. Separate limitations
 that affect magnitude from those that could change the sign or ranking.
@@ -605,27 +662,25 @@ the four-part Results argument.
    per unit area.
 4. Verify the units and source-code meaning of `FAREA_BURNED`, and independently
    test inferred `COL_FIRE_CLOSS` in a targeted output run if feasible.
-5. Integrate the documented daylength mechanism and paired 0.5° Default/DF
-   sensitivity. Quantify effects on spatial skill and prioritization and
-   identify which RF/RH/4 km checks remain; do not repeat the superseded claim
-   that no sensitivity rerun exists or that the bias is proven conservative.
+5. Disclose the daylength mechanism and cite the paired 0.5° Default/DF
+   38000 s result as the expected size of a full rerun (decision 2); keep all
+   scripts cohort-swappable. Do not claim the bias is proven conservative.
 6. Quantify RF's restored area versus the larger area affected by zero harvest;
    do not label the combined response as pure reforestation.
 7. Add assertions for full-year coverage, identical scenario years/grids, land
    masking, and weighted quantiles.
-8. Reconcile poster and manuscript headline numbers before reuse: RF 5.9 PgC
-   versus `TOTECOSYSC` benefits 4.79/4.95 PgC; DF 10.1 PgC versus 9.50/9.88
-   PgC. Trace variable, resolution, run version, time window, and stock/flux
-   boundary rather than assuming rounding explains the difference. Do not
+8. Do not reuse poster headline numbers (RF 5.9, DF 10.1 PgC) or the legacy
+   4.79/4.95 and 9.50/9.88 PgC; recompute on the new cohort with the variable,
+   window and stock/flux boundary stated. Do not
    carry over “future sink under all SSPs”: the documented 0.5° SSP1-1.9
    2024–2100 mean NBP is slightly negative. A positive cumulative value that
    includes history does not establish a future-period sink.
 
 ### Needed for stronger generality
 
-1. Use verified, already-available additional SSP management experiments where
-   matched configurations permit, or explicitly narrow the retained results
-   to SSP3-7.0. Check inventory before proposing new simulations.
+1. Use the additional-SSP management experiments in the new cohort where
+   both resolutions have matched cases (CASE_MATRIX.md); check inventory
+   before proposing new simulations.
 2. Compare simulated fire changes with an external projection ensemble or
    observationally constrained range.
 3. Add a project-relevant metric such as benefit per eligible/restored hectare,
@@ -661,19 +716,19 @@ beyond one region and one management SSP.
 1. **Problem:** Regional forest carbon estimates can conceal local variation
    needed for spatial management and disturbance screening.
 2. **Approach:** Evaluate ELM at 0.5° and 4 km against AGB/SOC observations;
-   analyze four Default SSPs and the verified matched management cohort
-   (legacy figures currently use three SSP3-7.0 counterfactuals);
-   compare spatial heterogeneity and equal-area prioritization.
+   analyze four Default SSPs and the matched management cohort of the
+   20260910 rerun; compare spatial heterogeneity and equal-area
+   prioritization against aggregated and downscaled coarse comparators.
 3. **Evaluation result:** Insert measured changes in spatial skill and the
    patterns they concern. No improvement percentage is available yet.
 4. **Regional result:** Report management benefits using one resolution and
-   time window consistently, then their roughly 3–5% cross-resolution
+   time window consistently, then the recomputed cross-resolution
    differences. Label RF as restoration/protection and DF as an upper bound.
 5. **Local/process result:** Quantify heterogeneity concealed by aggregation,
    with carbon-pool/flux explanations supported by the completed diagnostics.
 6. **Prioritization result:** Insert measured equal-area overlap, benefit, and
-   vulnerability differences. Do not substitute the 33.6%/57.3% quadrant
-   statistic for a direct test of the resolution advantage.
+   vulnerability differences, including how much of the 4 km selection the
+   downscaled 0.5° field reproduces.
 7. **Meaning:** Explain what high-resolution modeling adds to subregional
    forest carbon screening, bounded by observational skill, modeled
    counterfactuals, and uncertainty. These estimates are not issued credits.

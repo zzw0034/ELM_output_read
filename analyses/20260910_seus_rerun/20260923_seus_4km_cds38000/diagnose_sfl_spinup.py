@@ -48,11 +48,18 @@ COL_W, COL_E = 341, 343          # global columns either side of edges k=342/343
 
 
 def read_stage(path, var):
+    """Spin-up h0 files hold one ANNUAL record per model year (50 per AD file,
+    44 per final spin-up file, 1 in the last file): use the last record, i.e.
+    the final year of that file. Transient / future files hold 12 monthly
+    records: day-weighted annual mean."""
     with Dataset(path) as ds:
-        v = _read(ds, var)
-        if v.shape[0] == 1:
-            return v[0]
-        return np.tensordot(_month_weights(ds), v, axes=(0, 0))
+        n = len(ds.dimensions["time"])
+        if n == 12:
+            return np.tensordot(_month_weights(ds), _read(ds, var), axes=(0, 0))
+        tb = _read(ds, "time_bounds")
+        if not np.allclose(tb[-1, 1] - tb[-1, 0], 365, atol=1e-6):
+            raise RuntimeError(f"{path}: last record is not one year long")
+        return np.ma.filled(ds.variables[var][n - 1].astype(float), np.nan)
 
 
 def main():
@@ -66,7 +73,9 @@ def main():
     stages = []
     for case, tag in ((AD, "AD spin-up"), (FINAL, "final spin-up")):
         for f in sorted(glob.glob(os.path.join(CASE_ROOT, case, "run", f"{case}.elm.h0.*.nc"))):
-            stages.append((f"{tag} {os.path.basename(f).split('.h0.')[1][:4]}", f))
+            with Dataset(f) as ds:
+                last_year = int(round(float(ds.variables["time_bounds"][-1, 0]) / 365)) + 1
+            stages.append((f"{tag} yr {last_year}", f))
     for y in TRANS_YEARS:
         stages.append((f"transient {y}", os.path.join(CASE_ROOT, TRANS, "run", f"{TRANS}.elm.h0.{y}-02-01-00000.nc")))
     for y in FUT_YEARS:

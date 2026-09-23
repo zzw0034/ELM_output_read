@@ -103,8 +103,8 @@ def main():
     sub = (slice(jj[0], jj[-1] + 1), slice(ii[0], ii[-1] + 1))
     land = (W > 0)[sub]
     slat, slon = lat[jj], lon[ii]
-    # sanity: the grid edges really are on round numbers
-    assert abs((lon[0] - 1 / 48) - (-95.0)) < 1e-6 and abs((lat[0] - 1 / 48) - 24.0) < 1e-6
+    # sanity: the grid edges really are on round numbers (lat/lon are float32 in h0)
+    assert abs((lon[0] - 1 / 48) - (-95.0)) < 1e-4 and abs((lat[0] - 1 / 48) - 24.0) < 1e-4
 
     fields = {}
     old = case_name("oldDF", SSP)

@@ -3,7 +3,7 @@
 Built 2026-09-23 from read-only inspection of Pathfinder (`lnd_in`,
 `env_*.xml`, history headers, file timestamps). Cohort decision: blueprint
 "Decisions — 2026-09-23". This file is the only place case names should be
-copied from; `common.py` must be switched to it.
+copied from; `common.py` (`COHORTS["rerun_20260910"]`) generates exactly these names.
 
 Output root (scratch, purgeable):
 `/scratch/hpcl-cli185/zw5/cime_output_dirs/20260910_seus_rerun/<case>/run/`

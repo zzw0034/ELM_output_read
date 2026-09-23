@@ -26,11 +26,11 @@ Do not promise a positive result or treat 4 km as observational truth.
 ## Run provenance — decided 2026-09-23: use the 20260910 rerun
 
 The paper cohort is the 20260910 rerun family listed in
-[CASE_MATRIX.md](CASE_MATRIX.md). Switch `common.py` to it before regenerating
-anything, and keep case names in that one mapping so a later 38000 s cohort
-can be swapped in by editing one place.
+[CASE_MATRIX.md](CASE_MATRIX.md). `common.py` defaults to it (switched 2026-09-23: `PAPER_COHORT`, per-cohort `outputs/<cohort>/` and `_cache/<cohort>/`).
+Keep case names only in its `COHORTS` mapping so a later 38000 s cohort is
+one more entry. Legacy PNGs in `outputs/` and caches in `_cache/` are untouched.
 
-For history: the current `common.py` dictionaries are the **legacy figure cohort**:
+For history: the old figures came from the **legacy figure cohort** (`PAPER_COHORT=legacy_20260908`):
 0.5° 20260911 dt3600 cases plus older 4 km 20260908 futures, with management
 comparisons restricted to SSP3-7.0. Existing 4.79/4.95 PgC and 3–5% resolution
 differences belong to that cohort and are void for the paper.
@@ -73,8 +73,9 @@ advantage. Do not silently substitute sensitivity cases for baseline cases.
 - Project remote root: declared in ../../AGENTS.md as
   `/scratch/hpcl-cli185/zw5/ELM_output_read`.
 - Analysis working directory there: `analyses/paper_carbon_offset`.
-- `common.py` still references legacy raw files under
-  `/scratch/hpcl-cli185/zw5/cime_output_dirs`; availability is unverified.
+- `common.py` reads raw output under
+  `/scratch/hpcl-cli185/zw5/cime_output_dirs/20260910_seus_rerun`; all 34
+  cohort cases verified present and complete 2026-09-23 (scratch: purgeable).
 - Poster scripts record an archive location for older 4 km output:
   `/projects/hpcl-cli185/proj-shared/zw5/e3sm_run/20260901_before_seus_rerun`.
   Treat this as a documented location to verify, not proof files exist today.
@@ -131,8 +132,9 @@ complete inputs if using another dependency policy.
 
 ## Next work in order
 
-1. Finish [CASE_MATRIX.md](CASE_MATRIX.md) (cohort decided: 20260910 rerun)
-   and switch `common.py` to it.
+1. Done 2026-09-23: [CASE_MATRIX.md](CASE_MATRIX.md) built and `common.py`
+   switched. Legacy fig scripts still compute SSP3-7.0 only; use
+   `offset_defs(ssp)` for other SSPs.
 2. Quantify AGB/SOC spatial skill for native 0.5°, downscaled 0.5° and native
    4 km; the visual comparison exists, the formal benchmark is pending.
 3. Implement within-cell heterogeneity and equal-area selection diagnostics,

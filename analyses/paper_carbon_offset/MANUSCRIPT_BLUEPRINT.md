@@ -42,7 +42,7 @@ file or the companion documents conflicts, these decisions govern.
 
 1. **Cohort: the 20260910 rerun family.** The manuscript uses the new rerun
    outputs under `cime_output_dirs/20260910_seus_rerun/`, not the legacy
-   20260908 4 km cohort that `common.py` still points to. Every legacy
+   20260908 4 km cohort (`common.py` switched 2026-09-23). Every legacy
    headline value (RF 4.79/4.95, RH 0.93/0.98, DF 9.50/9.88 PgC; the 3–5%
    resolution difference; the 33.6%/57.3% quadrant) is void for the paper and
    must be recomputed. The actual case matrix is in

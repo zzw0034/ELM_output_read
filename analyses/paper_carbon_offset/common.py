@@ -1,17 +1,16 @@
 """
-Shared helpers for legacy SEUS manuscript figures at both resolutions.
+Shared helpers for the SEUS manuscript figures at both resolutions.
 
-The agreed high-resolution argument is in MANUSCRIPT_BLUEPRINT.md; figure
-mapping and pending analyses are in FIGURE_PLAN.md. Existing fig01-fig06
+The agreed argument is in MANUSCRIPT_BLUEPRINT.md; the cohort decision and the
+case list are in CASE_MATRIX.md (decided 2026-09-23). Existing fig01-fig06
 numbers are asset IDs, not the new manuscript figure numbers.
 
-CASE_ROOT, HALFDEG and FOURKM below retain the legacy cohort and paths.
-New 4 km reruns and paired 0.5-degree daylength sensitivity runs are recorded
-in AI_HANDOFF.md and ../CRIT_DAYL_STRESS_ARTIFACT.md. Verify availability and
-freeze matched case/parameter/restart versions before replacing these maps.
-Caches have no complete source-version signature; do not silently reuse them
-across a run-version change. No numerical helper changed in the 2026-09-22
-editorial alignment.
+Case names live ONLY in COHORTS below. The active cohort is PAPER_COHORT
+(default "rerun_20260910"); override without editing code via
+    sbatch --export=NONE,PAPER_COHORT=legacy_20260908 ... submit_py.sbatch ...
+Caches and figures go to per-cohort subfolders, because the caches carry no
+source-version signature and must never be reused across cohorts. A later
+crit_dayl_stress=38000 s cohort is added as one more COHORTS entry.
 """
 import glob
 import os
@@ -23,53 +22,103 @@ import xarray as xr
 
 CASE_ROOT = "/scratch/hpcl-cli185/zw5/cime_output_dirs"
 BASE = "/scratch/hpcl-cli185/zw5/ELM_output_read/analyses/paper_carbon_offset"
-OUTDIR = os.path.join(BASE, "outputs")
-CACHE_DIR = os.path.join(BASE, "_cache")
 
 SEC_PER_YEAR_NOLEAP = 365 * 86400.0
 
 # ---------------------------------------------------------------- case names
 
-# 0.5 deg: the "_dt3600" family under the 20260910_seus_rerun parent dir.
-HALFDEG_SUBDIR = "20260910_seus_rerun"
-HALFDEG = {
-    "transient": "20260911_seus_halfdeg_transient_dt3600",
-    "SSP1-1.9": "20260911_seus_halfdeg_future_ssp119_dt3600",
-    "SSP2-4.5": "20260911_seus_halfdeg_future_ssp245_dt3600",
-    "SSP3-7.0": "20260911_seus_halfdeg_future_ssp370_dt3600",
-    "SSP3-7.0 RF": "20260911_seus_halfdeg_future_ssp370_RF_dt3600",
-    "SSP3-7.0 DF": "20260911_seus_halfdeg_future_ssp370_DF_dt3600",
-    "SSP3-7.0 RH": "20260911_seus_halfdeg_future_ssp370_RH_dt3600",
-    "SSP5-8.5": "20260911_seus_halfdeg_future_ssp585_dt3600",
+SSPS = ["SSP1-1.9", "SSP2-4.5", "SSP3-7.0", "SSP5-8.5"]
+MANAGEMENT = ["RF", "DF", "RH"]
+_SSP_TAG = {"SSP1-1.9": "ssp119", "SSP2-4.5": "ssp245", "SSP3-7.0": "ssp370", "SSP5-8.5": "ssp585"}
+
+
+def _rerun_halfdeg():
+    # 20260911 created the four Default SSPs and the SSP3-7.0 management
+    # cases; 20260915 added management for the other three SSPs.
+    cases = {"transient": "20260911_seus_halfdeg_transient_dt3600"}
+    for ssp, tag in _SSP_TAG.items():
+        cases[ssp] = f"20260911_seus_halfdeg_future_{tag}_dt3600"
+        date = "20260911" if tag == "ssp370" else "20260915"
+        for m in MANAGEMENT:
+            cases[f"{ssp} {m}"] = f"{date}_seus_halfdeg_future_{tag}_{m}_dt3600"
+    return cases
+
+
+def _rerun_fourkm():
+    # 20260917 holds the four Defaults and SSP3-7.0 management; 20260915 the
+    # other SSPs' management. All share the 4 km transient's executable.
+    cases = {"transient": "20260911_Southeast_hires_30n_hdmfix_mapfix_ICB20TRCNPRDCTCBC"}
+    for ssp, tag in _SSP_TAG.items():
+        cases[ssp] = f"20260917_seus_4km_fut_{tag}"
+        date = "20260917" if tag == "ssp370" else "20260915"
+        for m in MANAGEMENT:
+            cases[f"{ssp} {m}"] = f"{date}_seus_4km_fut_{tag}_{m}"
+    return cases
+
+
+# Each cohort: resolution -> (case dict, subdir under CASE_ROOT).
+COHORTS = {
+    # Manuscript cohort (CASE_MATRIX.md): 4 SSPs x Default/RF/DF/RH at both
+    # resolutions, crit_dayl_stress = 36000 s, analysed as if 38000 s.
+    "rerun_20260910": {
+        "0.5deg": (_rerun_halfdeg(), "20260910_seus_rerun"),
+        "4km": (_rerun_fourkm(), "20260910_seus_rerun"),
+    },
+    # Legacy figure cohort (void for the paper). Its 4 km futures were
+    # archived to /projects/.../e3sm_run/20260901_before_seus_rerun, so these
+    # scratch paths may no longer resolve.
+    "legacy_20260908": {
+        "0.5deg": ({
+            "transient": "20260911_seus_halfdeg_transient_dt3600",
+            "SSP1-1.9": "20260911_seus_halfdeg_future_ssp119_dt3600",
+            "SSP2-4.5": "20260911_seus_halfdeg_future_ssp245_dt3600",
+            "SSP3-7.0": "20260911_seus_halfdeg_future_ssp370_dt3600",
+            "SSP3-7.0 RF": "20260911_seus_halfdeg_future_ssp370_RF_dt3600",
+            "SSP3-7.0 DF": "20260911_seus_halfdeg_future_ssp370_DF_dt3600",
+            "SSP3-7.0 RH": "20260911_seus_halfdeg_future_ssp370_RH_dt3600",
+            "SSP5-8.5": "20260911_seus_halfdeg_future_ssp585_dt3600",
+        }, "20260910_seus_rerun"),
+        "4km": ({
+            "transient": "20260902_Southeast_hires_s7P_s8hdmfix_harvfixsmooth_ICB20TRCNPRDCTCBC",
+            "SSP1-1.9": "20260908_seus_4km_fut_ssp119",
+            "SSP2-4.5": "20260908_seus_4km_fut_ssp245",
+            "SSP3-7.0": "20260908_seus_4km_fut_ssp370",
+            "SSP3-7.0 RF": "20260908_seus_4km_fut_ssp370_RF",
+            "SSP3-7.0 DF": "20260908_seus_4km_fut_ssp370_DF",
+            "SSP3-7.0 RH": "20260908_seus_4km_fut_ssp370_RH",
+            "SSP5-8.5": "20260908_seus_4km_fut_ssp585",
+        }, ""),
+    },
 }
 
-# 4 km: the pre-20260910_seus_rerun family, each case its own top-level dir.
-FOURKM_SUBDIR = ""
-FOURKM = {
-    "transient": "20260902_Southeast_hires_s7P_s8hdmfix_harvfixsmooth_ICB20TRCNPRDCTCBC",
-    "SSP1-1.9": "20260908_seus_4km_fut_ssp119",
-    "SSP2-4.5": "20260908_seus_4km_fut_ssp245",
-    "SSP3-7.0": "20260908_seus_4km_fut_ssp370",
-    "SSP3-7.0 RF": "20260908_seus_4km_fut_ssp370_RF",
-    "SSP3-7.0 DF": "20260908_seus_4km_fut_ssp370_DF",
-    "SSP3-7.0 RH": "20260908_seus_4km_fut_ssp370_RH",
-    "SSP5-8.5": "20260908_seus_4km_fut_ssp585",
-}
+PAPER_COHORT = os.environ.get("PAPER_COHORT", "rerun_20260910")
+if PAPER_COHORT not in COHORTS:
+    raise KeyError(f"PAPER_COHORT={PAPER_COHORT!r} not in {sorted(COHORTS)}")
 
-RESOLUTIONS = {
-    "0.5deg": (HALFDEG, HALFDEG_SUBDIR),
-    "4km": (FOURKM, FOURKM_SUBDIR),
-}
+# Legacy outputs stay in outputs/ and _cache/ themselves; new cohorts never
+# write there.
+OUTDIR = os.path.join(BASE, "outputs", PAPER_COHORT)
+CACHE_DIR = os.path.join(BASE, "_cache", PAPER_COHORT)
+
+RESOLUTIONS = COHORTS[PAPER_COHORT]
+HALFDEG, HALFDEG_SUBDIR = RESOLUTIONS["0.5deg"]
+FOURKM, FOURKM_SUBDIR = RESOLUTIONS["4km"]
 
 # Proposal Table 2. Sign convention is the proposal's: each entry is
 # (positive_term, negative_term) so that offset = positive - negative comes
 # out >0 when the management stores carbon. Note DF is reversed relative to
 # RF/RH -- that is intentional and comes straight from the proposal.
-OFFSET_DEFS = {
-    "Restoration/protection\n(RF - Default)": ("SSP3-7.0 RF", "SSP3-7.0"),
-    "Avoided-loss upper bound\n(Default - DF)": ("SSP3-7.0", "SSP3-7.0 DF"),
-    "Reduced harvest\n(RH - Default)": ("SSP3-7.0 RH", "SSP3-7.0"),
-}
+def offset_defs(ssp="SSP3-7.0"):
+    """(positive, negative) case keys for the three management benefits in one SSP."""
+    return {
+        "Restoration/protection\n(RF - Default)": (f"{ssp} RF", ssp),
+        "Avoided-loss upper bound\n(Default - DF)": (ssp, f"{ssp} DF"),
+        "Reduced harvest\n(RH - Default)": (f"{ssp} RH", ssp),
+    }
+
+
+# Legacy figure scripts use the SSP3-7.0 definitions directly.
+OFFSET_DEFS = offset_defs("SSP3-7.0")
 OFFSET_COLORS = {
     "Restoration/protection\n(RF - Default)": "tab:blue",
     "Avoided-loss upper bound\n(Default - DF)": "tab:red",

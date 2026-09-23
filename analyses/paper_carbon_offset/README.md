@@ -32,8 +32,7 @@ resolutions. It is planned, not implemented or validated by this update.
 ## Decisions of 2026-09-23 (details in the blueprint)
 
 1. **Cohort = the 20260910 rerun family** ([CASE_MATRIX.md](CASE_MATRIX.md)).
-   `common.py` still points to the legacy cohort and must be switched before
-   any figure is regenerated. All legacy headline numbers are void for the
+   `common.py` defaults to it (switched 2026-09-23: `PAPER_COHORT`, per-cohort `outputs/<cohort>/` and `_cache/<cohort>/`). All legacy headline numbers are void for the
    paper.
 2. **crit_dayl_stress:** analyze the current outputs as if they were the
    38000 s configuration; a full 38000 s rerun may follow. Keep every script

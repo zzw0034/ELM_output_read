@@ -24,8 +24,8 @@
 
 ## 1. 先锁定结果版本
 
-本目录 common.py 仍指向 20260911 的 0.5° dt3600 case 与较早的 20260908
-4 km future case；管理对比只列 SSP3-7.0。下面的 4.79/4.95 PgC、3–5%
+旧图（common.py 2026-09-23 前的设置）用的是 20260911 的 0.5° dt3600 case 与较早的
+20260908 4 km future case，管理对比只列 SSP3-7.0；common.py 现已切到新版 rerun。下面的 4.79/4.95 PgC、3–5%
 差异和象限比例属于这一旧图分析组合。
 
 [新版 4 km 配对分析](../20260908_seus_4km/rerun_comparison/FINDINGS.md)

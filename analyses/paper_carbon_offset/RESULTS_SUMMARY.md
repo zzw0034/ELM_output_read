@@ -1,12 +1,20 @@
 # 高分辨率 ELM 森林碳管理论文：结果与证据状态
 
-更新：2026-09-23。
+更新：2026-09-24。
 
-> **2026-09-23 决定（优先于下文旧表述，详见 blueprint）：**
-> 1. 论文用 **20260910 新版 rerun**，实验矩阵见 [CASE_MATRIX.md](CASE_MATRIX.md)。
+> **2026-09-24 结果目录选择（优先于下文旧表述）：**在
+> `/scratch/hpcl-cli185/zw5/cime_output_dirs/20260910_seus_rerun/`
+> 下，Default 和 DF 选用 16 个 `cds38000` future 目录；RF、RH
+> 选用 16 个不带该后缀的 future 目录；另用 6 个不带该后缀的
+> spin-up/transient 目录。具体 38 个名称见第 0 节。
+>
+> **2026-09-23 其余决定（与上述选择并用）：**
+> 1. 论文结果均来自上述 20260910 rerun 根目录。旧
+>    [CASE_MATRIX.md](CASE_MATRIX.md) 和 `code/common.py` 尚未更新到
+>    2026-09-24 的混合选择，不可直接把其 Default/DF 映射当作本文档清单。
 >    下文所有旧版数值（4.79/4.95、9.50/9.88、3–5%、33.6%/57.3% 等）对论文作废，需重算。
-> 2. `crit_dayl_stress`：把现有结果当作 38000 s 的结果分析，参数不影响分析设计；
->    将来可能全部重跑。脚本只从一个 case 映射读取 case 名，便于替换。
+> 2. `crit_dayl_stress`：按本节列出的实际目录选择分析，不能再把所有
+>    future case 统一描述为 38000 s。实际参数及跨情景配对条件仍须核对。
 > 3. 4 km 火灾图的圆形斑块来自 **HDM 人口密度输入**；脆弱性中的火灾分量是 HDM 的粗分辨率，
 >    需单独报告，并做去掉火灾分量的选址敏感性检验。
 > 4. 分辨率优势统一与“降尺度 0.5°”（0.5° 每 PFT 碳密度 × 4 km PFT 比例）比较；
@@ -22,6 +30,76 @@
 尚未执行的分析。重复且已被新证据取代的旧版长篇总结已从工作目录移除；
 可在 Git 历史中追溯，不能作为当前结论。
 
+## 0. 2026-09-24 选用的 38 个结果目录
+
+下列名称均位于同一结果根目录：
+`/scratch/hpcl-cli185/zw5/cime_output_dirs/20260910_seus_rerun/`。
+完整路径为“该根目录 + 下列文件夹名”。2026-09-24 对根目录做了只读的一层
+目录核对：54 个目录存在；按用户指定规则选用其中 38 个（32 个 future、
+6 个 spin-up/transient）。未在本次核对各目录内 h0/h1 文件、年份、参数、
+restart 或输出完整性。
+
+### 0.5°：19 个
+
+```text
+20260911_seus_halfdeg_ad_spinup_dt3600
+20260911_seus_halfdeg_final_spinup_dt3600
+20260911_seus_halfdeg_transient_dt3600
+
+20260922_seus_halfdeg_future_ssp119_cds38000_dt3600
+20260922_seus_halfdeg_future_ssp119_DF_cds38000_dt3600
+20260915_seus_halfdeg_future_ssp119_RF_dt3600
+20260915_seus_halfdeg_future_ssp119_RH_dt3600
+
+20260922_seus_halfdeg_future_ssp245_cds38000_dt3600
+20260922_seus_halfdeg_future_ssp245_DF_cds38000_dt3600
+20260915_seus_halfdeg_future_ssp245_RF_dt3600
+20260915_seus_halfdeg_future_ssp245_RH_dt3600
+
+20260922_seus_halfdeg_future_ssp370_cds38000_dt3600
+20260922_seus_halfdeg_future_ssp370_DF_cds38000_dt3600
+20260911_seus_halfdeg_future_ssp370_RF_dt3600
+20260911_seus_halfdeg_future_ssp370_RH_dt3600
+
+20260922_seus_halfdeg_future_ssp585_cds38000_dt3600
+20260922_seus_halfdeg_future_ssp585_DF_cds38000_dt3600
+20260915_seus_halfdeg_future_ssp585_RF_dt3600
+20260915_seus_halfdeg_future_ssp585_RH_dt3600
+```
+
+### 4 km：19 个
+
+```text
+20260910_Southeast_hires_30n_hdmfix_mapfix_ICB1850CNRDCTCBC_ad_spinup
+20260911_Southeast_hires_20n_hdmfix_mapfix_ICB1850CNPRDCTCBC_final_spinup
+20260911_Southeast_hires_30n_hdmfix_mapfix_ICB20TRCNPRDCTCBC
+
+20260922_seus_4km_fut_ssp119_cds38000
+20260922_seus_4km_fut_ssp119_DF_cds38000
+20260915_seus_4km_fut_ssp119_RF
+20260915_seus_4km_fut_ssp119_RH
+
+20260922_seus_4km_fut_ssp245_cds38000
+20260922_seus_4km_fut_ssp245_DF_cds38000
+20260915_seus_4km_fut_ssp245_RF
+20260915_seus_4km_fut_ssp245_RH
+
+20260922_seus_4km_fut_ssp370_cds38000
+20260922_seus_4km_fut_ssp370_DF_cds38000
+20260917_seus_4km_fut_ssp370_RF
+20260917_seus_4km_fut_ssp370_RH
+
+20260922_seus_4km_fut_ssp585_cds38000
+20260922_seus_4km_fut_ssp585_DF_cds38000
+20260915_seus_4km_fut_ssp585_RF
+20260915_seus_4km_fut_ssp585_RH
+```
+
+其余 16 个不带 `cds38000` 的旧版 Default/DF future 目录仍存在，
+但本次分析不选用。因为 RF/RH 与 Default/DF 取自不同批次，管理差值在
+解释前需核对实际参数、初始状态和其他配置；本节只固定文件夹选择，
+不声称已经完成严格配对验证或重算结果。
+
 ## 1. 先锁定结果版本
 
 旧图（common.py 2026-09-23 前的设置）用的是 20260911 的 0.5° dt3600 case 与较早的
@@ -31,7 +109,8 @@
 [新版 4 km 配对分析](../20260908_seus_4km/rerun_comparison/FINDINGS.md)
 已记录新增管理 SSP 和新版输出变化。不能再把“只有 SSP3-7.0 管理实验”说成
 整个项目的现状，也不能把旧表直接标成新版结果。论文采用哪些 case、参数、
-restart 和时间窗，需要先建立实际实验矩阵。
+restart 和时间窗，需要先建立实际实验矩阵。第 0 节已固定拟使用的目录，
+但 `code/common.py` 和 [CASE_MATRIX.md](CASE_MATRIX.md) 尚未同步这一选择。
 
 该配对分析指出 parameter file、restart 等配置同时变化，所以现有跨分辨率
 差异尚不能全部解释为纯网格效应。
@@ -160,9 +239,10 @@ stock CV。三个分量按格点排名后等权；象限中位数才是面积加
 2091–2100 平均 stock benefit 不同，不能直接乘上旧数当修正值。
 
 仅改 DF 仍会留下 Default 的阈值结构。38000 s 虽移走域内阈值，也引入
-南部更强冬季休眠；restart 仍来自 36000 s 的历史状态。因此这是有信息量
-的参数敏感性，不是独立生态验证或已决定采用的新基准。RF/RH、4 km 的
-对应参数敏感性状态需另核对，不能从这次 0.5° Default/DF 试验外推。
+南部更强冬季休眠；restart 仍来自 36000 s 的历史状态。早期试验是有信息量
+的参数敏感性，并非独立生态验证。现按第 0 节选用两种分辨率的
+`cds38000` Default/DF，以及不带该后缀的 RF/RH；后两种管理差值涉及
+不同批次，不能从早期 0.5° Default/DF 敏感性试验直接外推。
 
 论文必须检验阈值对空间 skill、潜力排序、vulnerability 的影响。高分辨率
 揭示额外细节，其中可能既有真实空间信息，也有模型结构的痕迹。

@@ -16,8 +16,8 @@ sections are described in
 
 | Location | Purpose |
 |---|---|
-| [MANUSCRIPT_BLUEPRINT.md](MANUSCRIPT_BLUEPRINT.md) | Full manuscript structure and Methods |
-| [manuscript_figure_results_discussion.md](manuscript_figure_results_discussion.md) | Current figure, Results, and Discussion plan |
+| [MANUSCRIPT_BLUEPRINT.md](MANUSCRIPT_BLUEPRINT.md) | Decisions, Introduction, Methods, tables, closure checklist |
+| [manuscript_figure_results_discussion.md](manuscript_figure_results_discussion.md) | The only maintained figure, Results, and Discussion plan |
 | [CASE_MATRIX.md](CASE_MATRIX.md) | Case and configuration provenance for the chosen cohort |
 | [RESULTS_SUMMARY.md](RESULTS_SUMMARY.md) | Evidence status; old numbers are explicitly void for the paper |
 | [code/](code/README.md) | Analysis scripts, shared helper, and Slurm runner |
@@ -33,9 +33,11 @@ The old filenames fig01–fig06 identify exploratory scripts, **not** the five
 planned manuscript figures. Current PNGs in [figures/legacy/](figures/legacy/)
 were not regenerated from the active cohort.
 
-The corrected daylength-threshold configuration is treated as non-blocking for
-the analysis design, but provenance and sensitivity still need to be checked
-before final claims. Fire-based vulnerability is partly limited by the
+The paper cohort still uses the original `crit_dayl_stress = 36000 s`; its
+outputs are analysed **as if** they were the 38000 s configuration, because
+the parameter does not change the analysis design. A full 38000 s rerun may
+follow, and the 30.833°N discontinuity is disclosed as a limitation. Only
+Default and DF have been rerun at 38000 s so far. Fire-based vulnerability is partly limited by the
 coarse-effective-resolution HDM input. Native 4 km versus native 0.5° compares
 two configurations, not grid spacing alone; aggregation of one 4 km simulation
 provides the cleaner spatial-information comparison.

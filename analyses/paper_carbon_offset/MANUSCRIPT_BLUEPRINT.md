@@ -1,6 +1,6 @@
 # Manuscript blueprint: southeastern U.S. forest carbon management
 
-Last updated: 2026-09-23
+Last updated: 2026-09-24
 
 This document turns the proposal's Milestone 6 into a manuscript-level
 argument. It distinguishes results that are ready to write from analyses that
@@ -212,23 +212,24 @@ the carbon-cycle problem rather than the credibility of voluntary markets.
 
 ### Paragraph 2 — the gap between regional budgets and local management
 
-Organize the gap around three scientific choices:
+State one organizing gap: regional forest-carbon assessments quantify broad
+carbon trajectories, but do not directly identify where reforestation or
+reduced harvest will have the greatest modeled benefit and acceptable modeled
+disturbance exposure. A management benefit is defined relative to the Default
+scenario; this is a comparison convention, not the paper's scientific gap.
 
-1. **Counterfactual baseline:** additional storage depends on what would have
-   happened without management.
-2. **Accounting boundary:** standing biomass, ecosystem stocks, NBP, harvested
-   products, and avoided loss are different quantities.
-3. **Time and spatial scale:** disturbance produces event-driven losses, and
-   regional totals can conceal sub-grid heterogeneity relevant to project
-   siting.
+Make spatial scale central. Similar regional totals can arise from very
+different local distributions of land cover, management change, carbon pools,
+and disturbance risk. It remains largely untested whether resolving that
+heterogeneity changes the location and expected performance of equal-area
+management portfolios.
 
-This framing is stronger than claiming that all crediting studies simply omit
-soil carbon. The present results show that standing stocks are mostly outside
-aboveground biomass, while management increments are mostly above ground.
-
-Make spatial scale the organizing gap: similar regional totals can arise from
-very different local distributions. Managers need the location and variability
-of additional carbon and disturbance exposure, not only a regional integral.
+Keep accounting-boundary and time-horizon distinctions concise here and define
+them fully in Methods. Do not frame the gap as an assertion that all crediting
+studies omit soil carbon. The stock-versus-increment distinction belongs in the
+Results/Discussion: standing ecosystem carbon may be dominated by soil and
+other non-aboveground pools, whereas the modeled management increment relative
+to Default may be dominated by aboveground biomass, pending pool closure.
 
 ### Paragraph 3 — limitations of existing approaches
 
@@ -240,7 +241,7 @@ definitions and spatial/temporal boundaries.
 
 Explain the remaining gap: few studies jointly resolve dynamic land use,
 multiple ecosystem pools, disturbance losses, and spatial scale while applying
-explicit management counterfactuals.
+management scenarios against a clearly defined Default scenario.
 
 Use CMIP6/TRENDY as concise regional context, with matched variables, periods,
 and scenario definitions. Their spread motivates uncertainty and scale
@@ -310,9 +311,29 @@ Avoided-deforestation bound(t)    = C_Default(t) - C_DF(t)
 Reduced-harvest benefit(t)        = C_RH(t) - C_Default(t)
 ```
 
-State whether `C` is `TOTECOSYSC` and list its included pools. Define the pool
-partition separately. Do not treat the sum of selected pools as identical to
-`TOTECOSYSC` until the current several-percent residual is closed.
+`C` is `TOTECOSYSC`. In this ELM version (`ColumnDataType.F90`, checked
+2026-09-24) it is
+
+```text
+TOTECOSYSC = TOTVEGC + CWDC + TOTLITC + TOTSOMC + TOTPRODC
+TOTPRODC   = PROD1C + PROD10C + PROD100C   (wood and crop product pools)
+```
+
+so the primary stock benefit includes harvested-product carbon. Name it
+"ecosystem and product carbon" or define it explicitly; do not call it
+in-situ ecosystem carbon. `TOTPRODC` is inactive by default and absent from
+our h0 files, so derive it as `TOTECOSYSC − (TOTVEGC + CWDC + TOTLITC +
+TOTSOMC)`. Verify the derivation where products should be near zero (early
+transient years) before relying on it. `TOTVEGC_ABG` gives aboveground
+vegetation carbon directly.
+
+Report the benefit at three boundaries: aboveground vegetation, in-situ
+ecosystem (excluding products), and ecosystem + products. RF (zero harvest)
+and RH change the product term directly, so the boundary can change their
+benefits and rankings. The legacy "several-percent residual" between selected
+pools and `TOTECOSYSC` was most likely the omitted product pool plus the
+vegetation storage/transfer pools; close the partition with `TOTVEGC` and the
+product term rather than with individual tissue pools.
 
 Flux outcomes:
 
@@ -351,6 +372,17 @@ ELM at 4 km. SOC is likely the more discriminating test, because it depends on
 soils, hydrology and temperature more than on where forest is.
 Do not count the known 30.833°N daylength discontinuity as observed spatial
 skill.
+
+Use a second independent product for each variable (AGB: GEDI L4B or an
+FIA-based map; SOC: gSSURGO) and report the agreement between the two
+observation products as the ceiling for model skill, especially within coarse
+cells, where a single 4 km observation field is noisy.
+
+SOC has no land-cover downscaling comparator: all natural PFTs (and crops,
+`create_crop_landunit=.false.`) share one soil column, so a coarse SOC field
+cannot be redistributed by PFT fraction. Within-cell SOC skill therefore comes
+entirely from running at 4 km, which makes SOC the cleanest test of the
+resolution claim; AGB measures the contribution of land cover.
 
 ### 2.7 Disturbance and vulnerability metrics
 
@@ -413,162 +445,14 @@ The legacy 33.6%/57.3% quadrant statistic (void for the paper, decision 1)
 motivated this design but is not a substitute for the equal-area comparison. A quadrant threshold and a fixed
 land-area budget answer different questions.
 
-## 3 Results
+## 3 Results and 4 Discussion — see the figure plan
 
-### 3.1 Spatial representation and observational evaluation
-
-Lead with the 0.5°/4 km/observation comparison. Identify the spatial structures
-that 4 km represents and quantify where performance improves or deteriorates.
-Show both common-support metrics and observed within-coarse-cell variation.
-AGB and SOC need separate assessments; do not infer SOC skill from AGB skill.
-
-Include CMIP6/TRENDY as brief context if definitions and periods align. Keep
-the historical trajectory compact, establishing the carbon and land-cover
-state from which the counterfactuals diverge in 2024. Full trajectories and
-multi-model maps can remain supplementary.
-
-### 3.2 Regional carbon futures and management benefits
-
-Establish the future baseline and intervention magnitudes, with both
-resolutions shown. Keep stocks, fluxes, and management differences distinct.
-
-Show the four Default SSP cumulative NBP curves, with the exact flux
-decomposition in supporting diagnostics. The current 0.5° results give a
-future mean NBP range of −0.0019 to 0.0218
-PgC/yr, versus 0.0708 PgC/yr in 2014–2023, without presenting the latter as an
-observationally validated climatology.
-
-For the existing 0.5° budget diagnostics, complete fire loss rises from 0.0073 to
-0.0671–0.0978 PgC/yr. It explains 82–153% of the NBP difference; NEP offsets
-part of the decline in SSP2-4.5, SSP3-7.0, and SSP5-8.5. SSP1-1.9 differs
-because NEP also declines. Emphasize episodic fire years rather than gradual,
-uniform sink saturation. Detailed fire attribution supports the regional
-baseline and does not displace the resolution-centered narrative.
-
-Report RF−Default and RH−Default as management effects. Present Default−DF in
-a visually separate panel labeled “idealized avoided-loss upper bound.” Give
-early-, mid-, and late-century values, not only 2091–2100 means.
-
-Effect sizes must be recomputed on the 20260910 rerun cohort. For orientation
-only, the void legacy 2091–2100 values were RF 4.95/4.79, RH 0.98/0.93 and
-DF 9.88/9.50 PgC (0.5°/4 km); do not quote them.
-
-Explain the 2024 DF discontinuity as an imposed instantaneous conversion and
-temporary transfer into litter/CWD, not gradual deforestation.
-
-Close with the regional comparison of the recomputed cross-resolution
-stock-benefit difference. This establishes
-the starting point for asking what those similar totals conceal locally.
-
-### 3.3 Spatial heterogeneity and carbon mechanisms
-
-Begin with the three-way native/aggregated comparison and the distribution
-tails. Quantify variation within 0.5° cells and the concentration of benefits
-within those cells. Relate local differences to forest cover, the management
-perturbation, and environmental conditions using reproducible strata or
-diagnostics, rather than attributing patterns from maps alone.
-
-Use the stock-versus-increment distinction to explain benefits. Show signed
-pool contributions to each management difference. Report the current 66–70%
-aboveground share of the management increment only after closing the selected
-pool sum versus `TOTECOSYSC` residual.
-
-Discuss the small negative SOC difference under RF/RH as a modeled response,
-not as proof that restoration depletes real-world soil carbon. Connect pool
-responses to litter inputs, heterotrophic respiration, conversion debris, and
-the analysis time horizon where supported.
-
-Compare SSP3-7.0 Default, RF, and RH using the exact budget. RF has higher NEP
-and much smaller LAND_USE_FLUX but also larger fire loss. Its maintained NBP is
-therefore a net outcome of competing processes, not evidence that restoration
-removes fire risk.
-
-For RF versus Default, the current 0.5°, 2024–2100 mean annual differences are
-approximately:
-
-- lower land-use/product loss: +0.0581 PgC/yr;
-- higher NEP: +0.0287 PgC/yr;
-- higher fire loss: −0.0193 PgC/yr.
-
-These regional flux diagnostics explain the net benefit, but do not alone
-attribute within-cell heterogeneity. Complete the spatial diagnostics before
-making local causal claims.
-
-### 3.4 Consequences for spatial prioritization
-
-First show individual potential and vulnerability components; then show the
-classification. Report the share of total potential retained under a clearly
-defined low-risk screen. Use absolute thresholds or show sensitivity to the
-domain-median thresholds.
-
-The poster's legacy 4 km RF quadrant (33.6% of land, 57.3% of potential) is
-void for the paper; recompute any quadrant statistic on the new cohort after
-harmonizing the vulnerability diagnostics. A quadrant is the intersection of
-two classes, not the entire low-vulnerability half of the domain.
-
-Make the equal-area comparison the culminating result: for the same 20% or
-30% area budget, where do the selections agree or disagree, how much modeled
-carbon do they capture, and what vulnerability do they carry? Present the
-selection curve and reference-field sensitivity alongside the maps. Report
-similar or mixed outcomes if that is what the test finds.
-
-Conclude at the level of subregional screening and management prioritization;
-4 km does not resolve ownership parcels or individual forest stands.
-
-## 4 Discussion
-
-### 4.1 What high-resolution modeling adds to forest carbon management
-
-Organize the discussion around three levels of evidence: observational spatial
-skill, heterogeneity concealed by regional totals, and consequences for
-equal-area prioritization. Explain where averaging removes useful information
-and where the two configurations give consistent guidance. Distinguish
-model-internal selection gains from independently demonstrated accuracy.
-Keep 4 km's role at subregional screening, not parcel-level implementation.
-
-### 4.2 Management ranking is conditional on the counterfactual
-
-The 10:5:1 ranking does not compare three equally realistic policies. DF is a
-maximum avoided-loss experiment; RF is a bundled intervention; RH is a
-smaller perturbation. Discuss marginal benefit per hectare or per unit forest
-area before making cost or policy comparisons.
-
-### 4.3 Carbon-pool boundaries change what “offset potential” means
-
-Use the stock-versus-increment result to explain why large soil stocks do not
-imply large soil contributions to near-century management benefits. Relate the
-finding to monitoring practice without asserting that a specific protocol
-omits a fixed percentage unless protocol evidence supports it.
-
-### 4.4 Disturbance and uncertainty in spatial prioritization
-
-State that the reported management benefits are already net of simulated fire.
-Discuss the rise in complete fire loss, event-driven NBP reversals, and the
-greater RF fire exposure. Verify which fire processes are represented by the
-actual configuration before matching to observations. Discuss prescribed
-burning and unrepresented disturbances such as insects and windthrow, and
-the absence of project-level reversal probabilities. Explain how index
-weights, thresholds, and evaluation windows affect priority-area stability.
-
-### 4.5 Implications for carbon-credit concepts
-
-- **Additionality:** quantified only relative to the modeled Default baseline.
-- **Permanence:** informed by event-driven losses, but no contractual durability
-  or reversal probability is estimated.
-- **Leakage:** not simulated; regional harvest displacement and market effects
-  remain outside the system boundary.
-- **Measurement:** stock and flux definitions must match the credited pool and
-  product-pool boundary.
-
-### 4.6 Limitations and generality
-
-Discuss the single-patch PFT representation, missing forest age structure,
-instantaneous DF conversion, RF intervention bundling, grass phenology concern,
-fire evaluation and HDM-driven fire structure, prescribed burning,
-crit_dayl_stress and the 30.833°N discontinuity, management-SSP coverage,
-configuration differences between resolutions, reference-field dependence in
-selection tests, and lack of economic/market feedback. Separate limitations
-that affect magnitude from those that could change the sign or ranking.
+The figure-by-figure Results (3.1–3.4) and the Discussion structure are
+maintained only in
+[manuscript_figure_results_discussion.md](manuscript_figure_results_discussion.md)
+(since 2026-09-24). This blueprint keeps the Introduction, Methods, tables,
+closure checklist and positioning notes. Do not re-add Results or Discussion
+text here; edit the plan instead so the two documents cannot drift.
 
 ## 5 Conclusions
 
@@ -590,37 +474,23 @@ that climate policy without land management “cannot work.”
 
 ### Main figures
 
-1. **Spatial credibility (Results 3.1).** 0.5° ELM, 4 km ELM, and observations
-   for AGB/SOC, with common-support skill and within-cell pattern metrics.
-   CMIP6/TRENDY is a compact context panel or supplementary figure, not a
-   substitute for the within-ELM resolution comparison.
-2. **Regional futures and management benefits (3.2).** Compact four-SSP NBP
-   context plus RF/RH stock-benefit trajectories and a separately scaled DF
-   upper-bound panel. Compare both resolutions and early/mid/late horizons.
-3. **Heterogeneity hidden by aggregation (3.3).** Native 4 km, aggregated 4 km,
-   and native 0.5°; weighted distribution tails, within-cell variation, and
-   representative subregions selected by a reproducible rule.
-4. **Carbon mechanisms (3.3).** Signed pool contributions and a concise
-   NEP/fire/LAND_USE_FLUX management-difference budget. Show spatial strata
-   where they explain the heterogeneity in Figure 3; close pool residuals
-   before finalizing numerical shares.
-5. **Consequences for prioritization (3.4).** Potential/vulnerability and
-   selection-agreement maps; captured-benefit versus selected-area curves;
-   equal-area overlap and vulnerability comparisons at 20% and 30%.
-
-Five main figures are the working target. Detailed fire maps and baseline
-budget/event diagnostics belong in the supplement unless essential to a main
-claim. Split a figure only if the combined panels become unreadable; preserve
-the four-part Results argument.
+The five main figures are defined in
+[manuscript_figure_results_discussion.md](manuscript_figure_results_discussion.md).
 
 ### Main tables
 
-1. **Actual simulation matrix and interventions.** Include resolution,
-   scenario, intervention, years, forcing, and purpose.
+1. **Simulation matrix and interventions.** Built from
+   [CASE_MATRIX.md](CASE_MATRIX.md): resolution, SSP, scenario, years, shared
+   and differing inputs (including the effective resolution of each driver),
+   and purpose.
 2. **Accounting definitions and system boundaries.** Stock/flux metric,
-   equation, included pools, time window, and interpretation.
+   equation, included pools, time window and interpretation — explicitly
+   including that `TOTECOSYSC` contains the wood/crop product pools, and the
+   three boundaries used in Figure 4 (aboveground vegetation, in-situ
+   ecosystem, ecosystem + products).
 3. **Evaluation datasets and metrics.** Product, years, native resolution,
-   matching procedure, and performance statistics.
+   matching procedure and performance statistics, including the second
+   independent product for AGB and SOC used as the observational ceiling.
 
 ### Supplement
 
@@ -655,8 +525,10 @@ the four-part Results argument.
 
 1. Independent AGB, SOC, forest-cover, and fire/burned-area evaluation with
    matched domains, periods, and definitions.
-2. Resolve the several-percent mismatch between `TOTECOSYSC` and the selected
-   pool sum before publishing pool shares.
+2. Close the pool partition including the derived product pool (Methods 2.4);
+   this should explain the earlier several-percent mismatch between
+   `TOTECOSYSC` and the selected pool sum. Confirm closure before publishing
+   pool shares.
 3. Diagnose the fire increase with `FAREA_BURNED`, fuel/stock variables, and
    meteorological controls; distinguish burned-area effects from carbon burned
    per unit area.
@@ -731,7 +603,8 @@ beyond one region and one management SSP.
    downscaled 0.5° field reproduces.
 7. **Meaning:** Explain what high-resolution modeling adds to subregional
    forest carbon screening, bounded by observational skill, modeled
-   counterfactuals, and uncertainty. These estimates are not issued credits.
+   Default-scenario comparisons, and uncertainty. These estimates are not
+   issued credits.
 
 ## 10. Recommended writing order
 
@@ -745,6 +618,7 @@ beyond one region and one management SSP.
 5. Write Results figure by figure, with one finding per subsection.
 6. Write Discussion around the three levels of high-resolution evidence:
    observed spatial skill, local heterogeneity, and prioritization consequences;
-   integrate counterfactuals, pool boundaries, and disturbance as explanations.
+   integrate Default-scenario comparisons, pool boundaries, and disturbance as
+   explanations.
 7. Write Introduction and Abstract last so they describe the evidence actually
    retained in the paper.

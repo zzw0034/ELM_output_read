@@ -1,14 +1,14 @@
 """
 Poster Panel 4: siting map (A-D, 2x2) and the potential-vs-vulnerability
 scatter (E, standalone). Same data and math as
-../../paper_carbon_offset/fig05_siting_potential_vs_vulnerability.py --
+../../paper_carbon_offset/code/fig05_siting_potential_vs_vulnerability.py --
 this script reuses that project's common.py (case names, area weights,
 day-weighted annual means) via sys.path rather than re-deriving them, per
-paper_carbon_offset/common.py's own "deliberately copied rather than
+paper_carbon_offset/code/common.py's own "deliberately copied rather than
 imported... across per-case-family folders" caution: that caution is about
 NOT importing between the 20260910_seus_rerun / 20260908_seus_4km per-case
 folders, a different pair from this one. carbon_offset_poster reusing
-paper_carbon_offset's *own* common.py is the same "reuse, do not fork"
+paper_carbon_offset's *own* code/common.py is the same "reuse, do not fork"
 relationship already documented in this project's README.
 
 Differences from fig05_siting_potential_vs_vulnerability.py:
@@ -36,7 +36,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import xarray as xr
 
-sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "..", "paper_carbon_offset"))
+sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "..", "paper_carbon_offset", "code"))
 from common import (FOURKM, SEC_PER_YEAR_NOLEAP, year_of, area_weights,
                      day_weighted_annual_mean)
 
@@ -48,7 +48,7 @@ Y0, Y1 = 2091, 2100
 CASES = FOURKM
 MANAGED, POTENTIAL_LABEL = "SSP3-7.0 RF", "Reforestation offset (RF - Default)"
 
-# 2026-09-17: paper_carbon_offset/common.py's FOURKM_SUBDIR="" + CASE_ROOT
+# 2026-09-17: paper_carbon_offset/code/common.py's legacy FOURKM_SUBDIR="" + CASE_ROOT
 # (/scratch/hpcl-cli185/zw5/cime_output_dirs) is stale for these 4km future
 # cases -- confirmed gone from scratch (moved/cleaned since the 2026-09-15
 # fig05 run that last used it successfully). The durable copy lives here

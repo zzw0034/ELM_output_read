@@ -7,7 +7,7 @@ numbers are asset IDs, not the new manuscript figure numbers.
 
 Case names live ONLY in COHORTS below. The active cohort is PAPER_COHORT
 (default "rerun_20260910"); override without editing code via
-    sbatch --export=NONE,PAPER_COHORT=legacy_20260908 ... submit_py.sbatch ...
+    sbatch --export=NONE,PAPER_COHORT=legacy_20260908 ... code/submit_py.sbatch code/<script.py> ...
 Caches and figures go to per-cohort subfolders, because the caches carry no
 source-version signature and must never be reused across cohorts. A later
 crit_dayl_stress=38000 s cohort is added as one more COHORTS entry.
@@ -95,9 +95,8 @@ PAPER_COHORT = os.environ.get("PAPER_COHORT", "rerun_20260910")
 if PAPER_COHORT not in COHORTS:
     raise KeyError(f"PAPER_COHORT={PAPER_COHORT!r} not in {sorted(COHORTS)}")
 
-# Legacy outputs stay in outputs/ and _cache/ themselves; new cohorts never
-# write there.
-OUTDIR = os.path.join(BASE, "outputs", PAPER_COHORT)
+# Legacy PNGs are preserved in figures/legacy; new cohorts write separately.
+OUTDIR = os.path.join(BASE, "figures", PAPER_COHORT)
 CACHE_DIR = os.path.join(BASE, "_cache", PAPER_COHORT)
 
 RESOLUTIONS = COHORTS[PAPER_COHORT]

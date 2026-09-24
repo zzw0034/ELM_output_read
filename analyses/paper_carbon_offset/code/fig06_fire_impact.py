@@ -1,7 +1,8 @@
 """
 Legacy asset fig06 -- modeled fire-loss diagnostics for the supplement.
 
-Supports new Main Figures 4/5 and Results 3.3/3.4; see FIGURE_PLAN.md.
+Supports new Main Figures 4/5 and Results 3.3/3.4; see
+../manuscript_figure_results_discussion.md.
 PFT_FIRE_CLOSS is patch fire loss, not complete COL_FIRE_CLOSS. Its ratio
 to ecosystem stock is loss intensity, not a project reversal probability.
 The existing case cohort and known phenology artifact need provenance and
@@ -35,7 +36,7 @@ assumed -- do not "simplify" these away:
     everywhere in this configuration -- not plotted.
 
 Usage inside an approved Slurm allocation:
-    python fig06_fire_impact.py [0.5deg|4km]
+    python code/fig06_fire_impact.py [0.5deg|4km]
 """
 import os
 import sys

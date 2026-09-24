@@ -14,10 +14,11 @@ Known daylength-threshold structure requires separate sensitivity checks.
 
 This script does not evaluate observations or compare equal-area selections.
 Some printed percentiles and RMS statistics are not area-weighted; audit
-before publication. See FIGURE_PLAN.md and AI_HANDOFF.md.
+before publication. See ../manuscript_figure_results_discussion.md and
+../supplement/AI_HANDOFF.md.
 
 Usage inside an approved Slurm allocation:
-    python fig04_resolution_comparison.py
+    python code/fig04_resolution_comparison.py
 """
 import os
 

@@ -1,7 +1,8 @@
 """
 Legacy asset fig01: management-induced ecosystem stock differences.
 
-Feeds new Main Figure 2 / Results 3.2; see FIGURE_PLAN.md.
+Feeds new Main Figure 2 / Results 3.2; see
+../manuscript_figure_results_discussion.md.
 RF-Default is restoration/protection including broad zero harvest.
 RH-Default is reduced prescribed harvest. Default-DF is an idealized
 avoided-loss bound, not a deployable forest-preservation credit estimate.
@@ -12,7 +13,7 @@ Separate panels retain visibility of RH. These are version-specific results,
 not observational validation or a completed pure-resolution experiment.
 
 Usage inside an approved Slurm allocation:
-    python fig01_offset_potential_timeseries.py [0.5deg|4km]
+    python code/fig01_offset_potential_timeseries.py [0.5deg|4km]
 """
 import os
 import sys

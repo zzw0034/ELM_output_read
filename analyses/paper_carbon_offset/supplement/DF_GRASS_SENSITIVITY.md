@@ -3,7 +3,7 @@
 ## Current status — 2026-09-22
 
 The September 15 assessment below is a historical investigation. Newer
-[daylength-threshold diagnostics](../CRIT_DAYL_STRESS_ARTIFACT.md) document
+[daylength-threshold diagnostics](../../CRIT_DAYL_STRESS_ARTIFACT.md) document
 the parameter-driven discontinuity near 30.833°N under
 `crit_dayl_stress=36000 s`, in both 0.5° and 4 km outputs. Source/parameter
 checks, seasonal and PFT contrasts, and paired sensitivity reruns now provide
@@ -253,9 +253,9 @@ For the Discussion/limitations, on what it means for the offset estimate:
 
 ```bash
 # Historical screening scripts; remote execution requires approved Slurm jobs.
-sbatch --export=NONE -J dfdecomp05 submit_py.sbatch check_df_grass_decomposition.py 0.5deg
-sbatch --export=NONE -J grass05 submit_py.sbatch check_grass_phenology_mechanism.py 2100 0.5deg
+sbatch --export=NONE -J dfdecomp05 code/submit_py.sbatch code/check_df_grass_decomposition.py 0.5deg
+sbatch --export=NONE -J grass05 code/submit_py.sbatch code/check_grass_phenology_mechanism.py 2100 0.5deg
 
 # 4 km must go through Slurm on the dedicated partition
-sbatch --export=NONE -J dfdecomp4km submit_py.sbatch check_df_grass_decomposition.py 4km
+sbatch --export=NONE -J dfdecomp4km code/submit_py.sbatch code/check_df_grass_decomposition.py 4km
 ```

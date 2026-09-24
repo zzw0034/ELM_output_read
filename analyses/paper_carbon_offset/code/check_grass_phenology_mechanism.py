@@ -12,7 +12,7 @@ paired 0.5-degree Default/DF sensitivity at 38000 s. Use that record and
 DF_GRASS_SENSITIVITY.md for current status, not this screening alone.
 
 Usage inside an approved Slurm allocation:
-    python check_grass_phenology_mechanism.py [year] [0.5deg|4km]
+    python code/check_grass_phenology_mechanism.py [year] [0.5deg|4km]
 """
 import sys
 

@@ -1,11 +1,14 @@
 # AI handoff — high-resolution ELM forest carbon manuscript
 
-Updated: 2026-09-23. Read [README.md](README.md), then
-[MANUSCRIPT_BLUEPRINT.md](MANUSCRIPT_BLUEPRINT.md) — its "Decisions —
+Updated: 2026-09-24. Historical handoff; verify all paths before use. Read
+[README.md](../README.md), then
+[MANUSCRIPT_BLUEPRINT.md](../MANUSCRIPT_BLUEPRINT.md) — its "Decisions —
 2026-09-23" section overrides older statements here — then
-[CASE_MATRIX.md](CASE_MATRIX.md). The blueprint records the
-user-approved argument; [FIGURE_PLAN.md](FIGURE_PLAN.md) maps existing scripts
-to the new manuscript figures. [RESULTS_SUMMARY.md](RESULTS_SUMMARY.md)
+[CASE_MATRIX.md](../CASE_MATRIX.md). The blueprint records the
+user-approved argument;
+[manuscript_figure_results_discussion.md](../manuscript_figure_results_discussion.md)
+maps existing scripts to the new manuscript figures.
+[RESULTS_SUMMARY.md](../RESULTS_SUMMARY.md)
 separates legacy numerical results from newer evidence and planned tests.
 
 ## Agreed scientific direction
@@ -26,9 +29,10 @@ Do not promise a positive result or treat 4 km as observational truth.
 ## Run provenance — decided 2026-09-23: use the 20260910 rerun
 
 The paper cohort is the 20260910 rerun family listed in
-[CASE_MATRIX.md](CASE_MATRIX.md). `common.py` defaults to it (switched 2026-09-23: `PAPER_COHORT`, per-cohort `outputs/<cohort>/` and `_cache/<cohort>/`).
+[CASE_MATRIX.md](../CASE_MATRIX.md). `code/common.py` defaults to it
+(`PAPER_COHORT`, per-cohort `figures/<cohort>/` and `_cache/<cohort>/`).
 Keep case names only in its `COHORTS` mapping so a later 38000 s cohort is
-one more entry. Legacy PNGs in `outputs/` and caches in `_cache/` are untouched.
+one more entry. Legacy PNGs are in `figures/legacy/`.
 
 For history: the old figures came from the **legacy figure cohort** (`PAPER_COHORT=legacy_20260908`):
 0.5° 20260911 dt3600 cases plus older 4 km 20260908 futures, with management
@@ -36,8 +40,8 @@ comparisons restricted to SSP3-7.0. Existing 4.79/4.95 PgC and 3–5% resolution
 differences belong to that cohort and are void for the paper.
 
 Newer analyses document additional management SSPs and changed 4 km outputs:
-[rerun comparison README](../20260908_seus_4km/rerun_comparison/README.md) and
-[FINDINGS](../20260908_seus_4km/rerun_comparison/FINDINGS.md). Do not say the
+[rerun comparison README](../../20260908_seus_4km/rerun_comparison/README.md) and
+[FINDINGS](../../20260908_seus_4km/rerun_comparison/FINDINGS.md). Do not say the
 whole project still has only seven futures per resolution. Build an actual
 case/version matrix before expanding or replacing the manuscript cohort.
 
@@ -53,7 +57,7 @@ block analyses on the parameter or on the fact that RF/RH were not rerun.
 Disclose the 30.833°N discontinuity in Methods/limitations. The history below
 is background.
 
-[CRIT_DAYL_STRESS_ARTIFACT.md](../CRIT_DAYL_STRESS_ARTIFACT.md) documents a
+[CRIT_DAYL_STRESS_ARTIFACT.md](../../CRIT_DAYL_STRESS_ARTIFACT.md) documents a
 36000 s daylength threshold producing a spatial discontinuity near 30.833°N
 in both resolutions, and September 22 paired Default/DF sensitivity runs at
 38000 s for four 0.5° SSPs. See [DF_GRASS_SENSITIVITY.md](DF_GRASS_SENSITIVITY.md).
@@ -70,7 +74,7 @@ advantage. Do not silently substitute sensitivity cases for baseline cases.
 
 ## Paths and execution
 
-- Project remote root: declared in ../../AGENTS.md as
+- Project remote root: declared in ../../../AGENTS.md as
   `/scratch/hpcl-cli185/zw5/ELM_output_read`.
 - Analysis working directory there: `analyses/paper_carbon_offset`.
 - `common.py` reads raw output under
@@ -80,7 +84,7 @@ advantage. Do not silently substitute sensitivity cases for baseline cases.
   `/projects/hpcl-cli185/proj-shared/zw5/e3sm_run/20260901_before_seus_rerun`.
   Treat this as a documented location to verify, not proof files exist today.
 - Scenario definitions:
-  `../../../ELM_Futu_landuseInput/harvest_scenarios/HARVEST_SCENARIOS.md`.
+  `../../../../ELM_Futu_landuseInput/harvest_scenarios/HARVEST_SCENARIOS.md`.
 
 Follow workspace/project AGENTS.md. Before any remote inspection, read the
 project declaration and local git status. Before transfers state direction;
@@ -89,7 +93,7 @@ user approval. Use scp for approved small files or rsync without --delete.
 Remote Python analysis belongs on Slurm, including 0.5°. Existing runner:
 
 ```bash
-sbatch --export=NONE -J <name> submit_py.sbatch <script.py> [args...]
+sbatch --export=NONE -J <name> code/submit_py.sbatch code/<script.py> [args...]
 ```
 
 This is a command template, not authorization to submit. Verify input paths,
@@ -132,8 +136,8 @@ complete inputs if using another dependency policy.
 
 ## Next work in order
 
-1. Done 2026-09-23: [CASE_MATRIX.md](CASE_MATRIX.md) built and `common.py`
-   switched. Legacy fig scripts still compute SSP3-7.0 only; use
+1. Done 2026-09-23: [CASE_MATRIX.md](../CASE_MATRIX.md) built and `code/common.py`
+   switched. Legacy fig scripts in code/ still compute SSP3-7.0 only; use
    `offset_defs(ssp)` for other SSPs.
 2. Quantify AGB/SOC spatial skill for native 0.5°, downscaled 0.5° and native
    4 km; the visual comparison exists, the formal benchmark is pending.

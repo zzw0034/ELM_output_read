@@ -15,12 +15,12 @@
 本文档按用户确定的新主线组织：
 **空间可信度 → 区域碳效益 → 空间异质性及机制 → 管理优先区域**。
 完整结构见 [MANUSCRIPT_BLUEPRINT.md](MANUSCRIPT_BLUEPRINT.md)，
-图表安排见 [FIGURE_PLAN.md](FIGURE_PLAN.md)。
+图表安排见
+[manuscript_figure_results_discussion.md](manuscript_figure_results_discussion.md)。
 
 本次为整理已有材料，没有重算模拟输出。下文区分旧图报告值、新版诊断记录和
-尚未执行的分析。旧版长篇总结保存在
-[archive/RESULTS_SUMMARY_pre_20260922.md](archive/RESULTS_SUMMARY_pre_20260922.md)，
-其中已撤回或被新证据取代的表述不再作为当前结论。
+尚未执行的分析。重复且已被新证据取代的旧版长篇总结已从工作目录移除；
+可在 Git 历史中追溯，不能作为当前结论。
 
 ## 1. 先锁定结果版本
 
@@ -102,7 +102,7 @@ PFT_FIRE_CLOSS 不包括完整的凋落物/CWD 火灾损失；用原生 NBP 反�
 COL_FIRE_CLOSS 按恒等式闭合，不是火灾物理的独立验证。木材进入产品池
 的 WOOD_HARVESTC 也不等于当年大气排放。
 
-[NBP 核算记录](NBP_RESIDUAL_REVIEW_20260915.md) 报告的旧 0.5° 结果：
+[NBP 核算记录](supplement/NBP_RESIDUAL_REVIEW_20260915.md) 报告的旧 0.5° 结果：
 
 | 情景/时期 | NEP | 完整 fire loss（反推） | LAND_USE_FLUX | NBP |
 |---|---:|---:|---:|---:|
@@ -175,4 +175,5 @@ stock CV。三个分量按格点排名后等权；象限中位数才是面积加
 4. 关闭 pool residual，核对 fire 和 vulnerability 定义，补面积归一化。
 5. 按新五图计划重组并重新生成图，记录版本并进行视觉检查。
 
-本轮已更新说明和脚本文字，未运行这些新分析；outputs/ 的原图仍是旧版。
+本轮已更新说明和脚本文字，未运行这些新分析；
+[figures/legacy/](figures/legacy/) 的原图仍是旧版。

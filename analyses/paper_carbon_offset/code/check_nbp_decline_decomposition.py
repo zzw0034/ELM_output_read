@@ -32,7 +32,7 @@ Variables used:
   LAND_USE_FLUX             gC/m2/s, conversion plus product-pool loss
 
 Usage inside an approved Slurm allocation:
-    python check_nbp_decline_decomposition.py [0.5deg|4km]
+    python code/check_nbp_decline_decomposition.py [0.5deg|4km]
 """
 import sys
 

@@ -8,7 +8,7 @@ and the known daylength discontinuity before attributing fine-scale detail
 to improved spatial realism. Quantitative observational skill is separate.
 
 Usage inside an approved Slurm allocation:
-    python fig02_offset_potential_maps.py [0.5deg|4km] [variable]
+    python code/fig02_offset_potential_maps.py [0.5deg|4km] [variable]
 """
 import os
 import sys

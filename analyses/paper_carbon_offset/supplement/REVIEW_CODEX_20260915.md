@@ -1,9 +1,9 @@
 # Carbon-offset manuscript：Codex 独立审查与讨论建议
 
 2026-09-22 阅读说明：以下保留 9 月 15 日的审查记录；论文当前采用用户确认的
-高分辨率主线，见 [MANUSCRIPT_BLUEPRINT.md](MANUSCRIPT_BLUEPRINT.md)。
+高分辨率主线，见 [MANUSCRIPT_BLUEPRINT.md](../MANUSCRIPT_BLUEPRINT.md)。
 其中观测比较缺失、草地物候未验证、管理 SSP 数量等状态需结合
-[RESULTS_SUMMARY.md](RESULTS_SUMMARY.md) 的最新证据阅读；旧期刊/结构建议
+[RESULTS_SUMMARY.md](../RESULTS_SUMMARY.md) 的最新证据阅读；旧期刊/结构建议
 不是当前执行计划。此次没有重做历史文献审查，也未把旧意见改写成新结论。
 
 日期：2026-09-15。定位：供 Zhuonan、Claude 和合作者继续讨论的审查意见，不是已达成共识的改版计划。

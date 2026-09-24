@@ -2,7 +2,7 @@
 
 2026-09-22 阅读说明：本文保留历史核算审查及随后重算记录。第 1 节“当前脚本”
 描述修正前状态，现有脚本已使用完整 fire 的反推恒等式；最新论文结构见
-[MANUSCRIPT_BLUEPRINT.md](MANUSCRIPT_BLUEPRINT.md)。这些数值属于当时的
+[MANUSCRIPT_BLUEPRINT.md](../MANUSCRIPT_BLUEPRINT.md)。这些数值属于当时的
 case 组合，不是新版/参数敏感性结果。该 NBP 漏项与尚未闭合的 stock-pool
 残差是两个不同问题。
 

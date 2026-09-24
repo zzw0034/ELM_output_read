@@ -12,7 +12,7 @@ paired 0.5-degree Default/DF runs at crit_dayl_stress=38000 s are documented
 in ../CRIT_DAYL_STRESS_ARTIFACT.md and DF_GRASS_SENSITIVITY.md.
 
 Usage inside an approved Slurm allocation:
-    python check_df_grass_decomposition.py [0.5deg|4km]
+    python code/check_df_grass_decomposition.py [0.5deg|4km]
 """
 import sys
 

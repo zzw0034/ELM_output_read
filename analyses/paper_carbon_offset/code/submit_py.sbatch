@@ -10,11 +10,12 @@
 #SBATCH -o /scratch/hpcl-cli185/zw5/ELM_output_read/analyses/paper_carbon_offset/logs/%x-%j.out
 #SBATCH -e /scratch/hpcl-cli185/zw5/ELM_output_read/analyses/paper_carbon_offset/logs/%x-%j.err
 
-# Generic runner: sbatch --export=NONE -J <name> submit_py.sbatch <script.py> [args...]
+# Generic runner from the analysis root:
+# sbatch --export=NONE -J <name> code/submit_py.sbatch code/<script.py> [args...]
 # Existing resources and paths are retained, not newly validated. Follow
 # AI_HANDOFF.md / AGENTS.md: verify source cohort, paths, environment and logs;
 # obtain the required staging/submission approval and use sbatch --test-only.
-# Figure filename numbers are legacy IDs; see FIGURE_PLAN.md for main figures.
+# Figure filename numbers are legacy IDs; see manuscript_figure_results_discussion.md.
 #
 # Use the project's own hpcl-cli185 partition, not the shared 'serial' pool:
 # see ../20260908_seus_4km/ANALYSIS_NOTES.md for the session where serial-pool

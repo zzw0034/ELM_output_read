@@ -18,8 +18,9 @@ sections are described in
 |---|---|
 | [MANUSCRIPT_BLUEPRINT.md](MANUSCRIPT_BLUEPRINT.md) | Decisions, Introduction, Methods, tables, closure checklist |
 | [manuscript_figure_results_discussion.md](manuscript_figure_results_discussion.md) | The only maintained figure, Results, and Discussion plan |
-| [CASE_MATRIX.md](CASE_MATRIX.md) | Case and configuration provenance for the chosen cohort |
+| [CASE_MATRIX.md](CASE_MATRIX.md) | Earlier case/configuration audit; Default/DF mapping still needs the 2026-09-24 update |
 | [RESULTS_SUMMARY.md](RESULTS_SUMMARY.md) | Evidence status; old numbers are explicitly void for the paper |
+| [analysis_process_notes.md](analysis_process_notes.md) | Data locations, sources, scripts, processing conventions and provenance checks |
 | [code/](code/README.md) | Analysis scripts, shared helper, and Slurm runner |
 | [figures/](figures/README.md) | Figure output; [legacy/](figures/legacy/) contains older exploratory PNGs only |
 | [supplement/](supplement/) | Supporting diagnostics, historical reviews, and supplement planning |
@@ -27,8 +28,10 @@ sections are described in
 ## Current status and boundaries
 
 The intended manuscript cohort is the 20260910 rerun family at 4 km and 0.5°.
-The active case map is in [code/common.py](code/common.py); all numerical
-claims from the old figure cohort must be recalculated before manuscript use.
+The chosen 38 directories are recorded in [RESULTS_SUMMARY.md](RESULTS_SUMMARY.md);
+[code/common.py](code/common.py) still maps Default/DF to the earlier
+non-`cds38000` directories and must be updated before rerunning analyses.
+All numerical claims from the old figure cohort must be recalculated before manuscript use.
 The old filenames fig01–fig06 identify exploratory scripts, **not** the five
 planned manuscript figures. Current PNGs in [figures/legacy/](figures/legacy/)
 were not regenerated from the active cohort.

@@ -16,6 +16,12 @@ See [the current figure plan](../manuscript_figure_results_discussion.md) and
 | `check_nbp_decline_decomposition.py` | Mechanism/accounting support | Validate the NBP components for the selected cohort |
 | `check_df_grass_decomposition.py`, `check_grass_phenology_mechanism.py` | Supplementary diagnostics | Interpret alongside corrected daylength runs |
 
+Observation data fetchers (Figure 1 inputs):
+
+| Script | Output | How it was run |
+|---|---|---|
+| `obs_fetch_esacci_agb_v7_seus.py` | ESA CCI Biomass v7.0 1 km AGB/AGB_SD, all 18 epochs, SEUS box 24–37.5°N, 95–74°W, in `/projects/hpcl-cli185/proj-shared/zw5/obs_data/biomass/` | 2026-09-24 on the Pathfinder login node (network transfer only, HTTP byte-range read from CEDA), streamed over ssh stdin with the `make_surfdata_pf` python; values unchanged (oven-dry biomass, Mg/ha, ocean = 0) |
+
 The missing main analyses are quantitative AGB/SOC observational evaluation,
 within-0.5°-cell skill, and equal-area selection. Their absence should not be
 obscured by the old figure filenames.

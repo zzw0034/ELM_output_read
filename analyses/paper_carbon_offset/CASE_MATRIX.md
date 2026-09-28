@@ -1,11 +1,10 @@
 # Case matrix — manuscript cohort (20260910 rerun)
 
-> **Out of date since 2026-09-24.** The paper now uses Default/DF from the
-> `cds38000` directories and RF/RH from the 36000 s directories (list in
-> [RESULTS_SUMMARY.md](RESULTS_SUMMARY.md) §0; pairing still open, blueprint
-> Part A2). The configuration facts below (§2–§5) still hold for the 36000 s
-> runs; the cds38000 runs differ only in `paramfile` but have not been audited
-> here.
+> **Update 2026-09-29.** The 34 cases below (all 36000 s) remain the
+> RF/RH pairing of the paper cohort. The DF pairing uses the 16 `cds38000`
+> Default and DF futures instead of the 36000 s DF runs listed here (blueprint
+> Part A2; list in [RESULTS_SUMMARY.md](RESULTS_SUMMARY.md) §0). The cds38000
+> runs differ only in `paramfile`, but have not been audited here.
 
 Built 2026-09-23 from read-only inspection of Pathfinder (`lnd_in`,
 `env_*.xml`, history headers, file timestamps). Cohort decision: blueprint

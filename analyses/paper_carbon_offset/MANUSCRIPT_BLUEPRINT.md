@@ -1,6 +1,6 @@
 # Manuscript blueprint: high-resolution ELM and southeastern U.S. forest carbon management
 
-Last updated: 2026-09-28
+Last updated: 2026-09-29
 
 This is the **single maintained plan** for the manuscript: decisions, story,
 Introduction, Methods, figures/Results, Discussion, tables and the closure
@@ -31,30 +31,34 @@ the application. Resolution is a thread through every Results section, not a
 final sensitivity subsection. Fire is a mechanism and a vulnerability
 component, not the title-level story.
 
-### A2. Cohort (2026-09-24 selection)
+### A2. Cohort and parameter pairing (decided 2026-09-29)
 
 All outputs come from
-`/scratch/hpcl-cli185/zw5/cime_output_dirs/20260910_seus_rerun/`. The 38
-selected directories are listed in [RESULTS_SUMMARY.md](RESULTS_SUMMARY.md) §0:
+`/scratch/hpcl-cli185/zw5/cime_output_dirs/20260910_seus_rerun/`. The full
+4 SSP × Default/RF/RH/DF design exists at both resolutions. Every management
+difference is taken between runs with the **same** `crit_dayl_stress`:
 
-- Default and DF futures: the 16 `cds38000` directories
-  (`crit_dayl_stress = 38000 s`);
-- RF and RH futures: the 16 directories without that suffix (36000 s);
-- spin-up and transient: 6 directories (36000 s).
+| Comparison | Management run | Default run it is paired with | Parameter |
+|---|---|---|---|
+| RF − Default, RH − Default | RF/RH (no suffix) | Default without suffix (0.5° `20260911_…_future_<ssp>_dt3600`; 4 km `20260917_seus_4km_fut_<ssp>`) | 36000 s |
+| Default − DF | DF `cds38000` | Default `cds38000` | 38000 s |
 
-Full 4 SSP × Default/RF/RH/DF design at both resolutions.
-[CASE_MATRIX.md](CASE_MATRIX.md) and `code/common.py` still describe the
-2026-09-23 all-36000 s mapping and must be updated to this selection.
+So each SSP and resolution has two Default runs, one per pairing. Spin-up and
+transient runs use 36000 s. This makes 46 directories (40 futures, 6
+spin-up/transient); the list is in [RESULTS_SUMMARY.md](RESULTS_SUMMARY.md) §0.
 
-**Open decision — parameter pairing for RF/RH − Default.** With this
-selection, RF − Default and RH − Default subtract a 36000 s run from a
-38000 s run. At 0.5°, 38000 s lowers Default GPP by 3–4% overall and by up to
-~20% south of 30.833°N (south Florida, Louisiana coast), so the difference
-carries a spatial parameter signal that the selection analysis (D9) is
-sensitive to. Options: (a) pair RF/RH with the 36000 s Default runs, which
-still exist, and pair DF with the 38000 s Default, so every difference is
-parameter-matched; (b) rerun RF and RH at 38000 s. Until decided, no
-management difference may be interpreted. Default − DF is parameter-matched.
+Consequences:
+
+- The Default trajectories in Figure 2 use the 36000 s Default: it continues
+  the 36000 s transient without a parameter change in 2024 and is the
+  baseline for RF and RH. The 38000 s Default appears only inside the DF pair.
+- The 30.833°N discontinuity remains in the RF/RH pair and is disclosed; the
+  DF pair, where it was strongest, is free of it.
+- Figure 5 (RF − Default) and the vulnerability components (from the RF run)
+  are therefore all at 36000 s.
+
+`code/common.py` and [CASE_MATRIX.md](CASE_MATRIX.md) must be updated to this
+pairing before any analysis.
 
 Legacy headline values (RF 4.79/4.95, RH 0.93/0.98, DF 9.50/9.88 PgC; the
 3–5% resolution difference; the 33.6%/57.3% quadrant; poster RF 5.9 and
@@ -101,19 +105,30 @@ spatially differentiated management opportunities by resolving local
 heterogeneity in carbon gains and modeled vulnerability; observational skill
 and equal-area selection tests determine how far that claim holds.
 
-### B3. Evidence chain and research questions
+### B3. The four-step framework
 
-| Step | Research question | Results | Figure |
-|---|---|---|---|
-| 1 | Which observed spatial patterns does 4 km ELM capture, at common support and within 0.5° cells, beyond what fine land cover alone explains? | 3.1 | 1 |
-| 2 | How large are regional management benefits, and how do they compare across resolutions and SSPs? | 3.2 | 2 |
-| 3 | What local variation do regional totals conceal, and which pools and processes explain it? | 3.3 | 3, 4 |
-| 4 | Does that information change equal-area management priorities? | 3.4 | 5 |
+| Step | Results | Figure | Question it answers | Coarse comparison used |
+|---|---|---|---|---|
+| 1. Test spatial patterns against observation-based estimates | 3.1 | 1 | Is the extra spatial detail of 4 km ELM credible, and is it more than fine land cover alone explains? | native 0.5°; downscaled 0.5° (AGB) |
+| 2. Establish regional carbon trajectories and modeled management benefits | 3.2 | 2 | How much carbon does management add, and do the two resolutions agree on the regional totals? | native 0.5° |
+| 3. Quantify spatial heterogeneity and explain its carbon-pool and process contributions | 3.3 | 3, 4 | What local differences do the regional totals hide, and where do they come from? | 4 km aggregated to 0.5°; downscaled 0.5° |
+| 4. Test whether that information changes equal-area management priorities | 3.4 | 5 | Does the spatial information change where to manage, for the same area budget? | 4 km aggregated to 0.5° (primary); downscaled; native 0.5° |
 
-Each step builds on the previous one: credible detail (1) → benefit magnitude
-and the question of what similar totals hide (2) → the hidden information and
-its causes (3) → its consequence for decisions (4). Every step compares
-against the coarse comparators of A4.
+The steps build on each other:
+
+1. **Credibility first.** Without evidence that the 4 km detail is credible,
+   no later conclusion based on 4 km spatial patterns has a basis.
+2. **Then the regional totals.** They set the size of the benefits. If the two
+   resolutions give similar totals, the next question follows naturally: what
+   do those similar totals hide?
+3. **Then open the totals.** Quantify the spatial information removed by
+   aggregation, and explain it with carbon pools and processes.
+4. **Finally the decision.** Test whether that information changes which land
+   would be chosen for the same area budget. This is the applied conclusion.
+
+Resolution is the thread through all four steps: every step compares 4 km
+with a coarse alternative (last column), so it is not a sensitivity section
+added at the end.
 
 ### B4. Language
 
@@ -203,8 +218,8 @@ interventions start in 2024 rather than the proposal's 2015.
 ### D3 (2.3). Future and management experiments
 
 Table 1 lists the actual runs (A2), not the proposal's factorial design. State
-the `crit_dayl_stress` value of each run and the resolved pairing (A2 open
-decision). Disclose the 30.833°N discontinuity produced by 36000 s
+the `crit_dayl_stress` value of each run and the pairing rule of A2 (every
+difference is parameter-matched). Disclose the 30.833°N discontinuity produced by 36000 s
 ([CRIT_DAYL_STRESS_ARTIFACT.md](../CRIT_DAYL_STRESS_ARTIFACT.md)). Within a
 resolution every future run starts from the same 2024 restart, so paired
 differences are exactly zero in 2024.
@@ -394,7 +409,7 @@ independently.
 management effects? Methods D3–D5.
 
 **Panels:** compact historical interval plus the four Default SSP
-trajectories; RF − Default and RH − Default for each SSP at both resolutions
+trajectories (36000 s Default, A2); RF − Default and RH − Default for each SSP at both resolutions
 (same color per management, line style per resolution), with early/mid/late
 summaries; Default − DF in a separate, labelled panel. Full NBP/flux
 trajectories go to the supplement.
@@ -520,7 +535,7 @@ Each part opens with a result, then explains cause and meaning.
    must match the pool and product boundary (Table 2).
 5. **Scope and limitations.** Differing 0.5°/4 km configurations and
    spin-ups; driver resolution (Table 1); crit_dayl_stress, the 30.833°N
-   discontinuity and the A2 pairing; one shared soil column and no forest age
+   discontinuity (still present in the RF/RH pair); one shared soil column and no forest age
    structure; instantaneous DF and bundled RF; unrepresented disturbances
    (insects, windthrow, prescribed burning); observational uncertainty; a
    single model; market feedbacks outside ELM. Separate limitations that
@@ -583,8 +598,9 @@ windows, eligibility, budgets, comparators, cross-SSP overlap). See also
 
 **Before any figure**
 
-1. Resolve the A2 pairing decision; update CASE_MATRIX.md and `code/common.py`
-   to the chosen directories and verify their completeness and parameters.
+1. Update CASE_MATRIX.md and `code/common.py` to the A2 pairing (two Default
+   runs per SSP and resolution) and verify completeness and parameters of all
+   46 directories.
 2. Fix units, masks, windows and the carbon-stock definition (D4, D5); add
    assertions for full-year coverage, identical years/grids, land masking and
    weighted quantiles.

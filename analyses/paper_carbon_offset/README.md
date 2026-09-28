@@ -17,6 +17,7 @@ sections are described in
 | Location | Purpose |
 |---|---|
 | [MANUSCRIPT_BLUEPRINT.md](MANUSCRIPT_BLUEPRINT.md) | The single manuscript plan: decisions, story, Introduction, Methods, figures/Results, Discussion, tables, checklist |
+| [ANALYSIS_FRAMEWORK.md](ANALYSIS_FRAMEWORK.md) | Short English outline of the analysis framework for sharing; derived from the blueprint, which governs |
 | [CASE_MATRIX.md](CASE_MATRIX.md) | Earlier case/configuration audit; Default/DF mapping still needs the 2026-09-24 update |
 | [RESULTS_SUMMARY.md](RESULTS_SUMMARY.md) | Evidence status; old numbers are explicitly void for the paper |
 | [analysis_process_notes.md](analysis_process_notes.md) | Data locations, sources, scripts, processing conventions and provenance checks |
@@ -27,9 +28,11 @@ sections are described in
 ## Current status and boundaries
 
 The intended manuscript cohort is the 20260910 rerun family at 4 km and 0.5°.
-The chosen 38 directories are recorded in [RESULTS_SUMMARY.md](RESULTS_SUMMARY.md);
-[code/common.py](code/common.py) still maps Default/DF to the earlier
-non-`cds38000` directories and must be updated before rerunning analyses.
+The 46 chosen directories are recorded in [RESULTS_SUMMARY.md](RESULTS_SUMMARY.md) §0.
+Every management difference is parameter-matched: RF/RH against the 36000 s
+Default, DF against the `cds38000` Default (blueprint Part A2).
+[code/common.py](code/common.py) still has only the 36000 s mapping and must
+gain the `cds38000` Default/DF pair before rerunning analyses.
 All numerical claims from the old figure cohort must be recalculated before manuscript use.
 The old filenames fig01–fig06 identify exploratory scripts, **not** the five
 planned manuscript figures. Current PNGs in [figures/legacy/](figures/legacy/)

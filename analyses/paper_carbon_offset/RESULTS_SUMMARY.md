@@ -1,6 +1,11 @@
 # 高分辨率 ELM 森林碳管理论文：结果与证据状态
 
-更新：2026-09-24。
+更新：2026-09-29。
+
+> **2026-09-29 配对决定（优先于下文）：** 每个管理差值都在相同参数的两次模拟之间计算。
+> RF − Default、RH − Default 用 36000 s 的 Default（不带后缀的 Default 目录）；
+> Default − DF 用 `cds38000` 的 Default 与 DF。因此每个 SSP、每个分辨率有两个 Default，
+> 共 46 个目录（40 个 future、6 个 spin-up/transient），见第 0 节。详见 blueprint Part A2。
 
 > **2026-09-24 结果目录选择（优先于下文旧表述）：**在
 > `/scratch/hpcl-cli185/zw5/cime_output_dirs/20260910_seus_rerun/`
@@ -93,10 +98,25 @@ restart 或输出完整性。
 20260915_seus_4km_fut_ssp585_RH
 ```
 
-其余 16 个不带 `cds38000` 的旧版 Default/DF future 目录仍存在，
-但本次分析不选用。因为 RF/RH 与 Default/DF 取自不同批次，管理差值在
-解释前需核对实际参数、初始状态和其他配置；本节只固定文件夹选择，
-不声称已经完成严格配对验证或重算结果。
+### 2026-09-29 追加：与 RF/RH 配对的 36000 s Default（8 个）
+
+```text
+20260911_seus_halfdeg_future_ssp119_dt3600
+20260911_seus_halfdeg_future_ssp245_dt3600
+20260911_seus_halfdeg_future_ssp370_dt3600
+20260911_seus_halfdeg_future_ssp585_dt3600
+20260917_seus_4km_fut_ssp119
+20260917_seus_4km_fut_ssp245
+20260917_seus_4km_fut_ssp370
+20260917_seus_4km_fut_ssp585
+```
+
+合计 46 个目录。配对规则：RF/RH 对 36000 s Default，DF 对 `cds38000`
+Default；上面 `cds38000` 的 Default 只用于 DF 配对。其余 8 个不带后缀的
+旧版 DF 目录（36000 s）不选用。本节只固定文件夹选择，尚未重新核对各目录
+的完整性或重算结果（其中 24 个 36000 s 的 RF/RH/Default future 目录和 2 个
+transient 已于 2026-09-23 核对完整，见 CASE_MATRIX.md；`cds38000` 目录和
+spin-up 目录尚未核对）。
 
 ## 1. 先锁定结果版本
 

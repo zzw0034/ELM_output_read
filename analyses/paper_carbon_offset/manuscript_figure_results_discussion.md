@@ -102,14 +102,36 @@ The Introduction has one organizing gap: coarse or regional carbon estimates do 
 
 **Why the scoring reference matters:** The 4 km selection maximizes benefit on the 4 km field used to rank it. Scoring both selections on that same field will favor the 4 km selection by construction. This comparison quantifies model-internal information lost through aggregation. It is not independent evidence that real-world outcomes would improve.
 
+**Vulnerability in the selection**
+
+Vulnerability enters as a **screen** (a constraint on which land may be selected), not as a term subtracted from the benefit or combined with it into one weighted score. The modeled benefit is already net of simulated fire, so subtracting fire risk again would double count, and any benefit-risk weighting would be an arbitrary analyst choice. Risk here stands for variability and loss exposure beyond the modeled mean.
+
+*Components* — report and screen each one separately; do not collapse them into a composite index for the main result:
+
+| Component | Definition for the paper | Problem in legacy fig05 |
+|---|---|---|
+| Fire | Complete column fire carbon loss (COL_FIRE_CLOSS, or inferred from the exact NBP identity) ÷ carbon stock, decade mean | Used PFT_FIRE_CLOSS, which omits litter/CWD fire loss |
+| Water stress | Growing-season mean 1 − BTRAN | Used the annual mean |
+| Variability | Interannual variability of the stock or NBP after removing the trend | Not detrended, so growth trends counted as variability |
+
+Compute the components from the **RF run** (the managed state whose carbon is at risk); repeat with the Default run as a check.
+
+*Three steps:*
+
+- **A. Report only (part of the minimum experiment).** For the potential-only 20%/30% selections, report the area-weighted mean of each component over each selection. This asks whether benefit-only selection happens to pick high-exposure land.
+- **B. Screen, then select.** Fix an **absolute** threshold per component before selection (for example fire loss above x% of stock per year, growing-season 1 − BTRAN above y). Do not use each resolution's own ranks or median; the two distributions differ, so the same rank cut means different risk levels. If a quantile is wanted, take it from one shared reference distribution and apply the resulting value to both maps. Remove land above the threshold from the eligible area, then rank the remainder by benefit and fill the same area budget. **The coarse side screens with coarse information:** aggregate the risk components to 0.5° the same way as the benefit, so a coarse cell can pass the screen while containing high-risk 4 km pixels. **Score both selections with the 4 km benefit and 4 km risk**, so those hidden high-risk pixels count against the coarse selection. Report captured benefit after screening, the true (4 km) exposure of each selection, and the benefit each approach gives up relative to step A. If a screen leaves less eligible land than the budget, report that instead of relaxing the threshold silently.
+- **C. Sensitivity.** Repeat B with water stress only (no fire). The 4 km fire field inherits the 0.5° effective resolution of the bilinear HDM input and a fixed lightning climatology, so within-cell fire information is weak; a genuine 4 km risk advantage is more likely to come from water stress, whose meteorological and soil drivers are resolved at 4 km. Also vary each threshold to show whether the conclusion depends on it.
+
+The expected value of high resolution here is finding pixels that are **high-benefit and low-risk** where a coarse average mixes both kinds. The indicators describe modeled exposure, not a project's reversal probability.
+
 **Extensions after the minimum experiment**
 
 - Plot a selected-area versus captured-benefit curve, keeping 20% and 30% as readable anchors.
-- First compare risk exposure of the potential-only selections. Then impose the same clearly defined water-stress or fire-loss screen on both selection approaches and report the carbon-benefit tradeoff. Keep fire and water components visible; repeat without the HDM-affected fire component.
+- Add the vulnerability screen (steps B and C above) to both selection approaches.
 - Carry selection masks from one SSP or time window into another SSP or window and rescore them there. This tests within-model stability rather than observational accuracy.
 - Compare the aggregated-4-km primary coarse map with the land-cover-downscaled 0.5° field and native 0.5° simulation. The native cross-resolution comparison includes input and spin-up differences.
 
-**Plot:** A map distinguishing land selected by both approaches, only 4 km, or only the coarse approach; an area-budget versus captured-benefit curve; and a small comparison of selected-area carbon benefit and individual disturbance exposures. Cross-SSP/time overlap can be a supplementary heatmap.
+**Plot:** A map distinguishing land selected by both approaches, only 4 km, or only the coarse approach; an area-budget versus captured-benefit curve; and a small comparison of selected-area carbon benefit and individual disturbance exposures, before and after the screen (benefit given up versus true 4 km exposure). Cross-SSP/time overlap can be a supplementary heatmap.
 
 ### Main tables
 

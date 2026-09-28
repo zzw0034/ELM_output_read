@@ -2,7 +2,7 @@
 Legacy asset fig01: management-induced ecosystem stock differences.
 
 Feeds new Main Figure 2 / Results 3.2; see
-../manuscript_figure_results_discussion.md.
+../MANUSCRIPT_BLUEPRINT.md.
 RF-Default is restoration/protection including broad zero harvest.
 RH-Default is reduced prescribed harvest. Default-DF is an idealized
 avoided-loss bound, not a deployable forest-preservation credit estimate.

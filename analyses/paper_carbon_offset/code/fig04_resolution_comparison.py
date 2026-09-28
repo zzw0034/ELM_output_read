@@ -14,7 +14,7 @@ Known daylength-threshold structure requires separate sensitivity checks.
 
 This script does not evaluate observations or compare equal-area selections.
 Some printed percentiles and RMS statistics are not area-weighted; audit
-before publication. See ../manuscript_figure_results_discussion.md and
+before publication. See ../MANUSCRIPT_BLUEPRINT.md and
 ../supplement/AI_HANDOFF.md.
 
 Usage inside an approved Slurm allocation:

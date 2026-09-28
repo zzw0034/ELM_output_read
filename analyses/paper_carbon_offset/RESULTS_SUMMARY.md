@@ -22,9 +22,7 @@
 
 本文档按用户确定的新主线组织：
 **空间可信度 → 区域碳效益 → 空间异质性及机制 → 管理优先区域**。
-完整结构见 [MANUSCRIPT_BLUEPRINT.md](MANUSCRIPT_BLUEPRINT.md)，
-图表安排见
-[manuscript_figure_results_discussion.md](manuscript_figure_results_discussion.md)。
+完整结构、方法与图表安排统一见 [MANUSCRIPT_BLUEPRINT.md](MANUSCRIPT_BLUEPRINT.md)。
 
 本次为整理已有材料，没有重算模拟输出。下文区分旧图报告值、新版诊断记录和
 尚未执行的分析。重复且已被新证据取代的旧版长篇总结已从工作目录移除；

@@ -80,7 +80,7 @@ Before claiming observational skill, align support, years, units, depth,
 forest/land masks and area weights. Evaluate common 0.5° support and
 within-cell anomalies separately. GEDI/FIA-based AGB and gSSURGO SOC are
 **planned independent checks**, not sources currently wired into these
-scripts. See [the Figure 1 plan](manuscript_figure_results_discussion.md).
+scripts. See the Figure 1 plan, [MANUSCRIPT_BLUEPRINT.md](MANUSCRIPT_BLUEPRINT.md) Methods D6.
 
 ### 3.1 ESA CCI Biomass v7.0 AGB — Figure 1 primary AGB observation (2026-09-24)
 

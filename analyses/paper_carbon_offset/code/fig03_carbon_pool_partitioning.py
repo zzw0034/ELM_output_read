@@ -14,7 +14,7 @@ Roots, CWD, litter and SOC are outside-AGB pools; not all are belowground.
 
 RF includes restoration/protection and broad zero harvest. Interpretation
 and new figure numbering follow ../MANUSCRIPT_BLUEPRINT.md and
-../manuscript_figure_results_discussion.md.
+../MANUSCRIPT_BLUEPRINT.md.
 
 Usage inside an approved Slurm allocation:
     python code/fig03_carbon_pool_partitioning.py [0.5deg|4km]

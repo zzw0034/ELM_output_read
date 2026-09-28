@@ -15,7 +15,7 @@
 # Existing resources and paths are retained, not newly validated. Follow
 # AI_HANDOFF.md / AGENTS.md: verify source cohort, paths, environment and logs;
 # obtain the required staging/submission approval and use sbatch --test-only.
-# Figure filename numbers are legacy IDs; see manuscript_figure_results_discussion.md.
+# Figure filename numbers are legacy IDs; see MANUSCRIPT_BLUEPRINT.md Part E.
 #
 # Use the project's own hpcl-cli185 partition, not the shared 'serial' pool:
 # see ../20260908_seus_4km/ANALYSIS_NOTES.md for the session where serial-pool

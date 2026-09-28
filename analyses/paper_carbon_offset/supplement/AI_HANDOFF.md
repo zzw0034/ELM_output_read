@@ -2,12 +2,11 @@
 
 Updated: 2026-09-24. Historical handoff; verify all paths before use. Read
 [README.md](../README.md), then
-[MANUSCRIPT_BLUEPRINT.md](../MANUSCRIPT_BLUEPRINT.md) — its "Decisions —
-2026-09-23" section overrides older statements here — then
-[CASE_MATRIX.md](../CASE_MATRIX.md). The blueprint records the
-user-approved argument;
-[manuscript_figure_results_discussion.md](../manuscript_figure_results_discussion.md)
-maps existing scripts to the new manuscript figures.
+[MANUSCRIPT_BLUEPRINT.md](../MANUSCRIPT_BLUEPRINT.md) — its Part A (current
+decisions) overrides older statements here — then
+[CASE_MATRIX.md](../CASE_MATRIX.md). The blueprint is the single manuscript
+plan; [code/README.md](../code/README.md) maps existing scripts to the new
+manuscript figures.
 [RESULTS_SUMMARY.md](../RESULTS_SUMMARY.md)
 separates legacy numerical results from newer evidence and planned tests.
 

@@ -10,14 +10,13 @@ the application. The evidence chain is observational evaluation → regional
 carbon benefits → spatial heterogeneity and mechanisms → consequences for
 equal-area prioritization. The planned five main figures and four Results
 sections are described in
-[manuscript_figure_results_discussion.md](manuscript_figure_results_discussion.md).
+[MANUSCRIPT_BLUEPRINT.md](MANUSCRIPT_BLUEPRINT.md) Part E.
 
 ## Directory map
 
 | Location | Purpose |
 |---|---|
-| [MANUSCRIPT_BLUEPRINT.md](MANUSCRIPT_BLUEPRINT.md) | Decisions, Introduction, Methods, tables, closure checklist |
-| [manuscript_figure_results_discussion.md](manuscript_figure_results_discussion.md) | The only maintained figure, Results, and Discussion plan |
+| [MANUSCRIPT_BLUEPRINT.md](MANUSCRIPT_BLUEPRINT.md) | The single manuscript plan: decisions, story, Introduction, Methods, figures/Results, Discussion, tables, checklist |
 | [CASE_MATRIX.md](CASE_MATRIX.md) | Earlier case/configuration audit; Default/DF mapping still needs the 2026-09-24 update |
 | [RESULTS_SUMMARY.md](RESULTS_SUMMARY.md) | Evidence status; old numbers are explicitly void for the paper |
 | [analysis_process_notes.md](analysis_process_notes.md) | Data locations, sources, scripts, processing conventions and provenance checks |

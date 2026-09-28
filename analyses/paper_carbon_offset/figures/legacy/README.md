@@ -8,8 +8,8 @@ were not regenerated. They may use old labels such as pure “reforestation”,
 “fire risk” or old figure numbering, and reflect the legacy case cohort.
 
 Do not treat them as the final five main figures. Use
-[manuscript_figure_results_discussion.md](../../manuscript_figure_results_discussion.md)
-for the legacy-to-main mapping and
+[code/README.md](../../code/README.md) for the legacy-to-main mapping,
+[MANUSCRIPT_BLUEPRINT.md](../../MANUSCRIPT_BLUEPRINT.md) Part E for the figures, and
 [RESULTS_SUMMARY.md](../../RESULTS_SUMMARY.md) for numerical provenance.
 
 Before a publication release, freeze matched case/parameter/restart versions,

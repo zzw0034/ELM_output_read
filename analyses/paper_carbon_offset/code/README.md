@@ -2,7 +2,7 @@
 
 These are exploratory scripts and diagnostics, not yet the final five
 manuscript figures. The numbered filenames are stable legacy asset IDs.
-See [the current figure plan](../manuscript_figure_results_discussion.md) and
+See [the manuscript plan](../MANUSCRIPT_BLUEPRINT.md) (Part E figures, Part D methods) and
 [case matrix](../CASE_MATRIX.md) before interpreting output.
 
 | Existing script | Intended use in the new paper | Required work |

@@ -1,8 +1,15 @@
 # Case matrix — manuscript cohort (20260910 rerun)
 
+> **Out of date since 2026-09-24.** The paper now uses Default/DF from the
+> `cds38000` directories and RF/RH from the 36000 s directories (list in
+> [RESULTS_SUMMARY.md](RESULTS_SUMMARY.md) §0; pairing still open, blueprint
+> Part A2). The configuration facts below (§2–§5) still hold for the 36000 s
+> runs; the cds38000 runs differ only in `paramfile` but have not been audited
+> here.
+
 Built 2026-09-23 from read-only inspection of Pathfinder (`lnd_in`,
 `env_*.xml`, history headers, file timestamps). Cohort decision: blueprint
-"Decisions — 2026-09-23". This file is the only place case names should be
+Part A (current decisions). This file is the only place case names should be
 copied from; `common.py` (`COHORTS["rerun_20260910"]`) generates exactly these names.
 
 Output root (scratch, purgeable):
@@ -70,7 +77,7 @@ effects need not be restricted to SSP3-7.0.
 Implication for the paper: native 0.5° vs 4 km is a comparison of two model
 configurations. The primary resolution comparisons therefore use
 **4 km aggregated to 0.5°** (same simulation) and the **downscaled 0.5°** field;
-native 0.5° is secondary (blueprint decision framing).
+native 0.5° is secondary (blueprint Part A4).
 
 ## 4. Code-version labels are misleading — do not quote them
 

@@ -133,6 +133,24 @@ The expected value of high resolution here is finding pixels that are **high-ben
 
 **Plot:** A map distinguishing land selected by both approaches, only 4 km, or only the coarse approach; an area-budget versus captured-benefit curve; and a small comparison of selected-area carbon benefit and individual disturbance exposures, before and after the screen (benefit given up versus true 4 km exposure). Cross-SSP/time overlap can be a supplementary heatmap.
 
+**Relation to the poster siting panel.** The poster (`../carbon_offset_poster/outputs/panel4_siting_RF_4km*.png`) selected the high-potential/low-vulnerability quadrant, with both split lines at domain medians. The same picture carries over, but the lines are placed differently. On the potential-versus-risk scatter, the **horizontal line** becomes the prespecified absolute risk threshold. The **vertical line** becomes the benefit cutoff at which the land below the threshold fills the 20% or 30% area budget. The selection is still the lower-right block, but now its area is fixed and equal at both resolutions. The poster quadrant is the special case in which both lines sit at the medians. Its problems are recorded so they are not reused:
+
+- the selected area is set by the medians, not by a budget (33.6% at 4 km vs 37.4% at 0.5°), so the two resolutions cannot be compared for captured carbon;
+- vulnerability was rank-normalized within each resolution and split at its median, so half of the land is always "high risk" whatever the actual exposure, and a given index value means different risk at 4 km and 0.5°;
+- three components were merged into one index, hiding which one drove the selection and passing the HDM circular artifacts straight into the map;
+- the 0.5° version used the native 0.5° run (configuration differences) rather than the aggregated 4 km map.
+
+| Poster panel | Use in Figure 5 |
+|---|---|
+| A benefit map (RF − Default) | Keep; recompute from the paper cohort |
+| B fire risk map | Replace with separate component maps (complete column fire loss, growing-season water stress); supplement or small inset |
+| C composite vulnerability | Drop from the main result; supplement only if retained |
+| D siting quadrants | Replace with the agreement map: selected by both, by 4 km only, by coarse only. This is the main panel |
+| E potential-vs-vulnerability scatter | Keep, with the absolute risk threshold and the budget cutoff as the lines; mark the coarse selection in a separate color |
+| F area share and mean potential per quadrant | Replace with captured benefit and true 4 km exposure of the two selections at equal area, plus the area-budget versus captured-benefit curve |
+
+The poster showed only the 4 km selection. Figure 5's core is the equal-area comparison between 4 km and the coarse approach, so the agreement map and the budget curve are required panels.
+
 ### Main tables
 
 1. **Simulation matrix** from [CASE_MATRIX.md](CASE_MATRIX.md): resolution, SSP, scenario, years, shared and differing inputs, and the effective resolution of each driver (including HDM and the lightning climatology).

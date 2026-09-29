@@ -155,6 +155,32 @@ cite the catalogue record in Methods. Foliage is **not** included.
   woody-only definition, the averaging window, and the remaining Figure 1
   decisions.
 
+### 3.2 ESA-matched ELM 4 km quantity — first visual comparison (2026-09-29)
+
+- **Quantity:** tree-PFT stem carbon, Σ over itype 1–8 of
+  (LIVESTEMC + DEADSTEMC) × `pfts1d_wtgcell`, per unit gridcell land area;
+  each year a day-weighted annual mean of the monthly h1 records (annual mean
+  stock chosen over the December value). Shrub stems (itype 9–11) are stored
+  separately; leaves and coarse roots excluded.
+- **Source:** 4 km transient `20260911_Southeast_hires_30n_hdmfix_mapfix_ICB20TRCNPRDCTCBC`
+  h1, the 17 ESA epochs inside 1850–2023 (2005–2012, 2015–2023).
+- **Extract:** `/projects/hpcl-cli185/proj-shared/zw5/ELM_output_read_extracts/paper_carbon_offset/obs_compare/elm4km_tree_stemc_2005-2023.npz`
+  (13.9 MB, md5 `7027ddaa5ef29f318796a9243f45cab7`; per-year `tree_stemc`,
+  `shrub_stemc`, `tree_frac`, `veg_frac`, plus lat/lon/area/landfrac and
+  provenance strings), made by
+  [code/extract_elm_4km_tree_stemc.py](code/extract_elm_4km_tree_stemc.py),
+  Slurm job 596693 (serial, 47 s). It is on proj-shared because the scratch
+  project quota 55528 was over its soft limit with the grace period expired
+  (239.6 T / 200 T), which made jobs 596645, 596680 and 596686 fail at the
+  write step.
+- **Figures (local, git-ignored):** `figures/obs/elm4km_tree_stemc_mean_2005-2023.png`
+  and `figures/obs/elm4km_vs_esacci_agbC_2005-2023.png`
+  ([code/plot_elm_vs_esacci_agb.py](code/plot_elm_vs_esacci_agb.py)).
+  Native grids, no common mask: a visual first look, not the D6 statistics.
+- **First-look numbers (different grids and masks):** ELM area-weighted mean
+  48.9 Mg C/ha (p50/p90/p99 47.8/82.7/115.5, max 135); ESA × 0.47 land mean
+  37.7 Mg C/ha (36.4/69.1/108.9, max 177).
+
 ## 4. Script and product locations
 
 | Purpose | Location / entry point | Current state |

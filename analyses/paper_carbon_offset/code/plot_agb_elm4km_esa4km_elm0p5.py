@@ -87,7 +87,8 @@ def compare(a, b, w, label):
     ok = np.isfinite(a) & np.isfinite(b) & (w > 0)
     wa = np.average(a[ok], weights=w[ok])
     wb = np.average(b[ok], weights=w[ok])
-    r = np.corrcoef(a[ok], b[ok])[0, 1]
+    da, db = a[ok] - wa, b[ok] - wb
+    r = np.average(da * db, weights=w[ok]) / np.sqrt(np.average(da ** 2, weights=w[ok]) * np.average(db ** 2, weights=w[ok]))
     rmse = np.sqrt(np.average((a[ok] - b[ok]) ** 2, weights=w[ok]))
     print(f"  {label}: n={ok.sum()} mean {wa:.1f} vs {wb:.1f} MgC/ha, bias {wa - wb:+.1f}, "
           f"RMSE {rmse:.1f}, r {r:.2f}")

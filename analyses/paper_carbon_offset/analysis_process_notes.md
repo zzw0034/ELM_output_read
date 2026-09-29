@@ -194,14 +194,14 @@ cite the catalogue record in Methods. Foliage is **not** included.
   area-overlap weights, land pixels only, masked where ELM 4 km has no
   vegetation) | ELM 0.5°. Output `figures/obs/agb_elm4km_esa4km_elm0p5_2005-2023_cf{47,50}.png`.
 - **First-look statistics, carbon fraction 0.50** (common support, area ×
-  landfrac weights; no final mask rules, no 30.833°N exclusion; not the D6
-  evaluation):
+  landfrac weights for every metric including r; no final mask rules, no
+  30.833°N exclusion; not the D6 evaluation):
 
   | Comparison | Means (Mg C/ha) | Bias | RMSE | r |
   |---|---|---|---|---|
   | 4 km cells: ELM 4 km vs ESA→4 km | 48.9 vs 40.8 | +8.1 | 18.0 | 0.79 |
   | 0.5°: ELM 4 km aggregated vs ESA aggregated | 48.9 vs 40.8 | +8.1 | 14.6 | 0.81 |
-  | 0.5°: ELM 0.5° native vs ESA aggregated | 52.1 vs 40.8 | +11.3 | 17.5 | 0.81 |
+  | 0.5°: ELM 0.5° native vs ESA aggregated | 52.1 vs 40.8 | +11.3 | 17.5 | 0.80 |
   | 0.5°: ELM 0.5° native vs ELM 4 km aggregated | 52.1 vs 48.9 | +3.2 | 4.9 | 0.99 |
 
   With 0.47 the ESA means are 38.3 and the biases +10.6/+10.6/+13.8; r is
@@ -234,10 +234,19 @@ cite the catalogue record in Methods. Foliage is **not** included.
   | B 0.5° downscaled | 52.1 | +11.3 | 20.1 | 0.78 |
 
   Within-0.5° anomalies (≥ 72/144 valid children; 525 coarse cells;
-  ESA anomaly SD 15.6 Mg C/ha): B r 0.78, skill score 0.60, SD ratio 0.82;
-  C r 0.77, skill score 0.54, SD ratio 0.96; A is 0 by construction.
-  Excluding the 30.5–31.0°N row changes C to skill score 0.55 and nothing
-  else.
+  ESA anomaly SD 15.6 Mg C/ha): B r 0.77, skill score 0.60, SD ratio 0.82;
+  C r 0.76, skill score 0.54, SD ratio 0.96; A is 0 by construction.
+  Excluding the 30.5–31.0°N row (498 cells): B r 0.78, SS 0.60, SD ratio
+  0.82; C r 0.77, SS 0.55, SD ratio 0.97.
+- **Metric definitions.** Within each eligible 0.5° cell the anomaly is
+  x′ = x − Σ w x / Σ w over the same valid children for every field, with
+  w = area × landfrac. Over all eligible fine cells: r = area-weighted
+  Pearson correlation of model and ESA anomalies; SD ratio k = weighted RMS
+  of model anomalies / that of ESA; skill score SS = 1 − Σ w (m′ − o′)² /
+  Σ w o′², i.e. improvement over the flat field A. Because anomalies have
+  zero weighted mean, SS = 2 r k − k² exactly (asserted in the script), so
+  for a given r the best SS is r² at k = r: extra amplitude without better
+  placement lowers SS, which is why C scores below B at almost equal r.
 - **Reading (preview):** for AGB, almost all of the within-cell skill of
   the 4 km run is already obtained by putting 0.5° per-PFT densities on 4 km
   land cover (B ≥ C). Running ELM at 4 km adds within-cell amplitude (SD

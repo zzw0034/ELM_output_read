@@ -87,11 +87,18 @@ def downscale_B(e4, e05):
     return np.mean(out, axis=0), fb_area / tot_area
 
 
+def wcorr(x, y, w):
+    """Area-weighted Pearson correlation (same weights as every other metric)."""
+    mx, my = np.average(x, weights=w), np.average(y, weights=w)
+    cov = np.average((x - mx) * (y - my), weights=w)
+    return cov / np.sqrt(np.average((x - mx) ** 2, weights=w) * np.average((y - my) ** 2, weights=w))
+
+
 def stats_vs(obs, model, w, label):
     ok = np.isfinite(obs) & np.isfinite(model) & (w > 0)
     mo, mm = np.average(obs[ok], weights=w[ok]), np.average(model[ok], weights=w[ok])
     rmse = np.sqrt(np.average((model[ok] - obs[ok]) ** 2, weights=w[ok]))
-    r = np.corrcoef(model[ok], obs[ok])[0, 1]
+    r = wcorr(model[ok], obs[ok], w[ok])
     print(f"  {label:<34s} mean {mm:5.1f} vs ESA {mo:5.1f}  bias {mm - mo:+5.1f}  RMSE {rmse:5.1f}  r {r:.2f}")
 
 
@@ -121,9 +128,12 @@ def within_cell(fields, w, lat4, exclude_dayl):
           f"ESA anomaly SD {so:.1f} MgC/ha")
     print(f"    {'A 0.5 deg copied (flat)':<30s} r   n/a  SS  0.00  SD ratio 0.00")
     for name, m in anoms.items():
-        r = np.corrcoef(m[ok], o[ok])[0, 1]
+        r = wcorr(m[ok], o[ok], wv[ok])
         ss = 1 - np.average((m[ok] - o[ok]) ** 2, weights=wv[ok]) / np.average(o[ok] ** 2, weights=wv[ok])
         sd = np.sqrt(np.average(m[ok] ** 2, weights=wv[ok])) / so
+        # Anomalies have zero weighted mean in every cell, so with weighted r
+        # the identity SS = 2 r k - k^2 (k = SD ratio) holds exactly.
+        assert abs(ss - (2 * r * sd - sd ** 2)) < 1e-6, (ss, r, sd)
         print(f"    {name:<30s} r {r:5.2f}  SS {ss:5.2f}  SD ratio {sd:4.2f}")
 
 

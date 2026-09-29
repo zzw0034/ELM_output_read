@@ -6,7 +6,7 @@ each the mean of the 17 ESA epochs inside the transient (2005-2012,
 
 ELM: tree-PFT (itype 1-8) LIVESTEMC + DEADSTEMC x wtgcell per gridcell land
 area (extract_elm_4km_tree_stemc.py, run for both resolutions).
-ESA: dry AGB x carbon fraction (default 0.47, the 2026-09-24 decision;
+ESA: dry AGB x carbon fraction (default 0.50, decided 2026-09-29;
 --cf overrides), aggregated from its 0.01 deg grid to the 1/24 deg ELM grid
 with exact area-overlap weights, averaging land pixels only (ocean is
 stored as 0 in the file and is excluded with the Natural Earth display
@@ -19,7 +19,7 @@ Figure 1 evaluation (no final mask rules, no 30.833N exclusion).
 
 Runs locally (cartopy venv), from the analysis root:
     /Users/zw5/ORNL_workplace/ELM_output_read/.venv/bin/python \
-        code/plot_agb_elm4km_esa4km_elm0p5.py [--cf 0.47]
+        code/plot_agb_elm4km_esa4km_elm0p5.py [--cf 0.50]
 """
 import argparse
 import datetime
@@ -95,7 +95,7 @@ def compare(a, b, w, label):
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("--cf", type=float, default=0.47, help="carbon fraction of dry AGB")
+    ap.add_argument("--cf", type=float, default=0.50, help="carbon fraction of dry AGB")
     cf = ap.parse_args().cf
 
     e4 = np.load(ELM4_NPZ)

@@ -4,7 +4,7 @@ Map the multi-epoch mean of the ESA CCI Biomass v7.0 1 km AGB subset
 ../analysis_process_notes.md §3.1).
 
 Values are shown as delivered: oven-dry woody AGB of trees, Mg ha-1 (not
-carbon; x0.47 gives Mg C ha-1). The file stores ocean as 0, not missing, so
+carbon; x0.50 gives Mg C ha-1). The file stores ocean as 0, not missing, so
 ocean and lakes are masked here with Natural Earth 10 m admin-1 polygons
 (the lakes-removed variant, already in the local cartopy cache). This land
 mask is for display only -- analyses take land from the ELM domain.
@@ -97,7 +97,7 @@ def main():
     ax.set_title(f"ESA CCI Biomass v7.0 aboveground biomass (1 km)\n"
                  f"mean of {used.size} annual maps, {span}{note}", fontsize=11, loc="left")
     cb = fig.colorbar(mesh, ax=ax, orientation="horizontal", pad=0.07, shrink=0.75, aspect=40)
-    cb.set_label("Tree woody AGB, oven-dry (Mg ha$^{-1}$); × 0.47 = Mg C ha$^{-1}$")
+    cb.set_label("Tree woody AGB, oven-dry (Mg ha$^{-1}$); × 0.50 = Mg C ha$^{-1}$")
     cb.ax.text(0.0, -3.9, "Grey: ocean and lakes (Natural Earth 10 m; display mask only, the file stores "
                "ocean as 0).", transform=cb.ax.transAxes, fontsize=8, color="#555555", va="top")
 

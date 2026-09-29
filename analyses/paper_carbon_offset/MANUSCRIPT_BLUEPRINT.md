@@ -269,7 +269,8 @@ events, not as monotonic decline.
 
 ### D6 (2.6). Observational evaluation (Figure 1)
 
-1. **Matching.** AGB: ESA CCI Biomass v7.0 1 km, carbon = 0.47 × dry AGB,
+1. **Matching.** AGB: ESA CCI Biomass v7.0 1 km, carbon = 0.50 × dry AGB
+   (sensitivity 0.47–0.51),
    matched to the model years (source, subset and conversion in
    [analysis_process_notes.md](analysis_process_notes.md) §3.1; the older
    0.04° v5.01 file used by the poster is superseded). SOC: 0–30 cm, SoilGrids,

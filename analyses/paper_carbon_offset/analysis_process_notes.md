@@ -140,11 +140,19 @@ cite the catalogue record in Methods. Foliage is **not** included.
   the Pathfinder login node as a network-only transfer. Verification: random
   50×50 blocks in three epochs are identical to the CEDA source.
 
-**Processing conventions (decided 2026-09-24)**
+**Processing conventions (2026-09-24; carbon fraction changed 2026-09-29)**
 
-- **Carbon fraction 0.47**: AGB carbon = 0.47 × dry AGB, i.e.
-  kg C m⁻² = 0.047 × (Mg ha⁻¹). Apply it once, in the analysis code, not to
-  the stored file.
+- **Carbon fraction 0.50** (decided 2026-09-29, replacing the 0.47 chosen on
+  2026-09-24): AGB carbon = 0.50 × dry AGB, i.e.
+  kg C m⁻² = 0.05 × (Mg ha⁻¹). Apply it once, in the analysis code, not to
+  the stored file. Reason: 0.47 is the IPCC 2006 cross-biome default, whereas
+  IPCC 2006 gives about 0.48 for temperate broadleaf and 0.51 for temperate
+  conifer wood, so the southeastern pine/hardwood mix is closer to
+  0.49–0.50; 0.50 is also the long-standing convention. Report sensitivity
+  over 0.47–0.51 (about ±4%). Values quoted from memory of IPCC 2006
+  Table 4.3; confirm against the table before citing.
+- A carbon fraction cannot close the ELM–ESA mean gap: matching the 4 km
+  means would need ≈ 0.60, outside the plausible 0.44–0.55 range (§3.2).
 - Ocean and non-forest pixels are stored as **0, not missing** (53% of the
   box is 0 in 2020). Take the land mask and land-area denominator from the ELM
   domain/`landfrac`, never from this file; otherwise coastal 4 km cells
@@ -177,9 +185,29 @@ cite the catalogue record in Methods. Foliage is **not** included.
   and `figures/obs/elm4km_vs_esacci_agbC_2005-2023.png`
   ([code/plot_elm_vs_esacci_agb.py](code/plot_elm_vs_esacci_agb.py)).
   Native grids, no common mask: a visual first look, not the D6 statistics.
-- **First-look numbers (different grids and masks):** ELM area-weighted mean
-  48.9 Mg C/ha (p50/p90/p99 47.8/82.7/115.5, max 135); ESA × 0.47 land mean
-  37.7 Mg C/ha (36.4/69.1/108.9, max 177).
+- **0.5° counterpart:** the same script on `20260911_seus_halfdeg_transient_dt3600`,
+  job 596700 (5 s), →
+  `.../obs_compare/elm0p5deg_tree_stemc_2005-2023.npz` (0.1 MB, md5
+  `995137936fb60e9fdfed19efae71cab8`).
+- **Three-way map** ([code/plot_agb_elm4km_esa4km_elm0p5.py](code/plot_agb_elm4km_esa4km_elm0p5.py),
+  `--cf`): ELM 4 km | ESA aggregated to the ELM 1/24° grid (exact
+  area-overlap weights, land pixels only, masked where ELM 4 km has no
+  vegetation) | ELM 0.5°. Output `figures/obs/agb_elm4km_esa4km_elm0p5_2005-2023_cf{47,50}.png`.
+- **First-look statistics, carbon fraction 0.50** (common support, area ×
+  landfrac weights; no final mask rules, no 30.833°N exclusion; not the D6
+  evaluation):
+
+  | Comparison | Means (Mg C/ha) | Bias | RMSE | r |
+  |---|---|---|---|---|
+  | 4 km cells: ELM 4 km vs ESA→4 km | 48.9 vs 40.8 | +8.1 | 18.0 | 0.79 |
+  | 0.5°: ELM 4 km aggregated vs ESA aggregated | 48.9 vs 40.8 | +8.1 | 14.6 | 0.81 |
+  | 0.5°: ELM 0.5° native vs ESA aggregated | 52.1 vs 40.8 | +11.3 | 17.5 | 0.81 |
+  | 0.5°: ELM 0.5° native vs ELM 4 km aggregated | 52.1 vs 48.9 | +3.2 | 4.9 | 0.99 |
+
+  With 0.47 the ESA means are 38.3 and the biases +10.6/+10.6/+13.8; r is
+  unchanged. ELM is high mainly in the Ozark/Ouachita, Kentucky/Cumberland
+  and Carolina coastal-plain regions; the southern Appalachian high and the
+  Delta/Atchafalaya pattern agree.
 
 ## 4. Script and product locations
 

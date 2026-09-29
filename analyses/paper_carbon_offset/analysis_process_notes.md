@@ -209,6 +209,43 @@ cite the catalogue record in Methods. Foliage is **not** included.
   and Carolina coastal-plain regions; the southern Appalachian high and the
   Delta/Atchafalaya pattern agree.
 
+### 3.3 All fields on the 4 km grid, with the 0.5° comparators A and B (2026-09-29)
+
+- **Per-type extracts** (jobs 596726, 596727; the extractor now also writes
+  `stemc_dens_by_type` and `frac_by_type` for tree itype 1–8, asserting
+  Σ_t density × fraction = `tree_stemc` every year):
+  `.../obs_compare/elm4km_tree_stemc_bytype_2005-2023.npz` (32.8 MB, md5
+  `24fc2e2de47eaaf0fa369a09cad423b5`) and
+  `.../obs_compare/elm0p5deg_tree_stemc_bytype_2005-2023.npz` (0.3 MB, md5
+  `5c8da59fe4e0269cb5a630d93bfe21bd`).
+- **Comparators on the 4 km grid**
+  ([code/plot_agb_4km_comparators.py](code/plot_agb_4km_comparators.py)):
+  A = the 0.5° run copied to its 144 children; B = Σ_t density_t(0.5° parent)
+  × fraction_t(4 km cell), per year then averaged. B averaged back over each
+  0.5° cell reproduces the 0.5° run exactly (max |d| 0.00 Mg C/ha), and no
+  fallback density was needed. Figure:
+  `figures/obs/agb_4km_comparators_2005-2023_cf50.png`.
+- **Preview statistics, carbon fraction 0.50** (4 km cells vs ESA→4 km):
+
+  | Field | Mean vs ESA 40.8 | Bias | RMSE | r |
+  |---|---|---|---|---|
+  | C ELM 4 km | 48.9 | +8.1 | 18.0 | 0.79 |
+  | A 0.5° copied | 52.1 | +11.3 | 23.4 | 0.61 |
+  | B 0.5° downscaled | 52.1 | +11.3 | 20.1 | 0.78 |
+
+  Within-0.5° anomalies (≥ 72/144 valid children; 525 coarse cells;
+  ESA anomaly SD 15.6 Mg C/ha): B r 0.78, skill score 0.60, SD ratio 0.82;
+  C r 0.77, skill score 0.54, SD ratio 0.96; A is 0 by construction.
+  Excluding the 30.5–31.0°N row changes C to skill score 0.55 and nothing
+  else.
+- **Reading (preview):** for AGB, almost all of the within-cell skill of
+  the 4 km run is already obtained by putting 0.5° per-PFT densities on 4 km
+  land cover (B ≥ C). Running ELM at 4 km adds within-cell amplitude (SD
+  ratio 0.96 vs 0.82) but not skill. This matches the D6 expectation that
+  AGB mostly measures land cover; the SOC test is where running at 4 km
+  must show value. Not yet done: final masks, the observational ceiling,
+  uncertainty (e.g. block bootstrap), and SOC.
+
 ## 4. Script and product locations
 
 | Purpose | Location / entry point | Current state |

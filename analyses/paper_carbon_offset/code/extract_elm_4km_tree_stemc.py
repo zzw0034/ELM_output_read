@@ -35,7 +35,8 @@ import numpy as np
 
 CASE_ROOT = "/scratch/hpcl-cli185/zw5/cime_output_dirs/20260910_seus_rerun"
 DEFAULT_YEARS = list(range(2005, 2013)) + list(range(2015, 2024))
-TREE = set(range(1, 9))
+TREE_TYPES = list(range(1, 9))
+TREE = set(TREE_TYPES)
 SHRUB = {9, 10, 11}
 STEM_VARS = ["LIVESTEMC", "DEADSTEMC"]
 
@@ -70,7 +71,8 @@ def main():
     run_dir = os.path.join(CASE_ROOT, case, "run")
     assert not os.path.exists(out_nc), f"{out_nc} exists; refusing to overwrite"
 
-    maps = {k: [] for k in ["tree_stemc", "shrub_stemc", "tree_frac", "veg_frac"]}
+    maps = {k: [] for k in ["tree_stemc", "shrub_stemc", "tree_frac", "veg_frac",
+                            "stemc_dens_by_type", "frac_by_type"]}
     lat = lon = landfrac = area = None
     for year in years:
         f = h1_file(run_dir, case, year)
@@ -113,30 +115,48 @@ def main():
         for key, mask, vals in [("tree_stemc", is_tree, stem0 * wt), ("shrub_stemc", is_shrub, stem0 * wt),
                                 ("tree_frac", is_tree, wt), ("veg_frac", wt > 0, wt)]:
             maps[key].append(np.where(has, gsum(mask, vals), np.nan))
+        # Per tree type: stem C per unit area of that type (density) and its
+        # gridcell fraction, for the land-cover-downscaled comparator
+        # B(i) = sum_t density_t(0.5 deg parent) * frac_t(4 km cell).
+        dens_t, frac_t = [], []
+        for t in TREE_TYPES:
+            m = (itype == t) & (wt > 0)
+            fw = gsum(m, wt)
+            with np.errstate(invalid="ignore", divide="ignore"):
+                dens_t.append(np.where(fw > 0, gsum(m, stem0 * wt) / fw, np.nan))
+            frac_t.append(np.where(has, fw, np.nan))
+        recon = np.nansum(np.stack(dens_t) * np.nan_to_num(np.stack(frac_t)), axis=0)
+        ok = np.isfinite(maps["tree_stemc"][-1])
+        assert np.allclose(recon[ok], maps["tree_stemc"][-1][ok], rtol=1e-6, atol=1e-3), \
+            f"{year}: sum_t density*fraction does not reproduce tree_stemc"
+        maps["stemc_dens_by_type"].append(np.stack(dens_t))
+        maps["frac_by_type"].append(np.stack(frac_t))
         tm = maps["tree_stemc"][-1]
         tbr = f"time_bounds {tb[0, 0]:.0f}-{tb[-1, 1]:.0f} d"
         n_tree, n_cells = int(is_tree.sum()), int(has.sum())
-        # Job 596645 reached the 32 GB limit after 17 years (~1.8 GB/year
-        # growth) and then failed writing the output; free the per-PFT arrays
-        # explicitly and log peak RSS so any remaining growth is visible.
-        del itype, wt, g, stem, stem0, is_tree, is_shrub, bad, veg, has
+        # Free the per-PFT arrays and log peak RSS. (Jobs 596645/596680 were
+        # first blamed on memory; the real cause was the exceeded scratch
+        # project quota, see analysis_process_notes §3.2.)
+        del itype, wt, g, stem, stem0, is_tree, is_shrub, bad, veg, has, dens_t, frac_t
         gc.collect()
         rss_gb = resource.getrusage(resource.RUSAGE_SELF).ru_maxrss / 1e6
         print(f"{year}: {os.path.basename(f)} ntime={ntime} {tbr} tree PFTs={n_tree} "
               f"cells={n_cells} tree_stemc mean={np.nanmean(tm):.0f} max={np.nanmax(tm):.0f} gC/m2 "
               f"peak RSS {rss_gb:.1f} GB", flush=True)
 
-    # Output is a compressed .npz, not netCDF: with this env's netCDF4
-    # 1.7.4 / libnetcdf 4.10.0, writing the first zlib + NaN-fill float
-    # (year, lat, lon) variable raised "NetCDF: HDF error" and drove the job
-    # to 93 GB RSS before a segfault (jobs 596645, 596680), while the read
-    # loop itself peaked at 1.1 GB.
+    # Output is a compressed .npz. The earlier netCDF writes failed with
+    # "NetCDF: HDF error" (jobs 596645, 596680) because the scratch project
+    # quota was exceeded (EDQUOT, shown plainly by job 596686), not because
+    # of netCDF itself; .npz is kept as a simple, adequate format.
     assert out_nc.endswith(".npz"), "output path must end in .npz"
     arrays = {key: np.stack(maps[key]).astype("f4") for key in maps}
     meta = {
-        "units": "tree_stemc, shrub_stemc: gC/m^2 per gridcell land area; tree_frac, veg_frac: 1; area: km^2",
+        "units": ("tree_stemc, shrub_stemc: gC/m^2 per gridcell land area; stemc_dens_by_type: gC/m^2 per unit "
+                  "area of that PFT type; tree_frac, veg_frac, frac_by_type: 1; area: km^2"),
         "definition": ("tree_stemc = sum over tree PFTs (itype 1-8) of (LIVESTEMC+DEADSTEMC) x pfts1d_wtgcell; "
-                       "shrub_stemc likewise for itype 9-11; tree_frac/veg_frac = summed wtgcell"),
+                       "shrub_stemc likewise for itype 9-11; tree_frac/veg_frac = summed wtgcell; "
+                       "*_by_type have dims (year, tree_type, lat, lon) with tree_type = itype 1..8, and "
+                       "tree_stemc = sum_t stemc_dens_by_type * frac_by_type"),
         "note": ("Annual values are day-weighted means of monthly h1 records; pfts1d_wtgcell is the value "
                  "stored in each year's h1 file. Intended to match the ESA CCI AGB definition (woody parts "
                  "of trees, per unit area). ELM has no separate stump pool; coarse roots are separate "
@@ -145,7 +165,8 @@ def main():
     }
     tmp = out_nc + ".part"
     with open(tmp, "wb") as fh:
-        np.savez_compressed(fh, year=np.array(years, "i4"), lat=lat, lon=lon, landfrac=landfrac, area=area,
+        np.savez_compressed(fh, year=np.array(years, "i4"), tree_type=np.array(TREE_TYPES, "i4"),
+                            lat=lat, lon=lon, landfrac=landfrac, area=area,
                             **arrays, **{k: np.array(v) for k, v in meta.items()})
     os.rename(tmp, out_nc)
     print(f"wrote {out_nc} ({os.path.getsize(out_nc) / 1e6:.1f} MB)")

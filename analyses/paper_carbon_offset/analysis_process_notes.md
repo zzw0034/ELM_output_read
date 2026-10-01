@@ -864,7 +864,7 @@ End state = mean of 2091-2100, gain = TOTECOSYSC difference to the 36000 s Defau
 **Slurm jobs 602388 (Default), 602389 (RF), 602390 (RH)**, `serial`/`normal`, 1 core, 8 GB, 1 h limit, COMPLETED in 4-5 s, empty stderr (dedicated
 partition occupied). Outputs `_cache/figure3/0.5deg/SSP3-7.0[_RF|_RH]__pools_2091-2100.npz`, copied locally, md5 identical:
 `6d386c0aaefaee77cfadd1880d7f00fa` (Default), `c3f34631ed4a3f995fb83eab43a88b5d` (RF), `7fd7279e48d41eb4c31ea898df63d018` (RH). The 4 km input is Figure 4's
-`_cache/figure4/4km/` maps (§3.10). Plot `code/figure3/plot_gain_heterogeneity.py` (md5 `82ac6196566cef8c113feda055d598c4`) →
+`_cache/figure4/4km/` maps (§3.10). Plot `code/figure3/plot_gain_heterogeneity.py` (md5 `c2f3a5da87d3382c01e389a99987c57a`) →
 `figures/figure3/fig3_gain_heterogeneity_SSP3-7.0_2091-2100.png`, `fig3_stats_…csv` (all metrics, three subsets, both managements), `fig3_cells_RF_…csv`.
 
 Method: the 4 km grid (324×504) nests exactly in the 0.5° grid (27×42; cell centres equal the means of their 12×12 children, asserted). C and A are compared
@@ -890,6 +890,11 @@ with ≥ 100 common children, the largest SD and the cell closest to the median 
   are 7.1 and 74.1 against 2.0 and 91.4 at 4 km.
 - Pattern agreement is moderate (RF r 0.71, ρ 0.75). Of the area in the 4 km top decile of the gain, 43 % is also in the 0.5° top decile (RH 56 %); the
   bottom decile 52 % (RH 62 %). The results hold with the 0.5° row 30.5-31.0°N excluded (RF r 0.70, top-decile overlap 43 %) and for cells with ≥ 72 children (r 0.71, 44 %).
+- **Where the top decile is (panels h-i, a spatial version of the overlap).** Each 4 km cell is "both" (in the top 10 % of the common-support land area by
+  gain in C and in A), "C only" (a top-decile cell of the 4 km run that the 0.5° run misses), "A only" or "neither". RF: both 4.3 %, C only 5.7 %,
+  A only 5.7 % of the land (C top decile 10.0 %, A 10.1 %), so the 0.5° run finds 43 % of the 4 km top decile; RH: 5.6 / 4.4 / 4.5 %, 56 %.
+  The 0.5° top decile is made of whole 0.5° cells; the 4 km "C only" cells are scattered small patches inside or beside the shared blocks.
+  The correlation coefficients are no longer in the figure (still in `fig3_stats_…csv`).
 - Zoom cells chosen by the rule: zoom 1 is the 0.5° cell at 30.25°N, 92.25°W (southern Louisiana; SD of C 43 MgC/ha, A 58.3), zoom 2 the median-SD cell at 33.75°N,
   85.75°W (SD of C 15.8, A 49.4). No regional reading of the maps was made.
 - RF is restoration plus a region-wide harvest ban and its gain contains the SSP's own land-use drift, which differs between the runs only through their own land

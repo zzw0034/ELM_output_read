@@ -62,7 +62,7 @@ the +142.3 ×10³ km² of notes §3.9 (4 km) first.
 
 | Script | What it does | How it runs |
 |---|---|---|
-| `plot_gain_heterogeneity.py` | RF (main) and RH gain of the native 4 km run (C) against the native 0.5° run (A) on common support (no averaged comparator): maps, A − C map, SD-of-C-inside-0.5°-cell map, two zooms chosen by a fixed rule, area-weighted CDF, agreement statistics (SD ratio, Pearson/Spearman, MAD/RMSE, decile overlaps; all / excluding the 30.5–31.0°N row / ≥ 72 children) and per-cell CSVs | Locally (cartopy venv); inputs `_cache/figure4/4km/` and `_cache/figure3/0.5deg/` (made by `figure4/extract_pool_maps.py`; 0.5° jobs 602388–602390); see notes §3.14 |
+| `plot_gain_heterogeneity.py` | RF (main) and RH gain of the native 4 km run (C) against the native 0.5° run (A) on common support (no averaged comparator): maps, A − C map, SD-of-C-inside-0.5°-cell map, two zooms chosen by a fixed rule, area-weighted CDF, maps of where the top-10 % gain areas of C and A coincide (RF, RH), agreement statistics in the CSV (SD ratio, Pearson/Spearman, MAD/RMSE, decile overlaps; all / excluding the 30.5–31.0°N row / ≥ 72 children) and per-cell CSVs | Locally (cartopy venv); inputs `_cache/figure4/4km/` and `_cache/figure3/0.5deg/` (made by `figure4/extract_pool_maps.py`; 0.5° jobs 602388–602390); see notes §3.14 |
 
 ## Legacy and diagnostic scripts
 

@@ -19,6 +19,11 @@ area-weighted mean, SD and quantiles of C and A, SD(A)/SD(C), weighted Pearson a
 correlation, mean absolute and RMS difference, mean A - C, and the top-/bottom-decile area
 overlap (the share of the area in C's top/bottom decile that is also in A's).
 
+Panels h-i map the top-10 % overlap (RF and RH): each 4 km cell is "both" (in the top 10 % of
+the land area by gain in C and in A), "C only" (a top-decile cell of the 4 km run that the 0.5 deg
+run misses), "A only" or "neither". Top 10 % = the cells with the largest gain holding 10 % of the
+common-support land area in that run; A's top decile is made of whole 0.5 deg cells.
+
 Descriptive map (panel d): the area-weighted SD of C inside each 0.5 deg cell (about that
 cell's own mean), the 4 km variation that a 0.5 deg cell cannot represent. It is also used,
 only, to choose the zoom windows by a rule fixed before looking at the maps: among 0.5 deg
@@ -335,7 +340,7 @@ def main():
         ptitle(ax1, letter, f"Zoom {k + 1}: SD of C in the centre cell {b['within_sd'][j, i]:.0f}" + (" MgC/ha" if k == 0 else " (median)"))
 
     # g: area-weighted cumulative distributions of C and A
-    axg = fig.add_subplot(gs[2, 0:6])
+    axg = fig.add_subplot(gs[2, 0:4])
     w = b["w"][m]
     for key, (col, lab) in SERIES.items():
         v = {"C": b["c"], "A": b["a"]}[key][m]
@@ -348,30 +353,40 @@ def main():
     ptitle(axg, "g", "Area-weighted distribution of the gain")
     axg.grid(axis="x", color=GRID, lw=0.9)
 
-    # h: how well A reproduces the pattern of C (all common support)
-    axh = fig.add_subplot(gs[2, 7:12])
-    names = [("r", "Pearson\nr"), ("rho", "Spearman\nρ"), ("top10_overlap", "Top-10%\narea overlap"), ("bottom10_overlap", "Bottom-10%\narea overlap")]
-    xh = np.arange(len(names))
-    wd = 0.36
-    for k, mg in enumerate(("RF", "RH")):
-        vals = [S[(mg, "all common support")][key] for key, _ in names]
-        axh.bar(xh + (k - 0.5) * wd, vals, wd, color=MGMT[mg], edgecolor=SURFACE, linewidth=1.2, zorder=3, label=mg)
-        for xi, v in zip(xh, vals):
-            axh.text(xi + (k - 0.5) * wd, v, f"{v:.2f}", ha="center", va="bottom", fontsize=9, color=INK2)
-    axh.set_xticks(xh)
-    axh.set_xticklabels([n for _, n in names], fontsize=8.8)
-    axh.set_ylim(0, 1.05)
-    axh.legend(frameon=False, fontsize=9.5, loc="upper right")
-    style(axh, "Agreement of A with C (1 = identical pattern)")
-    ptitle(axh, "h", "How well the 0.5° run reproduces the 4 km gain pattern")
+    # h-i: where the top-10 % land area of the 4 km run is, and whether the 0.5 deg run finds it
+    cls_cols = ["#e1e0dc", "#eb6834", "#1baf7a", "#2a78d6"]     # neither, C only, A only, both
+    cls_names = ["Neither", "C only (missed by 0.5°)", "A only", "Both"]
+    cmap_cls = matplotlib.colors.ListedColormap(cls_cols)
+    for letter, mg, col in (("h", "RF", slice(4, 8)), ("i", "RH", slice(8, 12))):
+        bm = B[mg]
+        wm = bm["w"] > 0
+        wv = bm["w"][wm]
+        qc = wquantile(bm["c"][wm], wv, [0.9])[0]
+        qa = wquantile(bm["a"][wm], wv, [0.9])[0]
+        topc, topa = bm["c"] >= qc, bm["a"] >= qa
+        cls = np.where(topc & topa, 3, np.where(topc, 1, np.where(topa, 2, 0))).astype("f8")
+        cls = np.where(bm["common"], cls, np.nan)
+        tot = bm["w"].sum()
+        share = {k: 100 * bm["w"][(cls == k)].sum() / tot for k in (0, 1, 2, 3)}
+        ov = S[(mg, "all common support")]["top10_overlap"]
+        print(f"{mg} top-10% maps: C top decile {100 * bm['w'][topc].sum() / tot:.1f}% of land, A top decile {100 * bm['w'][topa].sum() / tot:.1f}%; "
+              f"both {share[3]:.1f}%, C only {share[1]:.1f}%, A only {share[2]:.1f}% of land; overlap {100 * ov:.0f}% of C's top-decile area")
+        axm = fig.add_subplot(gs[2, col], projection=ccrs.PlateCarree())
+        draw_map(axm, bm["lon4"], bm["lat4"], cls, cmap_cls, Normalize(-0.5, 3.5),
+                 (letter, f"{mg}: top 10% of the gain, 4 km vs 0.5°"), extent)
+        handles = [plt.Rectangle((0, 0), 1, 1, color=cls_cols[k]) for k in (3, 1, 2, 0)]
+        axm.legend(handles, [cls_names[k] for k in (3, 1, 2, 0)], loc="lower left", fontsize=8.2, frameon=True, framealpha=0.92, edgecolor="none")
+        axm.text(0.98, 0.03, f"0.5° finds {100 * ov:.0f}%\nof the 4 km top 10%", transform=axm.transAxes, ha="right", va="bottom",
+                 fontsize=9.5, color=INK, bbox=dict(facecolor=SURFACE, edgecolor="none", alpha=0.9, pad=3))
 
     st = S[("RF", "all common support")]
     fig.suptitle(f"SEUS {a.ssp}, {win}: the management gain at 4 km and at 0.5°", fontsize=13, color=INK, x=0.05, y=0.985, ha="left")
-    fig.text(0.05, 0.012,
+    fig.text(0.05, 0.008,
              "Gain = TOTECOSYSC (RF or RH) − Default, mean of the window, MgC/ha of land, on the common support of the 4 km and 0.5° runs; weights area × landfrac. "
-             f"A is a separately configured run, so A − C combines resolution and configuration.\nRF: SD(A)/SD(C) = {st['sd_ratio_A_over_C']:.2f}, "
-             f"mean A − C = {st['mean_diff_A_minus_C']:+.1f} MgC/ha. RF is restoration plus a region-wide harvest ban and its gain contains the SSP's own land-use drift. "
-             "Panel d is the SD of the 4 km gain inside each 0.5° cell, about that cell's own mean.",
+             "A is a separately configured run, so A − C combines resolution and configuration.\n"
+             f"RF: SD(A)/SD(C) = {st['sd_ratio_A_over_C']:.2f}, mean A − C = {st['mean_diff_A_minus_C']:+.1f} MgC/ha. RF is restoration plus a region-wide harvest ban; "
+             "its gain contains the SSP's own land-use drift. Panel d: SD of the 4 km gain inside each 0.5° cell, about that cell's own mean.\n"
+             "h-i: top 10% = the cells with the largest gain holding 10% of the common-support land area in each run; the 0.5° top decile is made of whole 0.5° cells.",
              fontsize=8.6, color=INK2, va="bottom", ha="left")
     png = os.path.join(a.out_dir, f"fig3_gain_heterogeneity_{a.ssp}_{win}.png")
     fig.savefig(png, dpi=170, facecolor=SURFACE)

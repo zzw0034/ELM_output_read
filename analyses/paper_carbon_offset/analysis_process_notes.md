@@ -501,8 +501,11 @@ ceiling; and what the SoilGrids/HWSD disagreement with each other (HWSD is
 
 ### 3.5 Figure 2, historical regional series from the 4 km transient (2026-10-01)
 
-Figure 2 uses **4 km results only** and shows results, not a 4 km vs 0.5°
-comparison (user decision 2026-10-01). Case: `20260911_Southeast_hires_30n_hdmfix_mapfix_ICB20TRCNPRDCTCBC`,
+The historical figure shows both resolutions, **4 km solid and 0.5° dashed**
+(user request 2026-10-01). The per-scenario management figures will use the 4 km
+runs only and show results, not a resolution comparison (user decision
+2026-10-01; this reading of the two requests should be confirmed). Cases: 4 km
+`20260911_Southeast_hires_30n_hdmfix_mapfix_ICB20TRCNPRDCTCBC`, 0.5° `20260911_seus_halfdeg_transient_dt3600`,
 h0/h1 1850–2023. Annual values are day-weighted means of the 12 monthly
 records; domain totals = Σ field × area × landfrac over land cells (1.3562 Mkm²).
 
@@ -510,18 +513,20 @@ records; domain totals = Σ field × area × landfrac over land cells (1.3562 Mk
 |---|---|
 | Totals extractor | `code/figure2/extract_domain_totals.py` (TOTECOSYSC, TOTVEGC, TOTVEGC_ABG, CWDC, TOTLITC, TOTSOMC, GPP, NBP, WOOD_HARVESTC, LAND_USE_FLUX; product residual), md5 `5bdcbbfdd2cce2bf54d6e04b5da87418`, commit `c058c79`; job 602146 (18 min, 0.1 GB) → `_cache/figure2/transient_domain_totals_4km.npz`, md5 `951c09bc3e27bf8c348a02118bc26480` |
 | Forest-area extractor | `code/figure2/extract_forest_area.py` (Σ pfts1d_wtgcell × area × landfrac by itype; tree = itype 1–8), md5 `e205186833aa36a531435b2b575083e6`; job 602148 (4 min) → `transient_forest_area_4km.npz`, md5 `aae3adb6569bfed08accc033f6c3c254` |
-| Plot | `code/figure2/plot_historical_regional_series.py`, md5 `311442ede824bd9a4e0c85a092cdaa4a` → `figures/figure2/hist_regional_series_1850-2023.png` (git-ignored) |
-| Also extracted, not used | 0.5° counterparts (jobs 602147, 602149), kept in the same `_cache/figure2/` |
+| Plot | `code/figure2/plot_historical_regional_series.py`, md5 `2686ce1add92e3d8481e6f3564b9f049` → `figures/figure2/hist_regional_series_1850-2023.png` (git-ignored) |
+| 0.5° counterparts | same extractors; jobs 602147 (totals, md5 `6267909696638d15ca6dd6fb13f49748`) and 602149 (forest area, md5 `664fd8e2dd3590b22b3d24afbb23856c`), in the same `_cache/figure2/` |
 
 First jobs 602135–602138 failed on purpose: the first record of a run starts one
 model time step early (1850 file: time_bounds −1/24 d), which the extractors'
 strict calendar-year assertion rejected; the tolerance is now < 1 day and each
 use prints a note (effect on a day-weighted annual mean ≈ 0.01 %).
 
-Results (4 km, 1850 → 2023): forest (tree-PFT) area 976 → 805 ×10³ km² (72 %
-→ 59 % of land; minimum 783 in 1949); GPP 2.09 → 3.03 PgC/yr; SOC (TOTSOMC)
+Results (4 km unless stated, 1850 → 2023): forest (tree-PFT) area 976 → 805 ×10³ km² (72 %
+→ 59 % of land; minimum 783 in 1948); GPP 2.09 → 3.03 PgC/yr; SOC (TOTSOMC)
 25.25 PgC in 1850, +0.87 PgC by 2023; NBP between −0.22 and +0.20 PgC/yr, mean
-positive after ~1930. Checks: the PFT area sums to the land area (ratio 1.0000
+positive after ~1930 (2000–2023 mean +0.051 PgC/yr). The 0.5° run differs little in GPP (3.05) and NBP
+(+0.049) but gains more SOC: +1.25 against +0.87 PgC; forest area is identical in the two runs because
+the 0.5° land cover is the area-weighted aggregate of the 4 km one. Checks: the PFT area sums to the land area (ratio 1.0000
 every year); the product residual TOTECOSYSC − (TOTVEGC+CWDC+TOTLITC+TOTSOMC)
 grows from +0.03 to +0.83 PgC, so **TOTECOSYSC does include the product pools**
 (the h0 long_name "excl product pools" is stale; consistent with

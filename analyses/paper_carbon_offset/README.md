@@ -18,7 +18,7 @@ sections are described in
 
 | Location | Purpose |
 |---|---|
-| [CLAUDE.md](CLAUDE.md) | Short pointer file auto-loaded by Claude Code in this folder: remote root, what to read first, workflow |
+| [CLAUDE.md](CLAUDE.md), [AGENTS.md](AGENTS.md) | Folder rules for Claude Code and for other agents (Codex, Cursor): remote root, what to read first, workflow; kept consistent |
 | [MANUSCRIPT_BLUEPRINT.md](MANUSCRIPT_BLUEPRINT.md) | The single manuscript plan: decisions, story, Introduction, Methods, figures/Results, Discussion, tables, checklist |
 | [ANALYSIS_FRAMEWORK.md](ANALYSIS_FRAMEWORK.md) | Short English outline of the analysis framework for sharing; derived from the blueprint, which governs |
 | [CASE_MATRIX.md](CASE_MATRIX.md) | Earlier case/configuration audit; Default/DF mapping still needs the 2026-09-24 update |

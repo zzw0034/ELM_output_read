@@ -1,7 +1,9 @@
 # CLAUDE.md — paper_carbon_offset
 
 Loaded automatically when working in this folder. It only points to the
-governing documents; if anything here disagrees with them, they win. The
+governing documents; if anything here disagrees with them, they win.
+The sibling `AGENTS.md` carries the same essentials for other agents (Codex,
+Cursor); keep the two consistent when either changes. The
 workspace `AGENTS.md` rules (SSH, Slurm, sync, destructive actions) still
 apply in full.
 

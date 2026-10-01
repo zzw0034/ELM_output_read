@@ -343,6 +343,137 @@ cite the catalogue record in Methods. Foliage is **not** included.
   `e91f200c9655defc73bd03bb15b33eb8`) differs from the `1fd2a9a9…` version
   only in the usage path in its docstring; the computation is unchanged.
 
+### 3.4 SOC observations on the 4 km grid, ELM SOC 2000–2023, first comparison (2026-10-01)
+
+Everything below lives on Pathfinder under
+`/projects/hpcl-cli185/proj-shared/zw5/obs_data/SOC/` (observations, each
+product in its own folder together with a copy of its script and a README) and
+`.../paper_carbon_offset/_cache/obs_compare/` (ELM extracts). Scripts are
+authoritative in Git at `code/figure1/`; the remote paper root is an rsync
+mirror, not a git clone.
+
+**Depths and ELM quantity (decided 2026-10-01, blueprint A5).** 0–30 cm and
+0–100 cm, both drawn. ELM 0–30 cm = Σ_k overlap_k(0–0.30 m) ×
+(SOIL1C_vr+SOIL2C_vr+SOIL3C_vr+SOIL4C_vr)_k; ELM 0–100 cm = the model's own
+`TOTSOMC_1m`. In `ColumnDataType.F90` `TOTSOMC_1m` is the sum of the
+`is_soil` decomposition pools only (litter `TOTLITC_1m` and CWD are separate)
+integrated over layers fully above 1 m plus the share of the straddling
+layer, i.e. the same overlap rule as the 0–30 cm integral. Check: the
+extractor also integrates SOIL1–4C_vr to 1.00 m and the maximum difference to
+`TOTSOMC_1m` is 0.0000 kg C m⁻² in all 24 years at both resolutions. Layer
+bottoms (m): 0.0175, 0.0451, 0.0906, 0.1655, 0.2891, 0.4929, 0.8289, 1.3828;
+0–30 cm takes 0.0109 m of layer 6, 0–100 cm takes 0.1711 m of layer 8 (uniform
+density inside a layer assumed). `DZSOI` is written only to the first h0 file
+of a continuous run segment; later files name it in the global attribute
+`Time_constant_3Dvars_filename` (0.5°: the 1850 file; 4 km: the 1999 file),
+which the extractor follows. Each year is a day-weighted mean of the 12 monthly
+records; the figure uses the mean of the 24 annual means, 2000–2023.
+
+| Item | Value |
+|---|---|
+| ELM 4 km | `20260911_Southeast_hires_30n_hdmfix_mapfix_ICB20TRCNPRDCTCBC`, h0 2000–2023; `_cache/obs_compare/elm4km_soc_2000-2023.npz`, 19.3 MB, md5 `23b50fc594598b7e90b900b0238e5f9a`, job 602051 (85 s, 0.6 GB RSS) |
+| ELM 0.5° | `20260911_seus_halfdeg_transient_dt3600`; `_cache/obs_compare/elm0p5deg_soc_2000-2023.npz`, md5 `1e7875faf4da431aba7ceb37815b75dd`, job 602050 (8 s) |
+| Extractor | `code/figure1/extract_elm_soc.py`, md5 `b073596d521dba75193559f8fb4795dd`, commit `b20ef4e`; smoke tests 602048/602049 (year 2000) preceded the full runs |
+| Mean SOC, land cells (area × landfrac) | 4 km: 7.5 (0–30), 12.6 (0–100); 0.5°: 7.7, 12.9 kg C m⁻²; the 4 km run rises 7.44 → 7.53 (0–30) from 2000 to 2023 |
+
+**SoilGrids 2.0** (`obs_data/SOC/soilgrids/`). ISRIC `ocd` (organic carbon
+density, mean, hg/m³ ×0.1 = kg/m³; coarse fragments already accounted for)
+layers 0–5, 5–15, 15–30, 30–60, 60–100 cm, fetched through the ISRIC WCS 1.0.0
+(`https://maps.isric.org/mapserv?map=/map/ocd.map`, format `GEOTIFF_INT16`) as
+five 504 × 324 GeoTIFFs whose pixel edges are the ELM cell edges (box
+−95…−74°E, 24…37.5°N). The exact request URLs, byte counts and md5 of each
+tif are in `raw/provenance.json`; the five md5 were identical on the Mac and
+on Pathfinder (reproducible). Layer boundaries coincide with the target depths
+(0–30 = three layers, 0–100 = five), so there is no partial layer. A cell is
+valid only where all layers used are valid (77 961 of 163 296; ocean is
+nodata). Output `SOC_soilgrids_SEUS_1_24deg.nc`, md5
+`41ce8d284683b4e74d1119ba68579726`, job 602046; area-weighted mean over valid
+cells 6.60 (0–30) and 11.80 kg C m⁻² (0–100).
+**Caveat — resampling is done by the server.** This is the poster's route
+(`download_soilgrid.py`) with the request box and pixel counts set to the ELM
+grid instead of 25–40°N × 100–74°W. It is not our own area-weighted aggregate
+of the 250 m pixels (that alternative was offered and not chosen). A test on
+layer 0–5 cm: requesting 4× the pixels (2016 × 1296) and block-averaging 4 × 4
+reproduces the direct 504 × 324 request with RMSE 10.8 hg/m³ (≈3 % of the
+mean), bias +0.1, r 0.989, whereas the best single 4 × 4 sub-pixel gives
+RMSE ≥ 16.4 — so the server resamples by something close to averaging, not
+nearest neighbour. Not repeated for the other layers.
+Script `code/figure1/obs_soc_soilgrids_wcs_4km.py`, md5
+`e50c6e1562cd476f12493317b88d025c`: `fetch` on the login node (network only,
+~0.4 MB), `process` via Slurm.
+
+**HWSD v1.2** (`obs_data/SOC/hwsd/`). The regridded HWSD v1.2 of the ORNL DAAC
+(Wieder, Boehnert, Bonan and Langseth, 2014, doi:10.3334/ORNLDAAC/1247; 27
+`.nc4` files at 0.05° = 3 arc-minute plus one CLM-grid file), from the
+original HWSD v1.2 (FAO/IIASA/ISRIC/ISSCAS/JRC, 2012) regridded from 30
+arc-second by ArcGIS. Used: `AWT_T_SOC.nc4` (`SUM_t_c_12`, topsoil 0–30 cm,
+md5 `37184939fc5e1788afe2bae0b30f734d`) and `AWT_S_SOC.nc4` (`SUM_s_c_1`,
+subsoil 30–100 cm, md5 `04815e129b1e53fab2ab6b7134b00e03`), kg C m⁻², missing
+= −1. **Provenance gap:** these are the local copies from the earlier
+`wildfires` project (file dates 2014-09-12, folder
+`/Users/zw5/ORNL_workplace/wildfires/ELM_results4CCSImidmeet/otherdata00/soc/HWSD_1247/data/`),
+copied to Pathfinder with scp. The ORNL DAAC download needs an Earthdata login
+and was not repeated, and no direct download URL was verified in this
+session; the local `guide/Online_Version_HWSD.html` only redirects to
+`https://daac.ornl.gov/SOILS/guides/HWSD.html`; the documentation PDFs are in
+`.../HWSD_1247/comp/`.
+**Caveat — the source is coarser than the target.** 0.05° (3′) is coarser than
+1/24° (2.5′), so each 4 km cell takes the exact area-overlap weighted mean of
+the 0.05° cells it touches (valid cells only); this is a remap, not an
+aggregation, and carries no 4 km information. 0–100 cm = topsoil + subsoil
+where both are valid. The old `process_HWSD_1247.py` added the two files
+without masking the −1 fill. Output `SOC_hwsd_SEUS_1_24deg.nc`, md5
+`089510a149c832ce5f1aa759299a8e43`, job 602047 (also stores the valid share of
+each cell; 1 033 cells have < 0.5); 79 658 valid cells; area-weighted mean
+5.12 (0–30) and 10.39 kg C m⁻² (0–100), against 5.09 and 10.30 for the source
+cells inside the box. Script `code/figure1/obs_soc_hwsd_v12_4km.py`, md5
+`961118c6e6dbd58949d3c8a294ce4ce4`, commit `b20ef4e`. Minimum 0.00: some
+cells carry no SOC in HWSD.
+
+**Figures** (local, `figures/figure1/`, git-ignored; script
+`code/figure1/plot_soc_elm4km_obs4km_elm0p5.py`, md5
+`498bd4482b0e6a5ba8c24f026588350a`, run from `_cache/obs_soc/` and
+`_cache/obs_compare/` pulled with scp, md5 verified): one figure per product,
+rows = 0–30 and 0–100 cm, columns ELM 4 km | observation on the 4 km grid
+(masked where ELM 4 km has no soil column) | ELM 0.5°.
+`soc_elm4km_soilgrids4km_elm0p5_2000-2023.png`,
+`soc_elm4km_hwsd4km_elm0p5_2000-2023.png`. Colour scales are fixed and shared
+by both products (0–12 and 0–36 kg C m⁻², extend max); with a data-driven
+scale the HWSD wetland hotspots stretched the scale and washed ELM out.
+
+**First-look statistics** (area × landfrac weights, common support; mean of
+ELM 2000–2023; bias = ELM − obs; not the D6 evaluation):
+
+| Product, depth | 4 km cells: mean ELM / obs | bias | RMSE | r | 0.5°: ELM 0.5° native vs obs | bias | RMSE | r |
+|---|---|---|---|---|---|---|---|---|
+| SoilGrids 0–30 | 7.50 / 6.49 | +1.0 | 2.0 | +0.13 | 7.69 / 6.49 | +1.2 | 2.0 | +0.15 |
+| SoilGrids 0–100 | 12.64 / 11.32 | +1.3 | 4.7 | −0.23 | 12.88 / 11.35 | +1.5 | 4.6 | −0.28 |
+| HWSD 0–30 | 7.49 / 4.93 | +2.6 | 4.4 | −0.20 | 7.69 / 4.93 | +2.8 | 4.1 | −0.34 |
+| HWSD 0–100 | 12.62 / 9.91 | +2.7 | 8.7 | −0.26 | 12.88 / 9.91 | +3.0 | 7.6 | −0.40 |
+
+ELM 0.5° native vs ELM 4 km aggregated to 0.5°: bias +0.2 to +0.3, RMSE 0.5
+to 0.8, r 0.95 at both depths.
+
+**Reading (preview).** ELM is higher than both products at both depths and
+agrees poorly in space: r is between −0.40 and +0.15 for 4 km cells and 0.5°
+cells alike, so the 4 km run is not clearly closer to the observations than
+the 0.5° run (e.g. HWSD 0–30 cm at 0.5°: RMSE 3.9 aggregated 4 km vs 4.1 native 0.5°, r −0.35 vs −0.34). ELM's pattern is a north-high, south-low gradient with maxima in the
+Appalachians and Ozark/Ouachita; both products have little gradient but
+wetland/organic-soil hotspots (South Florida, Mississippi delta and
+Louisiana, North Carolina coastal pocosins) that ELM, with one soil column and
+no organic soils, cannot reproduce; it matches the South Florida deficit
+already diagnosed in `carbon_offset_poster/codes/diagnose_south_fl_soc*.py`.
+A test that the weak r is only the hotspots was **negative**: excluding the
+cells above 12 (0–30) or 30 kg C m⁻² (0–100) in the observation (0.6–1.7 % of
+cells) leaves Pearson +0.15 / −0.18 for SoilGrids and −0.28 / −0.39 for HWSD,
+and rank correlation (Spearman) of +0.26 / +0.01 and −0.01 / −0.06, so the
+disagreement is broad. Open before any claim: whether to mask or weight
+organic-soil cells; within-0.5°-cell anomaly skill (D6 step 3; the only place
+the 4 km run can show a SOC benefit, because coarse SOC has no downscaled
+comparator); a second independent product (gSSURGO) as the observational
+ceiling; and what the SoilGrids/HWSD disagreement with each other (HWSD is
+4.9 vs 6.5 kg C m⁻² in 0–30 cm) implies for the evaluation.
+
 ## 4. Script and product locations
 
 Since 2026-10-01 `code/` and `figures/` are organized by manuscript figure

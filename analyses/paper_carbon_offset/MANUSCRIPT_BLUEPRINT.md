@@ -87,6 +87,18 @@ model at 4 km. Only B→C supports "high-resolution *modeling*". For
 prioritization the primary coarse comparator is C′ (no configuration
 confound); B and A are secondary. SOC has no B (D6).
 
+### A5. SOC evaluation depths and products (decided 2026-10-01)
+
+Figure 1 SOC is shown at **0–30 cm and 0–100 cm**, against **SoilGrids 2.0 and
+HWSD v1.2** (one figure per product), on the ELM 4 km grid. ELM 0–30 cm is the
+overlap integral of SOIL1–4C_vr; ELM 0–100 cm is `TOTSOMC_1m` (identical to the
+same integral of SOIL1–4C_vr to 1 m, checked). Litter and CWD are excluded.
+HWSD v1.2 is coarser (0.05°) than 4 km and is remapped, so it adds no
+within-cell information; SoilGrids is requested from the ISRIC WCS directly on
+the ELM grid (server-side resampling). D6 step 1 still reads "0–30 cm,
+SoilGrids" and has **not** been updated to this wider scope; which product and
+depth carry the within-cell test is open. Details and first statistics: [analysis_process_notes.md](analysis_process_notes.md) §3.4.
+
 ---
 
 ## Part B — Scientific story

@@ -26,6 +26,10 @@ are preserved in `../figures/legacy/`.
 | `plot_elm_vs_esacci_agb.py` | ELM 4 km tree stem C alone and side by side with ESA × carbon fraction | Locally |
 | `plot_agb_elm4km_esa4km_elm0p5.py` | ELM 4 km \| ESA aggregated to 4 km \| ELM 0.5°, with common-support statistics | Locally |
 | `plot_agb_4km_comparators.py` | All on the 4 km grid: ELM 4 km (C), ESA, 0.5° copied (A), 0.5° downscaled by 4 km tree-PFT fractions (B); common-support and within-0.5° anomaly statistics | Locally |
+| `obs_soc_soilgrids_wcs_4km.py` | SoilGrids 2.0 SOC 0–30 / 0–100 cm on the ELM 4 km grid: `fetch` (ISRIC WCS, login node, network only) and `process` (Slurm) → `/projects/hpcl-cli185/proj-shared/zw5/obs_data/SOC/soilgrids/` | 2026-10-01, jobs 602046; see notes §3.4 |
+| `obs_soc_hwsd_v12_4km.py` | HWSD v1.2 (0.05°) SOC 0–30 / 0–100 cm remapped to the 4 km grid with overlap weights → `.../obs_data/SOC/hwsd/` | Slurm, job 602047 |
+| `extract_elm_soc.py` | ELM SOC 0–30 cm (SOIL1–4C_vr) and 0–100 cm (TOTSOMC_1m), annual day-weighted means 2000–2023, both resolutions → `_cache/obs_compare/` | Slurm via `submit_py.sbatch`, jobs 602050/602051 |
+| `plot_soc_elm4km_obs4km_elm0p5.py` | ELM 4 km \| obs on 4 km \| ELM 0.5°, rows 0–30 and 0–100 cm, one figure per product, with first-look statistics | Locally |
 
 Local plotting scripts read inputs pulled into `../_cache/` and write PNGs to
 `../figures/figure1/` (git-ignored).
@@ -43,8 +47,8 @@ Local plotting scripts read inputs pulled into `../_cache/` and write PNGs to
 | `supplement/` | `fig06_fire_impact.py` | Supplement / vulnerability support | Use complete fire budget and account for HDM effective resolution |
 | `supplement/` | `check_df_grass_decomposition.py`, `check_grass_phenology_mechanism.py` | Supplementary diagnostics | Interpret alongside corrected daylength runs |
 
-Still missing: SOC observational evaluation, the observational ceiling, and
-the equal-area selection experiment.
+Still missing: the quantitative SOC evaluation (the maps and first-look statistics exist, see notes §3.4),
+the observational ceiling, and the equal-area selection experiment.
 
 ## Running on Pathfinder
 

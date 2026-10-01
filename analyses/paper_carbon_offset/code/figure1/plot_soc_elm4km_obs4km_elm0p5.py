@@ -44,7 +44,11 @@ OBS = {
 ELM4_NPZ = os.path.join(ROOT, "_cache/obs_compare/elm4km_soc_2000-2023.npz")
 ELM05_NPZ = os.path.join(ROOT, "_cache/obs_compare/elm0p5deg_soc_2000-2023.npz")
 OUT_DIR = os.path.join(ROOT, "figures/figure1")
-DEPTHS = [("0_30", "0–30 cm", 2.0), ("0_100", "0–100 cm", 5.0)]  # key, label, colour-scale rounding (kg C m-2)
+# key, label, colour-scale top (kg C m-2). Fixed and shared by both products so the
+# figures are comparable and wetland/peat hotspots (Everglades, Mississippi
+# delta, NC pocosins; up to ~50-65 kg C m-2 in 0-100 cm) saturate instead of
+# stretching the scale and washing out ELM. 12 equal bins, extend="max".
+DEPTHS = [("0_30", "0–30 cm", 12.0), ("0_100", "0–100 cm", 36.0)]
 
 
 def stats(a, b, w):
@@ -81,10 +85,9 @@ def main():
             obs = {k: np.ma.filled(ds[f"soc_{k}cm"][:].astype("f8"), np.nan) for k, _, _ in DEPTHS}
         fig, axes = plt.subplots(2, 3, figsize=(21, 10.6), subplot_kw={"projection": ccrs.PlateCarree()})
         print(f"\n{short}, ELM mean of {len(years)} years {min(years)}-{max(years)}")
-        for row, (k, label, rnd) in enumerate(DEPTHS):
+        for row, (k, label, vmax) in enumerate(DEPTHS):
             o4 = np.where(np.isfinite(elm4[k]), obs[k], np.nan)
-            vmax = float(np.ceil(np.nanpercentile(np.concatenate([elm4[k].ravel(), o4.ravel(), elm05[k].ravel()]), 99.5) / rnd) * rnd)
-            levels = np.linspace(0, vmax, 11)
+            levels = np.linspace(0, vmax, 13)
             cmap = plt.get_cmap("YlOrBr", len(levels))
             cmap.set_bad("#dfe3e8")
             norm = BoundaryNorm(levels, ncolors=cmap.N, extend="max")

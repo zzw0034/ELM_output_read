@@ -36,7 +36,7 @@ matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 import netCDF4
 import numpy as np
-from matplotlib.colors import BoundaryNorm
+from matplotlib.colors import Normalize
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from plot_agb_elm4km_esa4km_elm0p5 import BLOCK  # noqa: E402
@@ -55,8 +55,8 @@ OUT_DIR = os.path.join(ROOT, "figures/figure1")
 # key, label, colour-scale top (kg C m-2). Fixed and shared by both products so the
 # figures are comparable and wetland/peat hotspots (Everglades, Mississippi
 # delta, NC pocosins; up to ~50-65 kg C m-2 in 0-100 cm) saturate instead of
-# stretching the scale and washing out ELM. 12 equal bins, extend="max".
-DEPTHS = [("0_30", "0–30 cm", 12.0), ("0_100", "0–100 cm", 36.0)]
+# stretching the scale and washing out ELM. Continuous BrBG colormap (the poster's), extend="max".
+DEPTHS = [("0_30", "0–30 cm", 12.0), ("0_100", "0–100 cm", 24.0)]
 
 
 def stats(a, b, w):
@@ -98,10 +98,9 @@ def main():
             common = np.isfinite(elm4[k]) & np.isfinite(obs[k]) & np.isfinite(elm05c[k])
             lost = int((np.isfinite(elm4[k]) & np.isfinite(obs[k]) & ~np.isfinite(elm05c[k])).sum())
             m4, o4, c05 = (np.where(common, x[k], np.nan) for x in (elm4, obs, elm05c))
-            levels = np.linspace(0, vmax, 13)
-            cmap = plt.get_cmap("YlOrBr", len(levels))
+            cmap = plt.get_cmap("BrBG").copy()  # brown (low) - beige - teal (high), as in the poster SOC panel
             cmap.set_bad("#dfe3e8")
-            norm = BoundaryNorm(levels, ncolors=cmap.N, extend="max")
+            norm = Normalize(vmin=0.0, vmax=vmax)
             s4, s05, s_mm = stats(m4, o4, w4), stats(c05, o4, w4), stats(c05, m4, w4)
             print(f" {label}: common support n={s4['n']} 4 km cells "
                   f"({lost} cells valid in ELM 4 km and obs but without a 0.5 deg parent value are dropped)")
@@ -115,7 +114,7 @@ def main():
                               fontsize=8.5, bbox=dict(fc="white", ec="none", alpha=0.75))
             axes[row, 2].text(0.02, 0.03, f"vs obs: {fmt(s05)}", transform=axes[row, 2].transAxes,
                               fontsize=8.5, bbox=dict(fc="white", ec="none", alpha=0.75))
-            cb = fig.colorbar(mesh, ax=axes[row, :], orientation="horizontal", pad=0.07, shrink=0.45, aspect=45)
+            cb = fig.colorbar(mesh, ax=axes[row, :], orientation="horizontal", pad=0.07, shrink=0.45, aspect=45, extend="max")
             cb.set_label(f"SOC {label}, kg C m$^{{-2}}$")
         fig.suptitle(f"Soil organic carbon: ELM vs {short}, ELM = mean of {min(years)}–{max(years)}",
                      x=0.04, y=0.995, ha="left", fontsize=13)

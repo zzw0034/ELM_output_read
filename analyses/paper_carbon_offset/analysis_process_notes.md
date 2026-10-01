@@ -435,7 +435,7 @@ cells carry no SOC in HWSD.
 
 **Figures** (local, `figures/figure1/`, git-ignored; script
 `code/figure1/plot_soc_elm4km_obs4km_elm0p5.py`, md5
-`226e966487d7afc099a6344c250b444d`, run from `_cache/obs_soc/` and
+`5128f4cee7d8f0a14974bbd2ac15f57e`, run from `_cache/obs_soc/` and
 `_cache/obs_compare/` pulled with scp, md5 verified): one figure per product,
 rows = 0–30 and 0–100 cm, columns ELM 4 km | observation on the 4 km grid |
 ELM 0.5° **copied to the 4 km grid**. Everything, maps and statistics, is on
@@ -449,8 +449,10 @@ earlier version of this figure showed the native 0.5° grid and scored it at
 0.5°; those numbers are superseded.
 `soc_elm4km_soilgrids4km_elm0p5_2000-2023.png`,
 `soc_elm4km_hwsd4km_elm0p5_2000-2023.png`. Colour scales are fixed and shared
-by both products (0–12 and 0–36 kg C m⁻², extend max); with a data-driven
-scale the HWSD wetland hotspots stretched the scale and washed ELM out.
+by both products (0–12 and 0–24 kg C m⁻², extend max) with the continuous
+`BrBG` colormap of the poster SOC panel (brown low, teal high; the midpoint
+sits near the typical value). With a data-driven scale the HWSD wetland
+hotspots stretched the scale and washed ELM out; hotspots now saturate.
 
 **First-look statistics** (4 km cells, common support; area × landfrac
 weights; mean of ELM 2000–2023; bias = ELM − obs; not the D6 evaluation):

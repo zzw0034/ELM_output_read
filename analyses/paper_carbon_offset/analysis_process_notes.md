@@ -189,10 +189,14 @@ cite the catalogue record in Methods. Foliage is **not** included.
   project quota 55528 was over its soft limit with the grace period expired
   (239.6 T / 200 T), which made jobs 596645, 596680 and 596686 fail at the
   write step.
-- **Figures (local, git-ignored):** `figures/figure1/elm4km_tree_stemc_mean_2005-2023.png`
-  and `figures/figure1/elm4km_vs_esacci_agbC_2005-2023.png`
-  ([code/figure1/plot_elm_vs_esacci_agb.py](code/figure1/plot_elm_vs_esacci_agb.py)).
-  Native grids, no common mask: a visual first look, not the D6 statistics.
+- **First-look figures** (ELM alone; ELM next to ESA on native grids, no
+  common mask) were made with
+  [code/figure1/plot_elm_vs_esacci_agb.py](code/figure1/plot_elm_vs_esacci_agb.py),
+  as was the ESA-only mean map with
+  [code/figure1/plot_obs_esacci_agb_v7_mean.py](code/figure1/plot_obs_esacci_agb_v7_mean.py).
+  Their PNGs were deleted on 2026-10-01 at the user's request (the scripts
+  regenerate them); Figure 1 keeps only the three-way and four-panel maps
+  below.
 - **0.5° counterpart:** the same script on `20260911_seus_halfdeg_transient_dt3600`,
   job 596700 (5 s), →
   `.../obs_compare/elm0p5deg_tree_stemc_2005-2023.npz` (0.1 MB, md5
@@ -200,7 +204,9 @@ cite the catalogue record in Methods. Foliage is **not** included.
 - **Three-way map** ([code/figure1/plot_agb_elm4km_esa4km_elm0p5.py](code/figure1/plot_agb_elm4km_esa4km_elm0p5.py),
   `--cf`): ELM 4 km | ESA aggregated to the ELM 1/24° grid (exact
   area-overlap weights, land pixels only, masked where ELM 4 km has no
-  vegetation) | ELM 0.5°. Output `figures/figure1/agb_elm4km_esa4km_elm0p5_2005-2023_cf{47,50}.png`.
+  vegetation) | ELM 0.5°. Output kept:
+  `figures/figure1/agb_elm4km_esa4km_elm0p5_2005-2023_cf50.png` (the cf47
+  variant was deleted 2026-10-01; rerun with `--cf 0.47` if needed).
 - **First-look statistics, carbon fraction 0.50** (common support, area ×
   landfrac weights for every metric including r; no final mask rules, no
   30.833°N exclusion; not the D6 evaluation):

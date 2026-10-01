@@ -580,7 +580,7 @@ Things to know before interpreting:
 
 ### 3.7 Figure 2, Default trajectories of the four SSPs, ELM 4 km (2026-10-01)
 
-`code/figure2/plot_default_ssp_trajectories.py`, md5 `a8f7545d40c8df47cacd710a216bc2e5`, from the extracts of §3.5 (history
+`code/figure2/plot_default_ssp_trajectories.py`, md5 `e8e8d5a6d7a68dcf9a310cc88c10efc3`, from the extracts of §3.5 (history
 2000–2023) and §3.6 (the four **36000 s Default** runs, 2024–2100; the Default paired with RF and RH):
 
 - `figures/figure2/ssp_forest_area_change_2000-2100_4km.png`: tree-PFT area change since 2023 (805 ×10³ km²),
@@ -602,6 +602,8 @@ Checks and open points:
 - **Extreme negative years.** Each SSP has several years far below the historical range (2000–2023 minimum −0.22
   PgC/yr): minimum −0.69 (2086, SSP1-1.9), −0.74 (2054, SSP2-4.5), −0.80 (2056, SSP3-7.0), −1.27 (2094, SSP5-8.5);
   6–10 years per SSP below −0.3. Cause (drought, fire, heat) not yet diagnosed.
+- `figures/figure2/ssp_nbp_lines_2000-2100_4km.png`: the same NBP as four coloured lines in one figure, annual
+  values on top and the 11-year running mean on a zoomed axis below.
 - Forest area at 2024 jumps for SSP1-1.9 (+10.3 ×10³ km² from 2023) and little for the others (+0.2 to +3.5).
 
 ## 4. Script and product locations

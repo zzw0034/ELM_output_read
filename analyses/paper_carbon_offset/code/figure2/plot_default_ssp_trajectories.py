@@ -145,6 +145,44 @@ def main():
     fig.savefig(out2, dpi=200, facecolor="white")
     plt.close(fig)
     print(f"Saved {out1}\nSaved {out2}")
+    # ---- 3. NBP of the four SSPs as lines: annual values (top) and 11-year running mean (bottom), one figure
+    fig, (axt, axb) = plt.subplots(2, 1, figsize=(13, 9.2), sharex=True, gridspec_kw={"height_ratios": [1.15, 1], "hspace": 0.13})
+    hyr, hn = hist["year"], hist["NBP"]
+    nh = len(hyr)
+    for ax in (axt, axb):
+        ax.plot(hyr, hn if ax is axt else running_mean(np.concatenate([hn, fut["SSP1-1.9"]["NBP"]]))[:nh],
+                color=HIST if ax is axt else HIST_DARK, lw=1.6 if ax is axt else 3.0, solid_capstyle="round", zorder=2,
+                label="historical")
+    rms = {}
+    for ssp in SSPS:
+        d = fut[ssp]
+        yr = np.concatenate([[hyr[-1]], d["year"]])
+        axt.plot(yr, np.concatenate([[hn[-1]], d["NBP"]]), color=COLORS[ssp], lw=1.6, alpha=0.9, zorder=3, label=ssp)
+        yr_all = np.concatenate([hyr, d["year"]])
+        rm = running_mean(np.concatenate([hn, d["NBP"]]))
+        rms[ssp] = rm
+        axb.plot(yr_all[nh - 1:], rm[nh - 1:], color=COLORS[ssp], lw=3.0, solid_capstyle="round", zorder=3)
+    for ax in (axt, axb):
+        ax.axhline(0, color="black", lw=0.9, zorder=2)
+        ax.axvline(hyr[-1] + 0.5, color=HIST_DARK, lw=0.9, ls=(0, (4, 3)), zorder=1)
+        ax.set_xlim(y0 - 2, 2100 + 2)
+    axt.set_ylim(lo, hi)
+    allrm = np.concatenate([r[np.isfinite(r)] for r in rms.values()])
+    axb.set_ylim(np.floor(allrm.min() * 20) / 20 - 0.02, np.ceil(allrm.max() * 20) / 20 + 0.02)
+    style(axt, "annual NBP (PgC yr$^{-1}$)")
+    style(axb, "11-yr running mean (PgC yr$^{-1}$)")
+    axb.set_xlabel("year", color=INK, fontsize=12)
+    axt.set_title("Regional NBP (positive = sink) under the four SSPs, ELM 4 km Default runs", loc="left", fontsize=14,
+                  fontweight="semibold", pad=12)
+    axt.legend(frameon=False, loc="lower center", bbox_to_anchor=(0.56, 0.0), fontsize=11, labelcolor=INK2, ncol=5, handlelength=2.0,
+                columnspacing=1.4)
+    fig.text(0.075, 0.005, "Top: annual values; bottom: 11-year running mean on a zoomed axis (the window trims the ends). "
+             "SSP runs use crit_dayl_stress = 36000 s. NBP includes fire, land use and harvest.", fontsize=9.5, color=INK2, va="bottom")
+    fig.tight_layout(rect=(0, 0.03, 1, 1))
+    out3 = os.path.join(OUT_DIR, f"ssp_nbp_lines_{y0}-2100_4km.png")
+    fig.savefig(out3, dpi=200, facecolor="white", bbox_inches="tight")
+    plt.close(fig)
+    print(f"Saved {out3}")
 
     print(f"\n2023 forest area {ref:.1f} x10^3 km2; hist NBP mean 2000-2023 {hist['NBP'].mean():+.3f} PgC/yr")
     print(f"{'SSP':9s} {'forest 2050':>12s} {'forest 2100':>12s} {'NBP 2024-50':>12s} {'NBP 2051-2100':>14s} {'NBP 2091-2100':>14s}  (change vs 2023, 10^3 km2 | PgC/yr)")

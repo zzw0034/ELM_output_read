@@ -724,6 +724,63 @@ Things to know before interpreting:
   `extract_tree_fraction.py` runs and its thresholds are untested on real data), the other SSPs, the
   0.5° version, an NBP/fire budget panel (COL_FIRE_CLOSS is not in h0).
 
+### 3.11 Figure 4, restoration/protection strata and the increment dose-response, ELM 4 km SSP3-7.0 (2026-10-01)
+
+Extension of §3.10 with panels d-f (`plot_pool_strata.py --strata`). Extractor
+`code/figure4/extract_tree_fraction.py` (md5 `382885de4f46211bfc7591900e67cb0e`), per-gridcell tree/shrub/grass/crop
+fraction from the h1 `pfts1d_wtgcell` by itype. **Slurm jobs 602366 (transient 2023) and 602367 (RF 2060)**,
+`serial`/`normal`, 1 core, 32 GB, both COMPLETED in 3 s, empty stderr. Outputs in
+`_cache/figure4/4km/`, copied locally, md5 identical: `transient__treefrac_2023.npz`
+`b18772903ccc3a125fa5013748a07819`, `SSP3-7.0_RF__treefrac_2060.npz` `2ae4a87d91c105bc7c49c4e7ed3b8853`.
+Checks that passed: tree area 804,878 km² (2023) and 947,158 km² (RF 2060) equal §3.9's 804.9 and 947.2
+×10³ km²; the increment is +142.3 ×10³ km²; PFT weights sum to 1.0000 in every land cell; strata sum to the
+domain total (RF +4.975, RH +0.955 PgC).
+
+Strata at the default thresholds (increment ≥ 0.01 of the cell; Default WOOD_HARVESTC ≥ 0.1 gC/m²/yr):
+
+| stratum | area (×10³ km²) | RF − Default (PgC, share) | RF (MgC/ha) | RH (MgC/ha) |
+|---|---:|---:|---:|---:|
+| restoration (+ harvest ban) | 939.0 | +3.88 (78 %) | 41.3 | 6.0 |
+| protection only (harvest ban) | 401.2 | +1.04 (21 %) | 25.9 | 9.7 |
+| no change | 15.9 | +0.06 (1 %) | 38.4 | 0.0 |
+
+**The threshold strata are not clean and should not be the headline.**
+
+- The restoration increment is thin and widespread, not concentrated: 73.3 % of the land has an
+  increment > 0.001, with a mean of 0.143 of the cell. The "restoration" stratum therefore holds 69 % of the
+  land and is mostly harvest ban plus a partial conversion.
+- The result depends on the threshold: the restoration share of the RF benefit is 79 % (threshold 0.005),
+  78 % (0.01), 66 % (0.05) and 53 % (0.10); the area goes 975 → 517 ×10³ km² (12-combination table in
+  `fig4_pool_strata_4km_SSP3-7.0_2091-2100_sensitivity.csv`).
+- **The "no change" control is not null:** +38 MgC/ha with RH ≈ 0, although neither the increment nor the
+  harvest acts there. The likely cause is the drift between RF and Default land use (RF replaces the land
+  trajectory, blueprint/scenario caveat 2; Default SSP3-7.0 loses 31.6 ×10³ km² of forest by 2100, §3.9).
+  Not verified: the Default land cover (2060) was not extracted.
+
+`code/figure4/check_increment_dose_response.py` (md5 `588a2995a5d7caf8bdcd3666094c06e7`) bins the land by
+the size of the increment, a continuous version of the split:
+
+| increment bin | area (×10³ km²) | RF − Default (MgC/ha) | RH − Default | ΔSOC | Default harvest (gC/m²/yr) |
+|---|---:|---:|---:|---:|---:|
+| ≤ 0.001 (no land-cover change) | 362.6 | 27.9 | 9.9 | +0.75 | 56.8 |
+| 0.001-0.01 | 54.6 | 16.1 | 5.2 | +0.38 | 29.1 |
+| 0.01-0.05 | 219.8 | 27.6 | 6.5 | +0.58 | 35.3 |
+| 0.05-0.1 | 202.6 | 31.5 | 7.2 | +0.06 | 38.7 |
+| 0.1-0.2 | 252.7 | 40.7 | 6.8 | −1.48 | 35.6 |
+| 0.2-0.5 | 247.5 | 59.1 | 4.2 | −4.96 | 20.9 |
+| > 0.5 | 16.4 | 87.1 | 1.1 | −9.73 | 4.9 |
+
+Reading (inference from the bins, not a decomposition; there is no NH run):
+
+- Where RF changes no land cover it still gains +27.9 MgC/ha, about 2.8 × RH: the harvest ban alone is a
+  large effect, in the most heavily harvested forest (57 gC/m²/yr). The benefit rises with the increment, to
+  +87 MgC/ha where more than half of the cell is converted: the restoration contribution.
+- **The SOC response follows the restoration, not the ban:** ΔSOC is ≥ 0 where nothing is converted and falls
+  to −9.7 MgC/ha at the largest increments. This is the grass-to-forest SOC decline known from field
+  syntheses (Guo & Gifford 2002; Paul et al. 2002, where adding the litter layer reverses the sign), and it
+  explains the −0.13 PgC of §3.10.
+- A clean split of ban and restoration still needs the NH run; the bins only bound them.
+
 ## 4. Script and product locations
 
 Since 2026-10-01 `code/` and `figures/` are organized by manuscript figure

@@ -40,8 +40,9 @@ Local plotting scripts read inputs pulled into `../_cache/` and write PNGs to
 Written 2026-10-01. Simplified first pass (user decision 2026-10-01): `plot_pool_strata.py` draws
 panels a-c only (Default stock by pool, signed RF/RH pool contributions, three boundaries) from three
 h0 extracts. The restoration/protection strata (panels d-f, `--strata`, needs the two
-`extract_tree_fraction.py` extracts) are written and tested on a synthetic cache but not yet run on real
-data. Scheme 1 of the RF split (no NH run): strata are fixed from RF's land cover and Default's harvest
+`extract_tree_fraction.py` extracts) were run on real data 2026-10-01 (notes §3.11); the threshold strata
+are not clean (restoration = 69 % of the land, share 53-79 % by threshold), so
+`check_increment_dose_response.py` bins the benefit by the size of the land-cover increment instead. Scheme 1 of the RF split (no NH run): strata are fixed from RF's land cover and Default's harvest
 before any benefit is looked at; the restoration stratum is restoration **plus** the harvest ban
 (blueprint E4; RF definition in the scenario notes).
 

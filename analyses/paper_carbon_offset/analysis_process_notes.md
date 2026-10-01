@@ -611,6 +611,9 @@ Checks and open points:
 - **Extreme negative years.** Each SSP has several years far below the historical range (2000–2023 minimum −0.22
   PgC/yr): minimum −0.69 (2086, SSP1-1.9), −0.74 (2054, SSP2-4.5), −0.80 (2056, SSP3-7.0), −1.27 (2094, SSP5-8.5);
   6–10 years per SSP below −0.3. Cause (drought, fire, heat) not yet diagnosed.
+- `figures/figure2/ssp_forest_and_cumulative_nbp_2010-2100_4km.png`: the forest-area-change figure and the cumulative-NBP-since-2010
+  figure as the two panels (a) and (b) of one new figure (`code/figure2/plot_default_ssp_forest_and_cumnbp.py`, md5
+  `b734c456fbb750488bd3d86e21b8936e`, shared legend, same data and colours); the two single-panel figures are kept unchanged.
 - `figures/figure2/ssp_nbp_cumulative_2010-2100_4km.png`: cumulative NBP **since 2010** as four coloured lines on one
   panel: the 2010–2023 history in grey (+0.89 PgC by 2023), then each SSP continues from it. At 2050 / 2075 / 2100
   (PgC): SSP1-1.9 +0.47 / +1.61 / +1.38, SSP2-4.5 +1.26 / +1.98 / +3.22, SSP3-7.0 +1.15 / +1.93 / +2.38, SSP5-8.5

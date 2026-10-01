@@ -148,6 +148,65 @@ cite the catalogue record in Methods. Foliage is **not** included.
   the Pathfinder login node as a network-only transfer. Verification: random
   50×50 blocks in three epochs are identical to the CEDA source.
 
+**How the data were downloaded, and how to reuse the script**
+
+- **Script:** `obs_fetch_esacci_agb_v7_seus.py`, md5
+  `f26be28b3e7d9e80448c4a3ec2b30f46` in all copies:
+  - Git (authoritative): [code/figure1/obs_fetch_esacci_agb_v7_seus.py](code/figure1/obs_fetch_esacci_agb_v7_seus.py)
+    (first committed as `code/obs_fetch_esacci_agb_v7_seus.py` in `4511bf9`);
+  - Pathfinder: `/projects/hpcl-cli185/proj-shared/zw5/paper_carbon_offset/code/figure1/obs_fetch_esacci_agb_v7_seus.py`.
+- **Method:** no login and no full download. netCDF-C opens the CEDA URL with
+  `#mode=bytes`, i.e. HTTP range requests over HTTPS, and only the chunks
+  covering the box are transferred (the global file is chunked 1 epoch ×
+  1500 × 3000 pixels, so the SEUS box needs 4 chunks per epoch). The script
+  (1) asserts the subset's centre coordinates, (2) writes coordinates,
+  bounds and time, (3) copies `agb` and `agb_sd` epoch by epoch, unchanged,
+  with retries, (4) copies the global attributes and adds `subset_source_url`,
+  `subset_index`, `subset_epochs`, `subset_note` and a `history` entry with
+  the script md5, and (5) writes to `<name>.part` and renames at the end. It
+  refuses to overwrite an existing output.
+- **Environment:** Pathfinder's login node can reach `dap.ceda.ac.uk` over
+  HTTPS (the compute nodes were not tested). The Python is
+  `/projects/hpcl-cli185/proj-shared/zw5/conda_envs/make_surfdata_pf/bin/python`
+  (netCDF4 1.7.4, libnetcdf 4.10.0, which supports `#mode=bytes`). It is
+  network-bound and light (one epoch, ~6 MB per variable, in memory; the
+  2026-09-24 run took about a minute for 40 MB), so the login node is
+  acceptable; summarize the command and get approval before running, per
+  AGENTS.md.
+- **Command used on 2026-09-24** (script streamed from the Mac; arguments are
+  the output directory and the script md5 to record):
+
+  ```bash
+  ssh pathfinder "/projects/hpcl-cli185/proj-shared/zw5/conda_envs/make_surfdata_pf/bin/python - /projects/hpcl-cli185/proj-shared/zw5/obs_data/biomass f26be28b3e7d9e80448c4a3ec2b30f46" < code/obs_fetch_esacci_agb_v7_seus.py
+  ```
+
+  Equivalent today, run from the paper's remote root on Pathfinder:
+
+  ```bash
+  cd /projects/hpcl-cli185/proj-shared/zw5/paper_carbon_offset && /projects/hpcl-cli185/proj-shared/zw5/conda_envs/make_surfdata_pf/bin/python code/figure1/obs_fetch_esacci_agb_v7_seus.py <out_dir> $(md5sum code/figure1/obs_fetch_esacci_agb_v7_seus.py | cut -d' ' -f1)
+  ```
+
+- **Look before fetching:** `ncdump -h "<URL>#mode=bytes"` reads only the
+  header (dimensions, variables, time axis, grid); this is how the 18 epochs
+  and the 0.01° grid were confirmed. `curl -s "https://data.ceda.ac.uk/<dir>?json"`
+  lists a CEDA directory with file sizes.
+- **Adapting it** (all settings are constants at the top of the script):
+  - *Another box:* on this 0.01° global grid, `lon index = (lon_edge + 180) / 0.01`
+    and `lat index = (90 − lat_edge) / 0.01` (rows run north→south, so the
+    slice starts at the north edge); e.g. lon −95/−74 → 8500/10600 and
+    lat 37.5/24 → 5250/6600, the slices used here. Set
+    `LON_SLICE` / `LAT_SLICE` (end exclusive), the centre-coordinate
+    assertions in `main()` and `OUT_NAME`. Choose edges on multiples of
+    0.01° to keep the subset index-exact.
+  - *Another version or resolution* (e.g. a later CCI release, or the 10 km
+    file): change `URL` and `OUT_NAME`, read the header first, and recompute
+    the slices if the grid step differs.
+  - *Fewer epochs or variables:* edit `DATA_VARS` or the epoch loop; by
+    default all epochs and `agb` + `agb_sd` are copied.
+- **After a new fetch:** spot-check blocks against the source, record the
+  output path, size and md5 here and in a `README.md` beside the data, and
+  commit the script version that ran.
+
 **Processing conventions (2026-09-24; carbon fraction changed 2026-09-29)**
 
 - **Carbon fraction 0.50** (decided 2026-09-29, replacing the 0.47 chosen on

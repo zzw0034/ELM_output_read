@@ -1,3 +1,5 @@
+remote root: /projects/hpcl-cli185/proj-shared/zw5/paper_carbon_offset
+
 # High-resolution ELM forest-carbon manuscript
 
 Updated: 2026-09-24.
@@ -50,7 +52,8 @@ provides the cleaner spatial-information comparison.
 Run code on Pathfinder through approved Slurm jobs, not on the login node.
 From this directory the runner and script paths are now, for example,
 `code/submit_py.sbatch code/figure2/fig01_offset_potential_timeseries.py 4km`.
-This is a path example, **not** permission to sync or submit a job. The project
-root is scratch-backed and remote files may be purged; see the project and
-workspace AGENTS.md before any remote action. No remote files or jobs were
-changed by this local reorganization.
+This is a path example, **not** permission to sync or submit a job. This
+paper folder has its own Pathfinder root, declared on the first line
+(persistent proj-shared, same layout as here; since 2026-10-01). It differs
+from the scratch root of the rest of `ELM_output_read`. See the project and
+workspace AGENTS.md before any remote action.

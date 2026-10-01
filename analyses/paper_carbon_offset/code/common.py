@@ -21,7 +21,7 @@ import numpy as np
 import xarray as xr
 
 CASE_ROOT = "/scratch/hpcl-cli185/zw5/cime_output_dirs"
-BASE = "/scratch/hpcl-cli185/zw5/ELM_output_read/analyses/paper_carbon_offset"
+BASE = "/projects/hpcl-cli185/proj-shared/zw5/paper_carbon_offset"
 
 SEC_PER_YEAR_NOLEAP = 365 * 86400.0
 

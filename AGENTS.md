@@ -20,6 +20,12 @@ and subject to purge. Consequences:
 Keep durable analysis code and Slurm scripts in Git here. Keep NetCDF, figures,
 and other generated products remote or in ignored local paths.
 
+**Exception (2026-10-01):** `analyses/paper_carbon_offset/` declares its own
+remote root on the first line of its README:
+`/projects/hpcl-cli185/proj-shared/zw5/paper_carbon_offset` (persistent
+proj-shared, same layout as the local folder). Its older copy under this
+project's scratch root is superseded.
+
 ## Versioning model
 
 GitHub is the authoritative version history for code, Slurm scripts,

@@ -21,7 +21,7 @@ are preserved in `../figures/legacy/`.
 | Script | What it does | How it runs |
 |---|---|---|
 | `obs_fetch_esacci_agb_v7_seus.py` | ESA CCI Biomass v7.0 1 km AGB/AGB_SD, all 18 epochs, SEUS box 24–37.5°N, 95–74°W → `/projects/hpcl-cli185/proj-shared/zw5/obs_data/biomass/` | 2026-09-24 on the Pathfinder login node (network transfer only, HTTP byte-range read from CEDA), streamed over ssh stdin with the `make_surfdata_pf` python; values unchanged (oven-dry biomass, Mg/ha, ocean = 0) |
-| `extract_elm_4km_tree_stemc.py` | ESA-matched ELM quantity at either resolution: tree-PFT (itype 1–8) LIVESTEMC+DEADSTEMC × wtgcell per gridcell, plus per-type density and fraction; day-weighted annual means for the ESA epochs 2005–2012, 2015–2023 | Slurm via `submit_py.sbatch`; outputs to proj-shared `ELM_output_read_extracts/paper_carbon_offset/obs_compare/` |
+| `extract_elm_4km_tree_stemc.py` | ESA-matched ELM quantity at either resolution: tree-PFT (itype 1–8) LIVESTEMC+DEADSTEMC × wtgcell per gridcell, plus per-type density and fraction; day-weighted annual means for the ESA epochs 2005–2012, 2015–2023 | Slurm via `submit_py.sbatch`; outputs to `_cache/obs_compare/` under the remote root `/projects/hpcl-cli185/proj-shared/zw5/paper_carbon_offset` |
 | `plot_obs_esacci_agb_v7_mean.py` | Multi-epoch mean map of the ESA AGB file | Locally (cartopy venv), from `_cache/obs/` |
 | `plot_elm_vs_esacci_agb.py` | ELM 4 km tree stem C alone and side by side with ESA × carbon fraction | Locally |
 | `plot_agb_elm4km_esa4km_elm0p5.py` | ELM 4 km \| ESA aggregated to 4 km \| ELM 0.5°, with common-support statistics | Locally |
@@ -55,8 +55,10 @@ command shape is:
 sbatch --export=NONE -J <name> code/submit_py.sbatch code/<folder>/<script.py> [args...]
 ```
 
-The Pathfinder mirror of this folder is still the older flat layout, and
-`/scratch` is over its project quota (see `../analysis_process_notes.md` §3.2);
-re-sync before running anything there. This is not authorization for remote
+The Pathfinder root of this paper folder is
+`/projects/hpcl-cli185/proj-shared/zw5/paper_carbon_offset/` (persistent,
+same layout as here); `submit_py.sbatch` and `common.py` point there. Sync
+`local -> remote` before running. The older scratch copy under
+`ELM_output_read/analyses/` is superseded. This is not authorization for remote
 synchronization or submission. Follow the project AGENTS.md, verify remote
 files and resources, and submit only after the required approval.

@@ -7,8 +7,8 @@
 #SBATCH -c 1
 #SBATCH --mem=32gb
 #SBATCH -t 03:00:00
-#SBATCH -o /scratch/hpcl-cli185/zw5/ELM_output_read/analyses/paper_carbon_offset/logs/%x-%j.out
-#SBATCH -e /scratch/hpcl-cli185/zw5/ELM_output_read/analyses/paper_carbon_offset/logs/%x-%j.err
+#SBATCH -o /projects/hpcl-cli185/proj-shared/zw5/paper_carbon_offset/logs/%x-%j.out
+#SBATCH -e /projects/hpcl-cli185/proj-shared/zw5/paper_carbon_offset/logs/%x-%j.err
 
 # Generic runner from the analysis root:
 # sbatch --export=NONE -J <name> code/submit_py.sbatch code/<script.py> [args...]
@@ -25,7 +25,7 @@
 
 set -u
 
-WORKDIR="/scratch/hpcl-cli185/zw5/ELM_output_read/analyses/paper_carbon_offset"
+WORKDIR="/projects/hpcl-cli185/proj-shared/zw5/paper_carbon_offset"
 PYTHON="/projects/hpcl-cli185/proj-shared/zw5/conda_envs/make_surfdata_pf/bin/python"
 
 unset SLURM_EXPORT_ENV

@@ -8,8 +8,14 @@ on Pathfinder must be rechecked when a new job is prepared.
 
 - Local manuscript workspace:
   `/Users/zw5/ORNL_workplace/pathfinder/ELM_output_read/analyses/paper_carbon_offset/`.
-  Its declared Pathfinder mirror is
-  `/scratch/hpcl-cli185/zw5/ELM_output_read/analyses/paper_carbon_offset/`.
+  Its declared Pathfinder mirror (since 2026-10-01) is the persistent
+  `/projects/hpcl-cli185/proj-shared/zw5/paper_carbon_offset/`, laid out
+  like this folder (`code/`, `figures/`, `_cache/`, `logs/`, docs). It
+  replaced `/scratch/hpcl-cli185/zw5/ELM_output_read/analyses/paper_carbon_offset/`
+  (older flat copy, left as is; scratch is purgeable and its project quota
+  was exceeded on 2026-09-29) and absorbed
+  `/projects/hpcl-cli185/proj-shared/zw5/ELM_output_read_extracts/paper_carbon_offset/`
+  (its `obs_compare/` is now `_cache/obs_compare/`, `logs/` unchanged).
 - Pathfinder raw-output root:
   `/scratch/hpcl-cli185/zw5/cime_output_dirs/20260910_seus_rerun/`.
   A case's history is under `<root>/<case>/run/`, with files such as
@@ -172,7 +178,7 @@ cite the catalogue record in Methods. Foliage is **not** included.
   separately; leaves and coarse roots excluded.
 - **Source:** 4 km transient `20260911_Southeast_hires_30n_hdmfix_mapfix_ICB20TRCNPRDCTCBC`
   h1, the 17 ESA epochs inside 1850–2023 (2005–2012, 2015–2023).
-- **Extract:** `/projects/hpcl-cli185/proj-shared/zw5/ELM_output_read_extracts/paper_carbon_offset/obs_compare/elm4km_tree_stemc_2005-2023.npz`
+- **Extract:** `/projects/hpcl-cli185/proj-shared/zw5/paper_carbon_offset/_cache/obs_compare/elm4km_tree_stemc_2005-2023.npz`
   (13.9 MB, md5 `7027ddaa5ef29f318796a9243f45cab7`; per-year `tree_stemc`,
   `shrub_stemc`, `tree_frac`, `veg_frac`, plus lat/lon/area/landfrac and
   provenance strings), made by
@@ -259,7 +265,7 @@ cite the catalogue record in Methods. Foliage is **not** included.
   mirror `/scratch/hpcl-cli185/zw5/ELM_output_read/analyses/paper_carbon_offset/code/`
   (flat layout there; locally the script is now in `code/figure1/`), via
   `code/submit_py.sbatch`, logs in
-  `/projects/hpcl-cli185/proj-shared/zw5/ELM_output_read_extracts/paper_carbon_offset/logs/`.
+  `/projects/hpcl-cli185/proj-shared/zw5/paper_carbon_offset/logs/`.
   The `_bytype` files (jobs 596726, 596727) come from the version now on
   Pathfinder (md5 `1fd2a9a95ffc5d0aff4017792cddb476`, commit `4a169f4`).
   The two files without `_bytype` (jobs 596693, 596700) come from the
@@ -280,9 +286,9 @@ layout.
 | Pathfinder batch wrapper | [code/submit_py.sbatch](code/submit_py.sbatch) | Runs a specified Python script from the manuscript analysis root; resources and remote paths must be checked before use |
 | Historical AGB/SOC extraction | [poster extraction script](../carbon_offset_poster/codes/extract_biomass_soc.py) and its [batch wrapper](../carbon_offset_poster/codes/submit_py.sbatch) | Separate poster workflow; output directory is a command argument |
 | Observational comparison plot | [poster panel script](../carbon_offset_poster/codes/plot_biomass_soc_panel.py) | Local plotting from extracted ELM cache and local observation files |
-| Generated manuscript plots | Pathfinder: `/scratch/hpcl-cli185/zw5/ELM_output_read/analyses/paper_carbon_offset/figures/figureN/<PAPER_COHORT>/` (`figure_outdir()` in `code/common.py`); local Figure 1 plots in `figures/figure1/` | Local `figures/legacy/` PNGs are old-cohort figures and not current evidence |
-| Intermediate numerical cache | `/scratch/hpcl-cli185/zw5/ELM_output_read/analyses/paper_carbon_offset/_cache/<PAPER_COHORT>/` | Script cache keys lack a complete source-version signature; never reuse across case-map changes without explicit validation |
-| Slurm logs | `/scratch/hpcl-cli185/zw5/ELM_output_read/analyses/paper_carbon_offset/logs/` | Generated job output; do not commit |
+| Generated manuscript plots | Pathfinder: `/projects/hpcl-cli185/proj-shared/zw5/paper_carbon_offset/figures/figureN/<PAPER_COHORT>/` (`figure_outdir()` in `code/common.py`); local Figure 1 plots in `figures/figure1/` | Local `figures/legacy/` PNGs are old-cohort figures and not current evidence |
+| Intermediate numerical cache | `/projects/hpcl-cli185/proj-shared/zw5/paper_carbon_offset/_cache/<PAPER_COHORT>/` (legacy scripts); `/projects/hpcl-cli185/proj-shared/zw5/paper_carbon_offset/_cache/obs_compare/` (Figure 1 extracts) | Script cache keys lack a complete source-version signature; never reuse across case-map changes without explicit validation |
+| Slurm logs | `/projects/hpcl-cli185/proj-shared/zw5/paper_carbon_offset/logs/` | Generated job output; do not commit |
 
 Current scripts and their proposed figure roles are listed in
 [code/README.md](code/README.md). In particular, the old `fig05` script

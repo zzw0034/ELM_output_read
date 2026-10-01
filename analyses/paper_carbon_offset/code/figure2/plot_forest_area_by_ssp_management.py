@@ -1,22 +1,20 @@
 """
-Forest (tree-PFT) area change under the four SSPs and the three management measures, ELM 4 km
-(results only): one column per SSP, 2024-2100, change relative to the 2023 forest area.
+Forest (tree-PFT) area change under the four SSPs and the management measures, ELM 4 km (results
+only): one panel per SSP, 2024-2100, change relative to the 2023 forest area.
 
-  row 1  RF (blue), RH (orange) and the 36000 s Default (grey)
-  row 2  DF (aqua) and the 38000 s Default (grey), own axes because DF holds no forest
+  RF (blue), RH (orange, dashed) and the 36000 s Default (grey)
 
 RH changes the harvest rate but not the forest area: its curve is identical to its Default in every
 year and SSP (asserted), so it is drawn as an orange dashed line on top of the grey Default line.
 RF is the same forest in all four SSPs (one shared land-use file: +5.47 x10^3 km2 per year for 26
-years, then fixed). The two Defaults have the same forest area (asserted): crit_dayl_stress does not
-change land cover. DF has no forest from 2024, i.e. -(2023 forest area).
+years, then fixed). DF is not drawn: it has no forest from 2024 (-(2023 forest area), asserted below
+against the DF extracts) and is stated in the legend note instead.
 
 Inputs: `_cache/figure2/transient_forest_area_4km.npz` (2023 forest area) and
-`_cache/figure2/future_4km/<SSP>[_RF|_RH|_cds38000|_DF_cds38000]__forest.npz`
-(extract_forest_area.py, notes section 3.6).
+`_cache/figure2/future_4km/<SSP>[_RF|_RH|_DF_cds38000]__forest.npz` (extract_forest_area.py,
+notes section 3.6).
 
-Colours: categorical slots of the dataviz reference palette as in the other Figure 2 plots (blue RF,
-orange RH, aqua DF), grey for the Default; black axes; one y axis per panel row.
+Colours: blue RF, orange RH (as in the other Figure 2 plots), grey Default; black axes.
 
 Runs locally, from the analysis root:
     /Users/zw5/ORNL_workplace/ELM_output_read/.venv/bin/python code/figure2/plot_forest_area_by_ssp_management.py
@@ -62,48 +60,38 @@ def main():
     ref = float(np.load(os.path.join(ROOT, "_cache/figure2/transient_forest_area_4km.npz"))["tree_area_km2"][-1] / 1e3)
     plt.rcParams.update({"font.family": "DejaVu Sans", "text.color": INK})
     os.makedirs(OUT_DIR, exist_ok=True)
-    fig, axes = plt.subplots(2, 4, figsize=(18, 8.6), sharex=True, sharey="row")
+    fig, axes = plt.subplots(1, 4, figsize=(18, 5.3), sharex=True, sharey=True)
     print(f"2023 forest area {ref:.1f} x10^3 km2")
-    print(f"{'SSP':9s} {'Default 2050':>13s} {'Default 2100':>13s} {'RF':>8s} {'RH':>6s} {'DF':>8s}   (change since 2023, 10^3 km2)")
-    for col, ssp in enumerate(SSPS):
-        runs = {k: forest(f"{ssp}{s}") for k, s in {"Def36": "", "RF": "_RF", "RH": "_RH", "Def38": "_cds38000", "DF": "_DF_cds38000"}.items()}
+    print(f"{'SSP':9s} {'Default 2050':>13s} {'Default 2100':>13s} {'RF':>8s} {'RH':>6s}   (change since 2023, 10^3 km2)")
+    for ax, ssp in zip(axes, SSPS):
+        runs = {k: forest(f"{ssp}{s}") for k, s in {"Def36": "", "RF": "_RF", "RH": "_RH", "DF": "_DF_cds38000"}.items()}
         year = runs["Def36"][0]
         chg = {k: v[1] - ref for k, v in runs.items()}
         assert np.allclose(runs["RH"][1], runs["Def36"][1]), f"{ssp}: RH forest area differs from its Default"
-        assert np.allclose(runs["Def38"][1], runs["Def36"][1]), f"{ssp}: the two Defaults differ in forest area"
+        assert np.allclose(runs["DF"][1], 0.0), f"{ssp}: DF still has forest"
         i50 = int(np.where(year == 2050)[0][0])
-        print(f"{ssp:9s} {chg['Def36'][i50]:+13.1f} {chg['Def36'][-1]:+13.1f} {chg['RF'][-1]:+8.1f} {chg['RH'][-1]:+6.1f} {chg['DF'][-1]:+8.1f}")
-
-        top, bot = axes[0, col], axes[1, col]
-        top.plot(year, chg["Def36"], color=DEFAULT_GREY, lw=3.4, solid_capstyle="round", zorder=3)
-        top.plot(year, chg["RH"], color=COLORS["RH"], lw=2.0, ls=(0, (4, 3)), zorder=4)
-        top.plot(year, chg["RF"], color=COLORS["RF"], lw=3.0, solid_capstyle="round", zorder=3)
-        end(top, year, chg["RF"], f"RF {chg['RF'][-1]:+.0f}", COLORS["RF"])
-        end(top, year, chg["Def36"], f"Default, RH {chg['Def36'][-1]:+.0f}".replace("-", "−"), DEFAULT_GREY)
-        top.set_title(ssp, loc="left", fontsize=15, fontweight="semibold", pad=10)
-
-        bot.plot(year, chg["Def38"], color=DEFAULT_GREY, lw=3.4, solid_capstyle="round", zorder=3)
-        bot.plot(year, chg["DF"], color=COLORS["DF"], lw=3.0, solid_capstyle="round", zorder=4)
-        end(bot, year, chg["DF"], "DF: no forest", COLORS["DF"])
-        end(bot, year, chg["Def38"], f"Default {chg['Def38'][-1]:+.0f}".replace("-", "−"), DEFAULT_GREY)
-
-        for ax in (top, bot):
-            ax.set_xlim(2022, 2137)
-            ax.set_xticks([2030, 2050, 2070, 2090])
-            style(ax, None)
-        bot.set_xlabel("year", color=INK, fontsize=12)
-    axes[0, 0].set_ylabel("RF, RH and Default  (10$^3$ km$^2$)", color=INK, fontsize=12.5)
-    axes[1, 0].set_ylabel("DF and Default  (10$^3$ km$^2$)", color=INK, fontsize=12.5)
+        print(f"{ssp:9s} {chg['Def36'][i50]:+13.1f} {chg['Def36'][-1]:+13.1f} {chg['RF'][-1]:+8.1f} {chg['RH'][-1]:+6.1f}")
+        ax.plot(year, chg["Def36"], color=DEFAULT_GREY, lw=3.4, solid_capstyle="round", zorder=3)
+        ax.plot(year, chg["RH"], color=COLORS["RH"], lw=2.0, ls=(0, (4, 3)), zorder=4)
+        ax.plot(year, chg["RF"], color=COLORS["RF"], lw=3.0, solid_capstyle="round", zorder=3)
+        end(ax, year, chg["RF"], f"RF {chg['RF'][-1]:+.0f}", COLORS["RF"])
+        end(ax, year, chg["Def36"], f"Default, RH {chg['Def36'][-1]:+.0f}".replace("-", "−"), DEFAULT_GREY)
+        ax.set_title(ssp, loc="left", fontsize=15, fontweight="semibold", pad=10)
+        ax.set_xlim(2022, 2137)
+        ax.set_xticks([2030, 2050, 2070, 2090])
+        ax.set_xlabel("year", color=INK, fontsize=12)
+        style(ax, None)
+    axes[0].set_ylabel("forest area change since 2023  (10$^3$ km$^2$)", color=INK, fontsize=12.5)
     fig.legend(handles=[Line2D([0], [0], color=COLORS["RF"], lw=3, label="RF  restoration/protection"),
-                        Line2D([0], [0], color=COLORS["RH"], lw=2, ls=(0, (4, 3)), label="RH  reduced harvest (= Default)"),
-                        Line2D([0], [0], color=COLORS["DF"], lw=3, label="DF  no forest (upper bound)"),
+                        Line2D([0], [0], color=COLORS["RH"], lw=2, ls=(0, (4, 3)), label="RH  reduced harvest (same as Default)"),
                         Line2D([0], [0], color=DEFAULT_GREY, lw=3.4, label="Default")],
-               loc="upper left", ncol=4, frameon=False, fontsize=12, labelcolor=INK2, bbox_to_anchor=(0.03, 0.955), columnspacing=2.2)
-    fig.suptitle("Forest area change since 2023 under four SSPs and three management measures, ELM 4 km", x=0.04, y=0.995, ha="left",
+               loc="upper left", ncol=3, frameon=False, fontsize=12, labelcolor=INK2, bbox_to_anchor=(0.03, 0.935), columnspacing=2.2)
+    fig.suptitle("Forest area change since 2023 under four SSPs and the management measures, ELM 4 km", x=0.04, y=0.995, ha="left",
                  fontsize=16, fontweight="semibold")
-    fig.text(0.04, 0.003, f"Each run's own tree-PFT area minus its 2023 value ({ref:.0f} ×10³ km²). RF is the same in every SSP (+5.5 ×10³ km² per year for 26 years, then held "
-             "fixed); RH changes harvest, not area, so it equals the Default; DF has no forest from 2024.", fontsize=10, color=INK2, va="bottom")
-    fig.tight_layout(rect=(0, 0.03, 1, 0.91), h_pad=2.6, w_pad=1.2)
+    fig.text(0.04, 0.003, f"Each run's own tree-PFT area minus its 2023 value ({ref:.0f} ×10³ km²). RF is the same in every SSP (+5.5 ×10³ km² per year for "
+             "26 years, then held fixed); RH changes harvest, not area, so it equals the Default.\nDF is not drawn: it has no forest from 2024.",
+             fontsize=10, color=INK2, va="bottom", linespacing=1.5)
+    fig.tight_layout(rect=(0, 0.07, 1, 0.89), w_pad=1.2)
     out = os.path.join(OUT_DIR, "forest_area_change_by_ssp_management_4km.png")
     fig.savefig(out, dpi=200, facecolor="white", bbox_inches="tight")
     plt.close(fig)

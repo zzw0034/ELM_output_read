@@ -58,6 +58,12 @@ Defaults: restoration = RF tree fraction (2060) − transient 2023 ≥ 0.01 of t
 not restored and Default WOOD_HARVESTC ≥ 0.1 gC/m²/yr. Check the printed RF tree-area increment against
 the +142.3 ×10³ km² of notes §3.9 (4 km) first.
 
+## figure3/ — heterogeneity hidden by aggregation (Results 3.3)
+
+| Script | What it does | How it runs |
+|---|---|---|
+| `plot_gain_heterogeneity.py` | RF (main) and RH gain as C (4 km), C′ (4 km averaged to 0.5°) and A (native 0.5°) on common support: maps, within-cell SD map, two zooms chosen by a fixed rule, area-weighted CDF, within-0.5° variance share (all / excluding the 30.5–31.0°N row / ≥ 72 children), quantiles, correlations, decile overlaps; statistics and per-cell CSVs | Locally (cartopy venv); inputs `_cache/figure4/4km/` and `_cache/figure3/0.5deg/` (made by `figure4/extract_pool_maps.py`; 0.5° jobs 602388–602390); see notes §3.14 |
+
 ## Legacy and diagnostic scripts
 
 | Folder | Script | Intended use | Required work |

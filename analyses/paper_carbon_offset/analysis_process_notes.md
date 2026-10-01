@@ -855,6 +855,43 @@ Seven pools now add up to TOTECOSYSC: aboveground vegetation, other vegetation, 
 - The end-state figures of §3.10-3.11 are unchanged except for the SOC split; the strata table of §3.11 is the
   whole-column version of the same maps and its totals did not change.
 
+### 3.14 Figure 3, heterogeneity of the RF/RH gain hidden by 0.5° averaging, SSP3-7.0 (2026-10-01)
+
+First pass of Figure 3 (blueprint E3, D8): RF main, RH check, end state = mean of 2091-2100, gain = TOTECOSYSC difference to the
+36000 s Default in MgC/ha of land. New 0.5° input: `extract_pool_maps.py` (md5 `e36ca89225b8ac1b5b5981652f20661e`) on the three native 0.5°
+runs `20260911_seus_halfdeg_future_ssp370{,_RF,_RH}_dt3600`; **Slurm jobs 602388 (Default), 602389 (RF), 602390 (RH)**,
+`serial`/`normal`, 1 core, 8 GB, 1 h limit, COMPLETED in 4-5 s, empty stderr (dedicated partition occupied). Outputs
+`_cache/figure3/0.5deg/SSP3-7.0[_RF|_RH]__pools_2091-2100.npz`, copied locally, md5 identical:
+`6d386c0aaefaee77cfadd1880d7f00fa` (Default), `c3f34631ed4a3f995fb83eab43a88b5d` (RF), `7fd7279e48d41eb4c31ea898df63d018` (RH). The 4 km input is
+Figure 4's `_cache/figure4/4km/` maps (§3.10). Plot `code/figure3/plot_gain_heterogeneity.py` (md5 `d6f043bce452ea9b7e4acf10162be953`) →
+`figures/figure3/fig3_gain_heterogeneity_SSP3-7.0_2091-2100.png`, `fig3_stats_…csv` (all metrics, three subsets, both managements),
+`fig3_cells_RF_…csv` (per 0.5° cell).
+
+Method: the 4 km grid (324×504) nests exactly in the 0.5° grid (27×42; cell centres equal the means of their 12×12 children, asserted).
+Three versions of the gain on common support (75,920 land cells, 1356.2 ×10³ km², identical at both resolutions): **C** native 4 km, **C′** the area-weighted
+mean of C over each 0.5° cell copied to its children (same simulation, coarse information), **A** native 0.5° run copied to its children
+(separately configured: A − C′ mixes aggregation with configuration). Weights area × landfrac; the identity var(C) = var(C′) + mean
+within-cell variance is asserted. Zoom rule fixed in code: among 0.5° cells with ≥ 100 children, the largest within-cell SD and the cell closest to the median SD,
+3×3 coarse cells each.
+
+| RF − Default (MgC/ha of land) | mean | SD | q05 | q25 | q50 | q75 | q95 |
+|---|---:|---:|---:|---:|---:|---:|---:|
+| C native 4 km | 36.7 | 27.5 | 2.0 | 16.9 | 30.8 | 50.8 | 91.4 |
+| C′ 4 km averaged to 0.5° | 36.7 | 19.8 | 9.0 | 20.9 | 34.2 | 51.1 | 71.6 |
+| A native 0.5° | 36.5 | 21.4 | 7.1 | 19.1 | 33.1 | 52.2 | 74.1 |
+
+- **Headline (D8): 48.2 % of the area-weighted spatial variance of the RF gain lies within 0.5° cells** (1 − var(C′)/var(C)); 48.8 % with the
+  30.5-31.0°N row excluded, 48.0 % for cells with ≥ 72 children. RH: 35.3 % / 36.0 % / 35.1 %. The 30.833°N line does not drive it.
+- Averaging keeps the mean and removes both tails: the 5th and 95th percentiles move from 2.0 / 91.4 to 9.0 / 71.6 MgC/ha, the SD from 27.5 to 19.8.
+- Cellwise on common support (RF): C vs C′ r = 0.72 (weighted Spearman 0.76), mean absolute difference 13.2, RMS 19.1 MgC/ha; the area in C's
+  top decile that is also in C′'s top decile is 45 % (bottom decile 54 %). RH: r = 0.81, top-decile overlap 56 %.
+- **The native 0.5° run behaves like the averaged 4 km run:** r(C′, A) = 0.98, mean A − C′ = −0.16 MgC/ha (RF), so C − A (r 0.71, top-decile
+  overlap 43 %) is almost the same as C − C′. The loss is the information removed by averaging, not a configuration difference between the two runs.
+- Zoom cells chosen by the rule (panel d marks them): zoom 1 is the 0.5° cell at 30.25°N, 92.25°W (southern Louisiana; within-cell SD 43 MgC/ha,
+  C′ 62.9), zoom 2 the median-SD cell at 33.75°N, 85.75°W (SD 15.8, C′ 45.3). The map of within-cell SD is in the figure; no regional reading was made.
+- RF is restoration plus a region-wide harvest ban and its gain contains the SSP's own land-use drift; the heterogeneity includes both. Not done: other SSPs,
+  the downscaled comparator B (needs per-PFT densities), the equal-area selection loss of Figure 5.
+
 ## 4. Script and product locations
 
 Since 2026-10-01 `code/` and `figures/` are organized by manuscript figure

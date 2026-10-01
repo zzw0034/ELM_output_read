@@ -12,12 +12,14 @@ paired 0.5-degree Default/DF runs at crit_dayl_stress=38000 s are documented
 in ../CRIT_DAYL_STRESS_ARTIFACT.md and DF_GRASS_SENSITIVITY.md.
 
 Usage inside an approved Slurm allocation:
-    python code/check_df_grass_decomposition.py [0.5deg|4km]
+    python code/supplement/check_df_grass_decomposition.py [0.5deg|4km]
 """
 import sys
 
 import numpy as np
 
+import os
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))  # code/, for common.py
 from common import HALFDEG, HALFDEG_SUBDIR, FOURKM, FOURKM_SUBDIR, load_annual_series
 
 VEG_VARS = ["TOTVEGC"]

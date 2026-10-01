@@ -13,7 +13,7 @@ Separate panels retain visibility of RH. These are version-specific results,
 not observational validation or a completed pure-resolution experiment.
 
 Usage inside an approved Slurm allocation:
-    python code/fig01_offset_potential_timeseries.py [0.5deg|4km]
+    python code/figure2/fig01_offset_potential_timeseries.py [0.5deg|4km]
 """
 import os
 import sys
@@ -23,9 +23,11 @@ matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 import numpy as np
 
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))  # code/, for common.py
 from common import (HALFDEG, HALFDEG_SUBDIR, FOURKM, FOURKM_SUBDIR, OFFSET_DEFS,
-                    OFFSET_COLORS, OUTDIR, load_annual_series, save_cache,
+                    OFFSET_COLORS, figure_outdir, load_annual_series, save_cache,
                     load_cache, cache_exists)
+OUTDIR = figure_outdir("figure2")  # outputs grouped by manuscript figure
 
 VARS = ["TOTECOSYSC", "TOTVEGC", "TOTSOMC"]
 

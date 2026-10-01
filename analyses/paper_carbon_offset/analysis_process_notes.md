@@ -135,7 +135,7 @@ cite the catalogue record in Methods. Foliage is **not** included.
 - Variables `agb` and `agb_sd` copied unchanged (int16, Mg/ha,
   `_FillValue` −32768).
 - Fetched by HTTP byte-range read (no full-file download) with
-  [code/obs_fetch_esacci_agb_v7_seus.py](code/obs_fetch_esacci_agb_v7_seus.py)
+  [code/figure1/obs_fetch_esacci_agb_v7_seus.py](code/figure1/obs_fetch_esacci_agb_v7_seus.py)
   (commit `4511bf9`, script md5 `f26be28b3e7d9e80448c4a3ec2b30f46`), run on
   the Pathfinder login node as a network-only transfer. Verification: random
   50×50 blocks in three epochs are identical to the CEDA source.
@@ -176,23 +176,23 @@ cite the catalogue record in Methods. Foliage is **not** included.
   (13.9 MB, md5 `7027ddaa5ef29f318796a9243f45cab7`; per-year `tree_stemc`,
   `shrub_stemc`, `tree_frac`, `veg_frac`, plus lat/lon/area/landfrac and
   provenance strings), made by
-  [code/extract_elm_4km_tree_stemc.py](code/extract_elm_4km_tree_stemc.py),
+  [code/figure1/extract_elm_4km_tree_stemc.py](code/figure1/extract_elm_4km_tree_stemc.py),
   Slurm job 596693 (serial, 47 s). It is on proj-shared because the scratch
   project quota 55528 was over its soft limit with the grace period expired
   (239.6 T / 200 T), which made jobs 596645, 596680 and 596686 fail at the
   write step.
-- **Figures (local, git-ignored):** `figures/obs/elm4km_tree_stemc_mean_2005-2023.png`
-  and `figures/obs/elm4km_vs_esacci_agbC_2005-2023.png`
-  ([code/plot_elm_vs_esacci_agb.py](code/plot_elm_vs_esacci_agb.py)).
+- **Figures (local, git-ignored):** `figures/figure1/elm4km_tree_stemc_mean_2005-2023.png`
+  and `figures/figure1/elm4km_vs_esacci_agbC_2005-2023.png`
+  ([code/figure1/plot_elm_vs_esacci_agb.py](code/figure1/plot_elm_vs_esacci_agb.py)).
   Native grids, no common mask: a visual first look, not the D6 statistics.
 - **0.5° counterpart:** the same script on `20260911_seus_halfdeg_transient_dt3600`,
   job 596700 (5 s), →
   `.../obs_compare/elm0p5deg_tree_stemc_2005-2023.npz` (0.1 MB, md5
   `995137936fb60e9fdfed19efae71cab8`).
-- **Three-way map** ([code/plot_agb_elm4km_esa4km_elm0p5.py](code/plot_agb_elm4km_esa4km_elm0p5.py),
+- **Three-way map** ([code/figure1/plot_agb_elm4km_esa4km_elm0p5.py](code/figure1/plot_agb_elm4km_esa4km_elm0p5.py),
   `--cf`): ELM 4 km | ESA aggregated to the ELM 1/24° grid (exact
   area-overlap weights, land pixels only, masked where ELM 4 km has no
-  vegetation) | ELM 0.5°. Output `figures/obs/agb_elm4km_esa4km_elm0p5_2005-2023_cf{47,50}.png`.
+  vegetation) | ELM 0.5°. Output `figures/figure1/agb_elm4km_esa4km_elm0p5_2005-2023_cf{47,50}.png`.
 - **First-look statistics, carbon fraction 0.50** (common support, area ×
   landfrac weights for every metric including r; no final mask rules, no
   30.833°N exclusion; not the D6 evaluation):
@@ -219,12 +219,12 @@ cite the catalogue record in Methods. Foliage is **not** included.
   `.../obs_compare/elm0p5deg_tree_stemc_bytype_2005-2023.npz` (0.3 MB, md5
   `5c8da59fe4e0269cb5a630d93bfe21bd`).
 - **Comparators on the 4 km grid**
-  ([code/plot_agb_4km_comparators.py](code/plot_agb_4km_comparators.py)):
+  ([code/figure1/plot_agb_4km_comparators.py](code/figure1/plot_agb_4km_comparators.py)):
   A = the 0.5° run copied to its 144 children; B = Σ_t density_t(0.5° parent)
   × fraction_t(4 km cell), per year then averaged. B averaged back over each
   0.5° cell reproduces the 0.5° run exactly (max |d| 0.00 Mg C/ha), and no
   fallback density was needed. Figure:
-  `figures/obs/agb_4km_comparators_2005-2023_cf50.png`.
+  `figures/figure1/agb_4km_comparators_2005-2023_cf50.png`.
 - **Preview statistics, carbon fraction 0.50** (4 km cells vs ESA→4 km):
 
   | Field | Mean vs ESA 40.8 | Bias | RMSE | r |
@@ -254,16 +254,33 @@ cite the catalogue record in Methods. Foliage is **not** included.
   AGB mostly measures land cover; the SOC test is where running at 4 km
   must show value. Not yet done: final masks, the observational ceiling,
   uncertainty (e.g. block bootstrap), and SOC.
+- **Which code made which extract.** All four `obs_compare/*.npz` were made
+  by `extract_elm_4km_tree_stemc.py` run on Pathfinder from the scratch
+  mirror `/scratch/hpcl-cli185/zw5/ELM_output_read/analyses/paper_carbon_offset/code/`
+  (flat layout there; locally the script is now in `code/figure1/`), via
+  `code/submit_py.sbatch`, logs in
+  `/projects/hpcl-cli185/proj-shared/zw5/ELM_output_read_extracts/paper_carbon_offset/logs/`.
+  The `_bytype` files (jobs 596726, 596727) come from the version now on
+  Pathfinder (md5 `1fd2a9a95ffc5d0aff4017792cddb476`, commit `4a169f4`).
+  The two files without `_bytype` (jobs 596693, 596700) come from the
+  previous version (md5 `bba97d47f1ff411f0e2945f56f2297ee`, commit `76bc6f5`),
+  which was overwritten on Pathfinder and survives only in Git. The
+  plotting scripts never ran on Pathfinder.
 
 ## 4. Script and product locations
 
+Since 2026-10-01 `code/` and `figures/` are organized by manuscript figure
+(`figure1/` … `figure5/`, `supplement/`); `common.py` and `submit_py.sbatch`
+stay in `code/`. The Pathfinder scratch mirror still has the older flat
+layout.
+
 | Purpose | Location / entry point | Current state |
 |---|---|---|
-| Main manuscript analysis code and shared case loader | [code/](code/README.md), especially [code/common.py](code/common.py) | Legacy figure scripts; case mapping must be updated before selected-cohort reruns |
+| Main manuscript analysis code and shared case loader | [code/](code/README.md) (per-figure subfolders), shared [code/common.py](code/common.py) | Legacy figure scripts; case mapping must be updated before selected-cohort reruns |
 | Pathfinder batch wrapper | [code/submit_py.sbatch](code/submit_py.sbatch) | Runs a specified Python script from the manuscript analysis root; resources and remote paths must be checked before use |
 | Historical AGB/SOC extraction | [poster extraction script](../carbon_offset_poster/codes/extract_biomass_soc.py) and its [batch wrapper](../carbon_offset_poster/codes/submit_py.sbatch) | Separate poster workflow; output directory is a command argument |
 | Observational comparison plot | [poster panel script](../carbon_offset_poster/codes/plot_biomass_soc_panel.py) | Local plotting from extracted ELM cache and local observation files |
-| Generated manuscript plots | `/scratch/hpcl-cli185/zw5/ELM_output_read/analyses/paper_carbon_offset/figures/<PAPER_COHORT>/` | Intended path in `code/common.py`; present local `figures/legacy/` PNGs are old-cohort figures and not current evidence |
+| Generated manuscript plots | Pathfinder: `/scratch/hpcl-cli185/zw5/ELM_output_read/analyses/paper_carbon_offset/figures/figureN/<PAPER_COHORT>/` (`figure_outdir()` in `code/common.py`); local Figure 1 plots in `figures/figure1/` | Local `figures/legacy/` PNGs are old-cohort figures and not current evidence |
 | Intermediate numerical cache | `/scratch/hpcl-cli185/zw5/ELM_output_read/analyses/paper_carbon_offset/_cache/<PAPER_COHORT>/` | Script cache keys lack a complete source-version signature; never reuse across case-map changes without explicit validation |
 | Slurm logs | `/scratch/hpcl-cli185/zw5/ELM_output_read/analyses/paper_carbon_offset/logs/` | Generated job output; do not commit |
 

@@ -17,7 +17,7 @@ and new figure numbering follow ../MANUSCRIPT_BLUEPRINT.md and
 ../MANUSCRIPT_BLUEPRINT.md.
 
 Usage inside an approved Slurm allocation:
-    python code/fig03_carbon_pool_partitioning.py [0.5deg|4km]
+    python code/figure4/fig03_carbon_pool_partitioning.py [0.5deg|4km]
 """
 import os
 import sys
@@ -27,8 +27,10 @@ matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 import numpy as np
 
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))  # code/, for common.py
 from common import (HALFDEG, HALFDEG_SUBDIR, FOURKM, FOURKM_SUBDIR, POOL_COMPONENTS,
-                    OUTDIR, load_annual_series, save_cache, load_cache, cache_exists)
+                    figure_outdir, load_annual_series, save_cache, load_cache, cache_exists)
+OUTDIR = figure_outdir("figure4")  # outputs grouped by manuscript figure
 
 SCENARIOS = ["SSP3-7.0", "SSP3-7.0 RF", "SSP3-7.0 DF", "SSP3-7.0 RH"]
 SHORT = {"SSP3-7.0": "Default", "SSP3-7.0 RF": "RF", "SSP3-7.0 DF": "DF", "SSP3-7.0 RH": "RH"}

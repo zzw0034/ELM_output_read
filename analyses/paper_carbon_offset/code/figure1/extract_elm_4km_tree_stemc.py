@@ -21,7 +21,7 @@ copy in an older layout, so it does not import code/common.py.
 
 Must run through Slurm (4 km h1 files are 7.5-12 GB with ~2.44M PFTs):
     sbatch --export=NONE -J tree_stemc code/submit_py.sbatch \
-        code/extract_elm_4km_tree_stemc.py <case> <out.npz> [year ...]
+        code/figure1/extract_elm_4km_tree_stemc.py <case> <out.npz> [year ...]
 """
 import gc
 import glob

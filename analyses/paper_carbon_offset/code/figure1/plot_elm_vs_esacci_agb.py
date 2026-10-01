@@ -7,12 +7,12 @@ This is a visual first look, not the Figure 1 evaluation: ESA stays at its
 native 1 km, ELM at 4 km, and no common mask or aggregation is applied (see
 MANUSCRIPT_BLUEPRINT.md D6 for the quantitative procedure).
 
-Writes two PNGs to figures/obs/:
+Writes two PNGs to figures/figure1/:
   elm4km_tree_stemc_mean_<y0>-<y1>.png      ELM alone
   elm4km_vs_esacci_agbC_<y0>-<y1>.png        ELM | ESA x 0.50, shared scale
 
 Runs locally with the cartopy venv, from the analysis root:
-    /Users/zw5/ORNL_workplace/ELM_output_read/.venv/bin/python code/plot_elm_vs_esacci_agb.py
+    /Users/zw5/ORNL_workplace/ELM_output_read/.venv/bin/python code/figure1/plot_elm_vs_esacci_agb.py
 Inputs (pulled remote -> local, git-ignored):
     _cache/obs_compare/elm4km_tree_stemc_2005-2023.npz
     _cache/obs/ESACCI-BIOMASS-L4-AGB-MERGED-1000m-fv7.0_SEUS_lat24-37.5_lon-95--74.nc
@@ -33,9 +33,9 @@ from matplotlib.colors import BoundaryNorm
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from plot_obs_esacci_agb_v7_mean import EXTENT, NC as ESA_NC, land_mask  # noqa: E402
 
-ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))  # analysis root
 ELM_NPZ = os.path.join(ROOT, "_cache/obs_compare/elm4km_tree_stemc_2005-2023.npz")
-OUT_DIR = os.path.join(ROOT, "figures/obs")
+OUT_DIR = os.path.join(ROOT, "figures/figure1")
 CARBON_FRACTION = 0.50          # decided 2026-09-29 (analysis_process_notes §3.1)
 GC_M2_TO_MGC_HA = 0.01          # 1 gC/m2 = 0.01 MgC/ha
 BAD = "#dfe3e8"

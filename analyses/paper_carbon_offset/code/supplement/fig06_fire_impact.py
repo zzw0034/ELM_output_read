@@ -36,7 +36,7 @@ assumed -- do not "simplify" these away:
     everywhere in this configuration -- not plotted.
 
 Usage inside an approved Slurm allocation:
-    python code/fig06_fire_impact.py [0.5deg|4km]
+    python code/supplement/fig06_fire_impact.py [0.5deg|4km]
 """
 import os
 import sys
@@ -49,10 +49,12 @@ import matplotlib.pyplot as plt
 import numpy as np
 import xarray as xr
 
-from common import (HALFDEG, HALFDEG_SUBDIR, FOURKM, FOURKM_SUBDIR, OUTDIR,
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))  # code/, for common.py
+from common import (HALFDEG, HALFDEG_SUBDIR, FOURKM, FOURKM_SUBDIR, figure_outdir,
                     SEC_PER_YEAR_NOLEAP, h0_files, year_of, area_weights,
                     day_weighted_annual_mean, domain_mean, domain_total_PgC,
                     save_cache, load_cache, cache_exists)
+OUTDIR = figure_outdir("supplement")  # outputs grouped by manuscript figure
 
 # Variables whose units attribute does not say gC/m^2/s but which are still
 # per-second rates that must be annualised (see the docstring).

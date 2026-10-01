@@ -99,6 +99,13 @@ if PAPER_COHORT not in COHORTS:
 OUTDIR = os.path.join(BASE, "figures", PAPER_COHORT)
 CACHE_DIR = os.path.join(BASE, "_cache", PAPER_COHORT)
 
+
+def figure_outdir(figure):
+    """Output folder grouped by manuscript figure (2026-10-01 layout), e.g.
+    figure_outdir("figure3") -> <BASE>/figures/figure3/<PAPER_COHORT>.
+    Scripts live in code/<figure>/ and import this module from code/."""
+    return os.path.join(BASE, "figures", figure, PAPER_COHORT)
+
 RESOLUTIONS = COHORTS[PAPER_COHORT]
 HALFDEG, HALFDEG_SUBDIR = RESOLUTIONS["0.5deg"]
 FOURKM, FOURKM_SUBDIR = RESOLUTIONS["4km"]

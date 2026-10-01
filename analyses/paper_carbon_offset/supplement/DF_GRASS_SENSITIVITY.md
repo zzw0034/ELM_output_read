@@ -253,9 +253,9 @@ For the Discussion/limitations, on what it means for the offset estimate:
 
 ```bash
 # Historical screening scripts; remote execution requires approved Slurm jobs.
-sbatch --export=NONE -J dfdecomp05 code/submit_py.sbatch code/check_df_grass_decomposition.py 0.5deg
-sbatch --export=NONE -J grass05 code/submit_py.sbatch code/check_grass_phenology_mechanism.py 2100 0.5deg
+sbatch --export=NONE -J dfdecomp05 code/submit_py.sbatch code/supplement/check_df_grass_decomposition.py 0.5deg
+sbatch --export=NONE -J grass05 code/submit_py.sbatch code/supplement/check_grass_phenology_mechanism.py 2100 0.5deg
 
 # 4 km must go through Slurm on the dedicated partition
-sbatch --export=NONE -J dfdecomp4km code/submit_py.sbatch code/check_df_grass_decomposition.py 4km
+sbatch --export=NONE -J dfdecomp4km code/submit_py.sbatch code/supplement/check_df_grass_decomposition.py 4km
 ```

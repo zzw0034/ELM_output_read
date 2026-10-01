@@ -19,7 +19,7 @@ Figure 1 evaluation (no final mask rules, no 30.833N exclusion).
 
 Runs locally (cartopy venv), from the analysis root:
     /Users/zw5/ORNL_workplace/ELM_output_read/.venv/bin/python \
-        code/plot_agb_elm4km_esa4km_elm0p5.py [--cf 0.50]
+        code/figure1/plot_agb_elm4km_esa4km_elm0p5.py [--cf 0.50]
 """
 import argparse
 import datetime
@@ -38,10 +38,10 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from plot_obs_esacci_agb_v7_mean import NC as ESA_NC, land_mask  # noqa: E402
 from plot_elm_vs_esacci_agb import BAD, draw  # noqa: E402
 
-ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))  # analysis root
 ELM4_NPZ = os.path.join(ROOT, "_cache/obs_compare/elm4km_tree_stemc_2005-2023.npz")
 ELM05_NPZ = os.path.join(ROOT, "_cache/obs_compare/elm0p5deg_tree_stemc_2005-2023.npz")
-OUT_DIR = os.path.join(ROOT, "figures/obs")
+OUT_DIR = os.path.join(ROOT, "figures/figure1")
 GC_M2_TO_MGC_HA = 0.01
 BLOCK = 12  # 4 km cells per 0.5 deg cell along each axis
 

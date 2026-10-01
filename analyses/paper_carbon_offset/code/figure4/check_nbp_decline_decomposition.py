@@ -32,13 +32,15 @@ Variables used:
   LAND_USE_FLUX             gC/m2/s, conversion plus product-pool loss
 
 Usage inside an approved Slurm allocation:
-    python code/check_nbp_decline_decomposition.py [0.5deg|4km]
+    python code/figure4/check_nbp_decline_decomposition.py [0.5deg|4km]
 """
 import sys
 
 import numpy as np
 import xarray as xr
 
+import os
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))  # code/, for common.py
 from common import (HALFDEG, HALFDEG_SUBDIR, FOURKM, FOURKM_SUBDIR,
                     SEC_PER_YEAR_NOLEAP, h0_files, year_of, area_weights,
                     day_weighted_annual_mean, domain_total_PgC)

@@ -1,45 +1,62 @@
 # Analysis code
 
-These are exploratory scripts and diagnostics, not yet the final five
-manuscript figures. The numbered filenames are stable legacy asset IDs.
-See [the manuscript plan](../MANUSCRIPT_BLUEPRINT.md) (Part E figures, Part D methods) and
-[case matrix](../CASE_MATRIX.md) before interpreting output.
+Organized by manuscript figure since 2026-10-01: each `figureN/` holds the
+scripts for main Figure N (see [the manuscript plan](../MANUSCRIPT_BLUEPRINT.md),
+Part E figures, Part D methods), `supplement/` holds supporting diagnostics,
+and the shared pieces stay here:
 
-| Existing script | Intended use in the new paper | Required work |
+- `common.py`: the single case map and common loader. Scripts in the
+  subfolders add `code/` to `sys.path` to import it, and write to
+  `figure_outdir("<folder>")` = `../figures/<folder>/<PAPER_COHORT>/` on
+  Pathfinder. Caches stay in `../_cache/<PAPER_COHORT>/`.
+- `submit_py.sbatch`: the Slurm runner (run from the analysis root).
+
+The `fig0N_*` filenames are stable legacy asset IDs, not the new figure
+numbers; they are exploratory scripts awaiting rework. Read the
+[case matrix](../CASE_MATRIX.md) before interpreting their output. Legacy PNGs
+are preserved in `../figures/legacy/`.
+
+## figure1/ — observational evaluation (Results 3.1)
+
+| Script | What it does | How it runs |
 |---|---|---|
-| `fig01_offset_potential_timeseries.py` | Main Figure 2 | Recompute regional RF/RH/DF benefits across SSPs |
-| `fig02_offset_potential_maps.py` | Main Figure 3 or supplement | Harmonize mask and area-weighted spatial summaries |
-| `fig03_carbon_pool_partitioning.py` | Main Figure 4 | Close pool sums against native TOTECOSYSC |
-| `fig04_resolution_comparison.py` | Main Figures 2–3 | Extend aggregation comparison from DF to RF |
-| `fig05_siting_potential_vs_vulnerability.py` | Starting point for Main Figure 5 | Replace quadrants with equal-area selection; audit risk definitions |
-| `fig06_fire_impact.py` | Supplement / vulnerability support | Use complete fire budget and account for HDM effective resolution |
-| `check_nbp_decline_decomposition.py` | Mechanism/accounting support | Validate the NBP components for the selected cohort |
-| `check_df_grass_decomposition.py`, `check_grass_phenology_mechanism.py` | Supplementary diagnostics | Interpret alongside corrected daylength runs |
+| `obs_fetch_esacci_agb_v7_seus.py` | ESA CCI Biomass v7.0 1 km AGB/AGB_SD, all 18 epochs, SEUS box 24–37.5°N, 95–74°W → `/projects/hpcl-cli185/proj-shared/zw5/obs_data/biomass/` | 2026-09-24 on the Pathfinder login node (network transfer only, HTTP byte-range read from CEDA), streamed over ssh stdin with the `make_surfdata_pf` python; values unchanged (oven-dry biomass, Mg/ha, ocean = 0) |
+| `extract_elm_4km_tree_stemc.py` | ESA-matched ELM quantity at either resolution: tree-PFT (itype 1–8) LIVESTEMC+DEADSTEMC × wtgcell per gridcell, plus per-type density and fraction; day-weighted annual means for the ESA epochs 2005–2012, 2015–2023 | Slurm via `submit_py.sbatch`; outputs to proj-shared `ELM_output_read_extracts/paper_carbon_offset/obs_compare/` |
+| `plot_obs_esacci_agb_v7_mean.py` | Multi-epoch mean map of the ESA AGB file | Locally (cartopy venv), from `_cache/obs/` |
+| `plot_elm_vs_esacci_agb.py` | ELM 4 km tree stem C alone and side by side with ESA × carbon fraction | Locally |
+| `plot_agb_elm4km_esa4km_elm0p5.py` | ELM 4 km \| ESA aggregated to 4 km \| ELM 0.5°, with common-support statistics | Locally |
+| `plot_agb_4km_comparators.py` | All on the 4 km grid: ELM 4 km (C), ESA, 0.5° copied (A), 0.5° downscaled by 4 km tree-PFT fractions (B); common-support and within-0.5° anomaly statistics | Locally |
 
-Observation data fetchers (Figure 1 inputs):
+Local plotting scripts read inputs pulled into `../_cache/` and write PNGs to
+`../figures/figure1/` (git-ignored).
 
-| Script | Output | How it was run |
-|---|---|---|
-| `plot_obs_esacci_agb_v7_mean.py` | Multi-epoch mean map of that ESA AGB file (and, with the ELM extract, a side-by-side ELM vs ESA×0.47 map), `figures/obs/` | Locally with the cartopy venv, from the file pulled to `_cache/obs/` |
-| `extract_elm_4km_tree_stemc.py` | ESA-matched ELM quantity: tree-PFT (itype 1–8) LIVESTEMC+DEADSTEMC × wtgcell per gridcell, day-weighted annual means, ESA epochs 2005–2012, 2015–2023 | Slurm via `submit_py.sbatch` (4 km h1 files) |
-| `obs_fetch_esacci_agb_v7_seus.py` | ESA CCI Biomass v7.0 1 km AGB/AGB_SD, all 18 epochs, SEUS box 24–37.5°N, 95–74°W, in `/projects/hpcl-cli185/proj-shared/zw5/obs_data/biomass/` | 2026-09-24 on the Pathfinder login node (network transfer only, HTTP byte-range read from CEDA), streamed over ssh stdin with the `make_surfdata_pf` python; values unchanged (oven-dry biomass, Mg/ha, ocean = 0) |
+## Legacy and diagnostic scripts
 
-The missing main analyses are quantitative AGB/SOC observational evaluation,
-within-0.5°-cell skill, and equal-area selection. Their absence should not be
-obscured by the old figure filenames.
+| Folder | Script | Intended use | Required work |
+|---|---|---|---|
+| `figure2/` | `fig01_offset_potential_timeseries.py` | Main Figure 2 | Recompute regional RF/RH/DF benefits across SSPs |
+| `figure3/` | `fig02_offset_potential_maps.py` | Main Figure 3 (or supplement) | Harmonize mask and area-weighted spatial summaries |
+| `figure3/` | `fig04_resolution_comparison.py` | Main Figure 3 heterogeneity; its regional-total panels also feed Figure 2 | Extend aggregation comparison from DF to RF |
+| `figure4/` | `fig03_carbon_pool_partitioning.py` | Main Figure 4 | Close pool sums against native TOTECOSYSC |
+| `figure4/` | `check_nbp_decline_decomposition.py` | Mechanism/accounting support | Validate the NBP components for the selected cohort |
+| `figure5/` | `fig05_siting_potential_vs_vulnerability.py` | Starting point for Main Figure 5 | Replace quadrants with equal-area selection; audit risk definitions |
+| `supplement/` | `fig06_fire_impact.py` | Supplement / vulnerability support | Use complete fire budget and account for HDM effective resolution |
+| `supplement/` | `check_df_grass_decomposition.py`, `check_grass_phenology_mechanism.py` | Supplementary diagnostics | Interpret alongside corrected daylength runs |
 
-`common.py` is the single case map and common loader. New figures write to
-`../figures/<PAPER_COHORT>/` on Pathfinder, and cache files remain in
-`../_cache/<PAPER_COHORT>/`. The generated legacy PNGs are preserved in
-`../figures/legacy/`.
+Still missing: SOC observational evaluation, the observational ceiling, and
+the equal-area selection experiment.
+
+## Running on Pathfinder
 
 From the **analysis root** (the parent of this directory), the approved-run
 command shape is:
 
 ```bash
-sbatch --export=NONE -J <name> code/submit_py.sbatch code/<script.py> [args...]
+sbatch --export=NONE -J <name> code/submit_py.sbatch code/<folder>/<script.py> [args...]
 ```
 
-This is not authorization for remote synchronization or submission. Follow
-the project AGENTS.md, verify remote files and resources, and submit only
-after the required approval.
+The Pathfinder mirror of this folder is still the older flat layout, and
+`/scratch` is over its project quota (see `../analysis_process_notes.md` §3.2);
+re-sync before running anything there. This is not authorization for remote
+synchronization or submission. Follow the project AGENTS.md, verify remote
+files and resources, and submit only after the required approval.

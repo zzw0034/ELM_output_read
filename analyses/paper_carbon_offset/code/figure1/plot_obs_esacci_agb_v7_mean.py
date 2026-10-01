@@ -11,10 +11,10 @@ mask is for display only -- analyses take land from the ELM domain.
 
 Runs locally with the cartopy venv:
     /Users/zw5/ORNL_workplace/ELM_output_read/.venv/bin/python \
-        code/plot_obs_esacci_agb_v7_mean.py [first_year last_year]
+        code/figure1/plot_obs_esacci_agb_v7_mean.py [first_year last_year]
 Input (pulled remote -> local, git-ignored):
     _cache/obs/ESACCI-BIOMASS-L4-AGB-MERGED-1000m-fv7.0_SEUS_lat24-37.5_lon-95--74.nc
-Output: figures/obs/esacci_agb_v7_mean_<years>.png
+Output: figures/figure1/esacci_agb_v7_mean_<years>.png
 """
 import datetime
 import os
@@ -31,9 +31,9 @@ import shapely
 import xarray as xr
 from matplotlib.colors import BoundaryNorm
 
-ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))  # analysis root
 NC = os.path.join(ROOT, "_cache/obs/ESACCI-BIOMASS-L4-AGB-MERGED-1000m-fv7.0_SEUS_lat24-37.5_lon-95--74.nc")
-OUT_DIR = os.path.join(ROOT, "figures/obs")
+OUT_DIR = os.path.join(ROOT, "figures/figure1")
 EXTENT = [-95.0, -74.0, 24.0, 37.5]
 LEVELS = np.arange(0, 325, 25)  # Mg/ha, 25 Mg/ha bins, extend="max" above 300
 

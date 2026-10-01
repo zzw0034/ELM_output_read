@@ -21,8 +21,8 @@ sections are described in
 | [CASE_MATRIX.md](CASE_MATRIX.md) | Earlier case/configuration audit; Default/DF mapping still needs the 2026-09-24 update |
 | [RESULTS_SUMMARY.md](RESULTS_SUMMARY.md) | Evidence status; old numbers are explicitly void for the paper |
 | [analysis_process_notes.md](analysis_process_notes.md) | Data locations, sources, scripts, processing conventions and provenance checks |
-| [code/](code/README.md) | Analysis scripts, shared helper, and Slurm runner |
-| [figures/](figures/README.md) | Figure output; [legacy/](figures/legacy/) contains older exploratory PNGs only |
+| [code/](code/README.md) | Analysis scripts in `figure1/`…`figure5/` and `supplement/`; shared `common.py` and Slurm runner |
+| [figures/](figures/README.md) | Figure output in `figure1/`…`figure5/` and `supplement/`; [legacy/](figures/legacy/) contains older exploratory PNGs only |
 | [supplement/](supplement/) | Supporting diagnostics, historical reviews, and supplement planning |
 
 ## Current status and boundaries
@@ -49,7 +49,7 @@ provides the cleaner spatial-information comparison.
 
 Run code on Pathfinder through approved Slurm jobs, not on the login node.
 From this directory the runner and script paths are now, for example,
-`code/submit_py.sbatch code/fig01_offset_potential_timeseries.py 4km`.
+`code/submit_py.sbatch code/figure2/fig01_offset_potential_timeseries.py 4km`.
 This is a path example, **not** permission to sync or submit a job. The project
 root is scratch-backed and remote files may be purged; see the project and
 workspace AGENTS.md before any remote action. No remote files or jobs were

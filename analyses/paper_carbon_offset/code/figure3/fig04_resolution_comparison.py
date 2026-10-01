@@ -18,7 +18,7 @@ before publication. See ../MANUSCRIPT_BLUEPRINT.md and
 ../supplement/AI_HANDOFF.md.
 
 Usage inside an approved Slurm allocation:
-    python code/fig04_resolution_comparison.py
+    python code/figure3/fig04_resolution_comparison.py
 """
 import os
 
@@ -30,9 +30,12 @@ import matplotlib.pyplot as plt
 import numpy as np
 import xarray as xr
 
+import sys
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))  # code/, for common.py
 from common import (HALFDEG, HALFDEG_SUBDIR, FOURKM, FOURKM_SUBDIR, OFFSET_DEFS,
-                    OFFSET_COLORS, OUTDIR, h0_files, area_weights, load_mean_map,
+                    OFFSET_COLORS, figure_outdir, h0_files, area_weights, load_mean_map,
                     load_cache, cache_exists, load_annual_series, save_cache)
+OUTDIR = figure_outdir("figure3")  # outputs grouped by manuscript figure
 
 BLOCK = 12  # 4 km cells per 0.5 deg cell, each direction
 Y0, Y1 = 2091, 2100

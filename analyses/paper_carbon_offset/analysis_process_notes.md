@@ -534,6 +534,50 @@ grows from +0.03 to +0.83 PgC, so **TOTECOSYSC does include the product pools**
 against a TOTECOSYSC change of −2.13 PgC (a 0.13 PgC, 6 % gap that is not yet
 explained: annual-mean vs year-end stock, or the NBP definition at the product pool).
 
+### 3.6 Figure 2, per-scenario management benefits from the ELM 4 km future runs (2026-10-01)
+
+4 km only, results only (user decision 2026-10-01). 20 cases (4 SSPs × 5): the 36000 s Default,
+RF and RH, and the `cds38000` Default and DF, named in `code/common.py` (`FOURKM["<SSP> cds38000"]`,
+`["<SSP> DF cds38000"]`). Pairing (blueprint A2): RF − Default and RH − Default against the 36000 s
+Default, **DF against the 38000 s Default**, written as Default − DF (positive = avoided loss).
+Extractors as in §3.5 (`extract_domain_totals.py` md5 `5bdcbbfdd2cce2bf54d6e04b5da87418`,
+`extract_forest_area.py` md5 `e205186833aa36a531435b2b575083e6`); 40 jobs, one per (case, script),
+**Slurm jobs 602234–602273 on `serial`/`normal`, `-t 08:00:00`** (command-line overrides of
+`code/submit_py.sbatch`), all COMPLETED, ≈ 19–35 min for the totals jobs and a few minutes for the forest
+jobs. A first batch of the same 40 jobs, 602182–602224 on the dedicated partition `hpcl-cli185`, was
+cancelled while running at the user's request (the dedicated partition was occupied) and wrote nothing.
+Outputs `_cache/figure2/future_4km/<SSP>[_RF|_RH|_cds38000|_DF_cds38000]__{totals,forest}.npz` on
+Pathfinder, copied to the same local path, all 40 md5 identical. Plot:
+`code/figure2/plot_scenario_management_benefits.py`, md5 `289d4062ea1edeed3813eb2c6af2a207` →
+`figures/figure2/management_benefits_<SSP>_4km.png` (one per SSP; rows cumulative NBP benefit and forest
+area change, left RF and RH, right DF on its own axes).
+
+Cumulative NBP benefit(t) = Σ_{y=2024..t} of the paired annual NBP difference; forest area is the
+same-sign annual difference of the tree-PFT area. Results at 2100 (4 km):
+
+| SSP | mgmt | cum. NBP benefit (PgC) | forest area change (10³ km²) | TOTECOSYSC difference (PgC) |
+|---|---|---|---|---|
+| SSP1-1.9 | RF / RH / DF | +3.73 / +0.98 / +11.22 | +87.5 / 0.0 / +859.7 | +3.62 / +0.94 / +11.02 |
+| SSP2-4.5 | RF / RH / DF | +4.46 / +1.45 / +11.75 | +30.9 / 0.0 / +916.3 | +4.30 / +1.38 / +11.68 |
+| SSP3-7.0 | RF / RH / DF | +5.21 / +1.00 / +10.85 | +173.8 / 0.0 / +773.3 | +5.03 / +0.95 / +10.67 |
+| SSP5-8.5 | RF / RH / DF | +5.31 / +1.24 / +10.72 | +118.0 / 0.0 / +829.2 | +5.15 / +1.18 / +10.65 |
+
+Things to know before interpreting:
+
+- **The 2024 paired differences are not zero.** Management acts from the first simulated year: in 2024 the DF
+  pair already differs by +5.8 to +6.2 PgC/yr of NBP and +805 to +815 ×10³ km² of forest (DF replaces nearly
+  all forest at once), so about half of the 2100 DF benefit (≈ 6 of 11 PgC) accrues in the first year; RF adds
+  forest gradually (+2 to +5 ×10³ km² in 2024, ≈ +160 by 2049 for SSP3-7.0). Blueprint D3's "exactly zero in
+  2024" holds only for the 1 January 2024 restart state, not for the 2024 annual means.
+- RH changes carbon but **not forest area** (difference exactly 0.0 in every year and SSP).
+- The RF forest-area advantage peaks in 2049 and then shrinks in SSP2-4.5 (+91 → +31) and SSP5-8.5, because the
+  Default's own forest area changes; it is a paired difference, not the RF forest area.
+- **Closure:** the cumulative NBP benefit exceeds the TOTECOSYSC difference by 0.04–0.20 PgC (2–4 % of the
+  benefit), always in the same direction; the historical series has a gap of the same sign (§3.5). Not yet
+  explained (annual-mean vs year-end stock, or the NBP definition at the product pool).
+- At 2100 DF ≈ 2 × RF ≈ 8–11 × RH in carbon, similar to the legacy ratio DF : RF : RH ≈ 10 : 5 : 1; DF is an
+  idealized avoided-loss bound, not a policy estimate.
+
 ## 4. Script and product locations
 
 Since 2026-10-01 `code/` and `figures/` are organized by manuscript figure

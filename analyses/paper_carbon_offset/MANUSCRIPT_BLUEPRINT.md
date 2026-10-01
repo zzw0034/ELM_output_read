@@ -234,7 +234,9 @@ the `crit_dayl_stress` value of each run and the pairing rule of A2 (every
 difference is parameter-matched). Disclose the 30.833°N discontinuity produced by 36000 s
 ([CRIT_DAYL_STRESS_ARTIFACT.md](../CRIT_DAYL_STRESS_ARTIFACT.md)). Within a
 resolution every future run starts from the same 2024 restart, so paired
-differences are exactly zero in 2024.
+differences are zero at the 1 January 2024 state; the 2024 annual means already
+include the management effect (DF converts nearly all forest in the first year,
+notes §3.6).
 
 ### D4 (2.4). Carbon accounting
 

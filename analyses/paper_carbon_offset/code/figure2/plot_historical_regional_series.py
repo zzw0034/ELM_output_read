@@ -48,15 +48,16 @@ def running_mean(y, n=WIN):
 
 
 def style(ax, ylabel):
-    ax.set_ylabel(ylabel, color=INK2, fontsize=12)
+    ax.set_ylabel(ylabel, color=INK, fontsize=12)
     ax.grid(axis="y", color=GRID, lw=0.9)
     ax.set_axisbelow(True)
     for sp in ("top", "right"):
         ax.spines[sp].set_visible(False)
     for sp in ("left", "bottom"):
-        ax.spines[sp].set_color("#cfcec9")
-    ax.tick_params(colors=INK2, labelsize=11, length=3.5, color="#cfcec9")
-    ax.margins(x=0)
+        ax.spines[sp].set_color("black")
+        ax.spines[sp].set_linewidth(1.1)
+    ax.tick_params(colors="black", labelcolor=INK, labelsize=11, length=4, width=1.0)
+    ax.margins(x=0.035, y=0.06)
 
 
 def note(ax, xy, text, xytext, ha="left", color=INK2):
@@ -126,7 +127,7 @@ def main():
     # (c) SOC change
     for r, (lab, c, cl, ls) in RES.items():
         axc.plot(yr, soc[r], color=c, ls=ls, lw=2.6 if r == "4km" else 2.2, label=lab, solid_capstyle="round")
-    axc.axhline(0, color=MUTED, lw=0.9)
+    axc.axhline(0, color="black", lw=0.9)
     stat(axc, [f"{lab}: {soc[r][-1]:+.2f} PgC by {y1} ({100 * soc[r][-1] / soc0[r]:+.1f}% of {soc0[r]:.1f} PgC)"
                for r, (lab, *_rest) in RES.items()])
     head(axc, f"Soil organic carbon, change since {y0}")
@@ -134,18 +135,22 @@ def main():
     style(axc, "PgC")
 
     # (d) NBP
+    # annual values as side-by-side bars (4 km left, 0.5 deg right of each year), 11-yr means as lines
+    off = {"4km": -0.24, "0p5deg": 0.24}
     for r, (lab, c, cl, ls) in RES.items():
-        axd.plot(yr, nbp[r], color=cl, lw=1.2, ls="-")
-        axd.plot(yr, running_mean(nbp[r]), color=c, ls=ls, lw=2.6, label=lab, solid_capstyle="round")
-    axd.axhline(0, color=MUTED, lw=0.9)
+        axd.bar(yr + off[r], nbp[r], width=0.48, color=c, alpha=0.75, lw=0, zorder=2)
+    for r, (lab, c, cl, ls) in RES.items():
+        axd.plot(yr, running_mean(nbp[r]), color=c, ls=ls, lw=2.6, label=lab, solid_capstyle="round", zorder=4)
+    axd.axhline(0, color="black", lw=0.9, zorder=3)
     stat(axd, [f"mean {yr[-24]}–{yr[-1]}:"] + [f"{lab} {nbp[r][last].mean():+.3f} PgC yr$^{{-1}}$" for r, (lab, *_rest) in RES.items()])
     head(axd, "Net biome production (positive = sink)")
-    axd.legend(frameon=False, loc="lower right", fontsize=11, labelcolor=INK2, handlelength=2.2, title="thin: annual; thick: 11-yr mean",
+    axd.legend(frameon=False, loc="lower right", fontsize=11, labelcolor=INK2, handlelength=2.2, title="bars: annual; lines: 11-yr mean",
                title_fontsize=9.5)
     style(axd, "PgC yr$^{-1}$")
 
+    axa.set_xlim(y0 - 6, y1 + 6)  # shared by all panels
     for ax in (axc, axd):
-        ax.set_xlabel("year", color=INK2, fontsize=12)
+        ax.set_xlabel("year", color=INK, fontsize=12)
         ax.set_xticks(np.arange(int(np.ceil(y0 / 25) * 25), y1 + 1, 25))
     fig.suptitle(f"Southeastern U.S. {y0}–{y1}: ELM historical simulation, regional totals (4 km solid, 0.5° dashed)",
                  x=0.045, y=0.995, ha="left", fontsize=16, fontweight="semibold")

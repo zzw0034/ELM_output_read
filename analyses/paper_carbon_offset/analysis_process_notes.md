@@ -513,7 +513,7 @@ records; domain totals = Σ field × area × landfrac over land cells (1.3562 Mk
 |---|---|
 | Totals extractor | `code/figure2/extract_domain_totals.py` (TOTECOSYSC, TOTVEGC, TOTVEGC_ABG, CWDC, TOTLITC, TOTSOMC, GPP, NBP, WOOD_HARVESTC, LAND_USE_FLUX; product residual), md5 `5bdcbbfdd2cce2bf54d6e04b5da87418`, commit `c058c79`; job 602146 (18 min, 0.1 GB) → `_cache/figure2/transient_domain_totals_4km.npz`, md5 `951c09bc3e27bf8c348a02118bc26480` |
 | Forest-area extractor | `code/figure2/extract_forest_area.py` (Σ pfts1d_wtgcell × area × landfrac by itype; tree = itype 1–8), md5 `e205186833aa36a531435b2b575083e6`; job 602148 (4 min) → `transient_forest_area_4km.npz`, md5 `aae3adb6569bfed08accc033f6c3c254` |
-| Plot | `code/figure2/plot_historical_regional_series.py`, md5 `2686ce1add92e3d8481e6f3564b9f049` → `figures/figure2/hist_regional_series_1850-2023.png` (git-ignored) |
+| Plot | `code/figure2/plot_historical_regional_series.py`, md5 `a2d504063c7c4da1ed5bc5ff46180eec` → `figures/figure2/hist_regional_series_1850-2023.png` (git-ignored) |
 | 0.5° counterparts | same extractors; jobs 602147 (totals, md5 `6267909696638d15ca6dd6fb13f49748`) and 602149 (forest area, md5 `664fd8e2dd3590b22b3d24afbb23856c`), in the same `_cache/figure2/` |
 
 First jobs 602135–602138 failed on purpose: the first record of a run starts one

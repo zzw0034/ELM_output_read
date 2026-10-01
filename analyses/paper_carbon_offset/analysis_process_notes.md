@@ -625,7 +625,7 @@ Checks and open points:
 
 ### 3.8 Figure 2, presentation versions that show the four SSPs on one slide (2026-10-01)
 
-`code/figure2/plot_management_summary_across_ssps.py`, md5 `1d74e265d0b5cfdde829771fb06a22fa`, built from the same paired benefit
+`code/figure2/plot_management_summary_across_ssps.py`, md5 `8d99f1a1c5cdf8d375e61312d22e9208`, built from the same paired benefit
 curves as §3.6 (4 km only):
 
 - `figures/figure2/management_summary_2100_4km.png`: values at 2100, x = the four SSPs; row 1 cumulative NBP benefit
@@ -634,6 +634,10 @@ curves as §3.6 (4 km only):
   +11.8 / +10.9 / +10.7; forest area RF +87 / +31 / +174 / +118, RH 0, DF +860 / +916 / +773 / +829 ×10³ km².
 - `figures/figure2/management_rf_rh_cumNBP_4ssp_4km.png`: one panel per SSP with the RF and RH cumulative NBP benefit
   curves on a shared axis (DF, ≈ +11 PgC, is on the summary figure).
+
+- `figures/figure2/management_summary_carbon_2100_4km.png`: the carbon-only version of the 2100 summary (one row, RF and RH |
+  DF, no forest-area panel), made at the user's request because the forest-area panels of the paired-difference version were
+  hard to read (the DF forest panel is just the Default's own forest area, since DF holds zero forest). The original figure is kept.
 
 The ranking DF > RF > RH holds in every SSP; RF varies most between SSPs (3.7 to 5.3 PgC, ≈ 40 %), RH 1.0 to 1.5.
 Suggested slide order: one SSP (SSP3-7.0) in full from §3.6 to explain how to read the panels, the summary figure for

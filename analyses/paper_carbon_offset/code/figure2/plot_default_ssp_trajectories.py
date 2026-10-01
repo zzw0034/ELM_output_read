@@ -145,44 +145,50 @@ def main():
     fig.savefig(out2, dpi=200, facecolor="white")
     plt.close(fig)
     print(f"Saved {out1}\nSaved {out2}")
-    # ---- 3. NBP of the four SSPs as lines: annual values (top) and 11-year running mean (bottom), one figure
-    fig, (axt, axb) = plt.subplots(2, 1, figsize=(13, 9.2), sharex=True, gridspec_kw={"height_ratios": [1.15, 1], "hspace": 0.13})
+    # ---- 3. cumulative NBP of the four SSPs since the first plotted year, one panel
+    fig, ax = plt.subplots(figsize=(12, 6.8))
     hyr, hn = hist["year"], hist["NBP"]
-    nh = len(hyr)
-    for ax in (axt, axb):
-        ax.plot(hyr, hn if ax is axt else running_mean(np.concatenate([hn, fut["SSP1-1.9"]["NBP"]]))[:nh],
-                color=HIST if ax is axt else HIST_DARK, lw=1.6 if ax is axt else 3.0, solid_capstyle="round", zorder=2,
-                label="historical")
-    rms = {}
+    chist = np.cumsum(hn)
+    ax.plot(hyr, chist, color=HIST_DARK, lw=3.0, solid_capstyle="round", zorder=3, label="historical")
+    ends = {}
     for ssp in SSPS:
         d = fut[ssp]
         yr = np.concatenate([[hyr[-1]], d["year"]])
-        axt.plot(yr, np.concatenate([[hn[-1]], d["NBP"]]), color=COLORS[ssp], lw=1.6, alpha=0.9, zorder=3, label=ssp)
-        yr_all = np.concatenate([hyr, d["year"]])
-        rm = running_mean(np.concatenate([hn, d["NBP"]]))
-        rms[ssp] = rm
-        axb.plot(yr_all[nh - 1:], rm[nh - 1:], color=COLORS[ssp], lw=3.0, solid_capstyle="round", zorder=3)
-    for ax in (axt, axb):
-        ax.axhline(0, color="black", lw=0.9, zorder=2)
-        ax.axvline(hyr[-1] + 0.5, color=HIST_DARK, lw=0.9, ls=(0, (4, 3)), zorder=1)
-        ax.set_xlim(y0 - 2, 2100 + 2)
-    axt.set_ylim(lo, hi)
-    allrm = np.concatenate([r[np.isfinite(r)] for r in rms.values()])
-    axb.set_ylim(np.floor(allrm.min() * 20) / 20 - 0.02, np.ceil(allrm.max() * 20) / 20 + 0.02)
-    style(axt, "annual NBP (PgC yr$^{-1}$)")
-    style(axb, "11-yr running mean (PgC yr$^{-1}$)")
-    axb.set_xlabel("year", color=INK, fontsize=12)
-    axt.set_title("Regional NBP (positive = sink) under the four SSPs, ELM 4 km Default runs", loc="left", fontsize=14,
-                  fontweight="semibold", pad=12)
-    axt.legend(frameon=False, loc="lower center", bbox_to_anchor=(0.56, 0.0), fontsize=11, labelcolor=INK2, ncol=5, handlelength=2.0,
-                columnspacing=1.4)
-    fig.text(0.075, 0.005, "Top: annual values; bottom: 11-year running mean on a zoomed axis (the window trims the ends). "
-             "SSP runs use crit_dayl_stress = 36000 s. NBP includes fire, land use and harvest.", fontsize=9.5, color=INK2, va="bottom")
-    fig.tight_layout(rect=(0, 0.03, 1, 1))
-    out3 = os.path.join(OUT_DIR, f"ssp_nbp_lines_{y0}-2100_4km.png")
+        cum = np.concatenate([[chist[-1]], chist[-1] + np.cumsum(d["NBP"])])
+        ends[ssp] = cum
+        ax.plot(yr, cum, color=COLORS[ssp], lw=3.0, solid_capstyle="round", zorder=4, label=ssp)
+    ax.axhline(0, color="black", lw=0.9, zorder=2)
+    ax.axvline(hyr[-1] + 0.5, color=HIST_DARK, lw=0.9, ls=(0, (4, 3)), zorder=1)
+    ax.set_xlim(y0 - 2, 2100 + 2)
+    style(ax, f"cumulative NBP since {y0}  (PgC)")
+    ax.set_xlabel("year", color=INK, fontsize=12)
+    ax.set_title("Cumulative regional NBP (positive = sink) under the four SSPs, ELM 4 km Default runs", loc="left", fontsize=14,
+                 fontweight="semibold", pad=12)
+    # end labels, nudged apart when two values are closer than the label height
+    order = sorted(SSPS, key=lambda k: ends[k][-1])
+    gap = 0.05 * (ax.get_ylim()[1] - ax.get_ylim()[0])
+    pos = {}
+    for k in order:
+        v = ends[k][-1]
+        pos[k] = v if not pos else max(v, max(pos.values()) + gap)
+    for ssp in SSPS:
+        ax.plot([2100], [ends[ssp][-1]], "o", color=COLORS[ssp], ms=6.5, mec="white", mew=1.4, zorder=5)
+        ax.annotate(f"{ssp}  {ends[ssp][-1]:+.1f}", xy=(2100, ends[ssp][-1]), xytext=(2104, pos[ssp]), textcoords="data", fontsize=12,
+                    color=INK, va="center", fontweight="semibold", annotation_clip=False,
+                    arrowprops=dict(arrowstyle="-", color="#b9b8b3", lw=0.8, shrinkA=0, shrinkB=3))
+    ax.legend(frameon=False, loc="upper left", fontsize=11, labelcolor=INK2, ncol=5, handlelength=2.0, columnspacing=1.4)
+    fig.text(0.075, 0.005, f"Cumulative sum of the annual regional NBP from {y0}; the {hyr[-1] + 1}–2100 projections continue from the "
+             f"2023 value ({chist[-1]:+.1f} PgC).\nSSP runs use crit_dayl_stress = 36000 s. NBP includes fire, land use and harvest.",
+             fontsize=9.5, color=INK2, va="bottom")
+    fig.tight_layout(rect=(0, 0.03, 0.87, 1))
+    out3 = os.path.join(OUT_DIR, f"ssp_nbp_cumulative_{y0}-2100_4km.png")
     fig.savefig(out3, dpi=200, facecolor="white", bbox_inches="tight")
     plt.close(fig)
     print(f"Saved {out3}")
+    print(f"cumulative NBP since {y0}: 2023 {chist[-1]:+.2f} PgC; at 2050 / 2100 (PgC):")
+    for ssp in SSPS:
+        yrs = fut[ssp]["year"]; c = ends[ssp][1:]
+        print(f"  {ssp}: {c[int(np.where(yrs == 2050)[0][0])]:+.2f} / {c[-1]:+.2f}   (added since 2023: {c[-1] - chist[-1]:+.2f})")
 
     print(f"\n2023 forest area {ref:.1f} x10^3 km2; hist NBP mean 2000-2023 {hist['NBP'].mean():+.3f} PgC/yr")
     print(f"{'SSP':9s} {'forest 2050':>12s} {'forest 2100':>12s} {'NBP 2024-50':>12s} {'NBP 2051-2100':>14s} {'NBP 2091-2100':>14s}  (change vs 2023, 10^3 km2 | PgC/yr)")

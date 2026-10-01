@@ -39,7 +39,7 @@ Local plotting scripts read inputs pulled into `../_cache/` and write PNGs to
 
 | Folder | Script | Intended use | Required work |
 |---|---|---|---|
-| `figure2/` | `extract_domain_totals.py`, `extract_forest_area.py`, `plot_historical_regional_series.py` | Main Figure 2, historical series (4 km only): forest area, GPP, SOC change, NBP | Done 2026-10-01 for the transient (notes §3.5); `plot_scenario_management_benefits.py` draws the per-SSP management benefits from the 4 km future runs (notes §3.6) |
+| `figure2/` | `extract_domain_totals.py`, `extract_forest_area.py`, `plot_historical_regional_series.py` | Main Figure 2, historical series (4 km only): forest area, GPP, SOC change, NBP | Done 2026-10-01 for the transient (notes §3.5); `plot_scenario_management_benefits.py` draws the per-SSP management benefits from the 4 km future runs (notes §3.6); `plot_default_ssp_trajectories.py` draws the four Default SSP forest-area and annual NBP series (notes §3.7) |
 | `figure2/` | `fig01_offset_potential_timeseries.py` | Main Figure 2 | Recompute regional RF/RH/DF benefits across SSPs |
 | `figure3/` | `fig02_offset_potential_maps.py` | Main Figure 3 (or supplement) | Harmonize mask and area-weighted spatial summaries |
 | `figure3/` | `fig04_resolution_comparison.py` | Main Figure 3 heterogeneity; its regional-total panels also feed Figure 2 | Extend aggregation comparison from DF to RF |

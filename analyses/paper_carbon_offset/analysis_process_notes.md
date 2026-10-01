@@ -578,6 +578,32 @@ Things to know before interpreting:
 - At 2100 DF ≈ 2 × RF ≈ 8–11 × RH in carbon, similar to the legacy ratio DF : RF : RH ≈ 10 : 5 : 1; DF is an
   idealized avoided-loss bound, not a policy estimate.
 
+### 3.7 Figure 2, Default trajectories of the four SSPs, ELM 4 km (2026-10-01)
+
+`code/figure2/plot_default_ssp_trajectories.py`, md5 `a8f7545d40c8df47cacd710a216bc2e5`, from the extracts of §3.5 (history
+2000–2023) and §3.6 (the four **36000 s Default** runs, 2024–2100; the Default paired with RF and RH):
+
+- `figures/figure2/ssp_forest_area_change_2000-2100_4km.png`: tree-PFT area change since 2023 (805 ×10³ km²),
+  four SSPs on one panel. At 2100: SSP1-1.9 +55, SSP2-4.5 +111, SSP3-7.0 −32, SSP5-8.5 +24 ×10³ km² (2050:
+  +36, +53, −19, +9). Lines have kinks about every 5 years, probably the spacing of the land-use input (not checked).
+- `figures/figure2/ssp_nbp_annual_2000-2100_4km.png`: annual NBP, one panel per SSP, annual bars and an 11-year
+  running mean. 2024–2100 mean NBP +0.006 (SSP1-1.9), +0.030 (SSP2-4.5), +0.019 (SSP3-7.0), +0.019 (SSP5-8.5)
+  PgC/yr, against +0.051 for 2000–2023 (the later means are small sinks; the 11-year mean dips below zero in
+  several decades).
+
+Checks and open points:
+
+- **2023 → 2024 boundary.** The 2024 NBP differs a lot between SSPs (SSP1-1.9 −0.38, SSP5-8.5 −0.63, SSP3-7.0 −0.11,
+  SSP2-4.5 +0.12 PgC/yr, against +0.10 in 2023). It is **not** land use or harvest (LAND_USE_FLUX +0.08 to +0.12 and
+  WOOD_HARVESTC +0.065 are normal in 2024) but GPP: 2.46 (SSP5-8.5), 2.67 (SSP1-1.9), 2.89 (SSP3-7.0), 3.16
+  (SSP2-4.5) against 3.03 in 2023. A forcing-transition artifact would be common to all SSPs, but the sign and size
+  differ, which points to each SSP's own weather sequence; not verified. The differences in single years between
+  SSPs are therefore mostly weather, not a forced signal; compare SSPs with the running mean or period means.
+- **Extreme negative years.** Each SSP has several years far below the historical range (2000–2023 minimum −0.22
+  PgC/yr): minimum −0.69 (2086, SSP1-1.9), −0.74 (2054, SSP2-4.5), −0.80 (2056, SSP3-7.0), −1.27 (2094, SSP5-8.5);
+  6–10 years per SSP below −0.3. Cause (drought, fire, heat) not yet diagnosed.
+- Forest area at 2024 jumps for SSP1-1.9 (+10.3 ×10³ km² from 2023) and little for the others (+0.2 to +3.5).
+
 ## 4. Script and product locations
 
 Since 2026-10-01 `code/` and `figures/` are organized by manuscript figure

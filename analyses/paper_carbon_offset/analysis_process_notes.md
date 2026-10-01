@@ -261,24 +261,27 @@ cite the catalogue record in Methods. Foliage is **not** included.
   `.../obs_compare/elm0p5deg_tree_stemc_2005-2023.npz` (0.1 MB, md5
   `995137936fb60e9fdfed19efae71cab8`).
 - **Three-way map** ([code/figure1/plot_agb_elm4km_esa4km_elm0p5.py](code/figure1/plot_agb_elm4km_esa4km_elm0p5.py),
-  `--cf`): ELM 4 km | ESA aggregated to the ELM 1/24° grid (exact
-  area-overlap weights, land pixels only, masked where ELM 4 km has no
-  vegetation) | ELM 0.5°. Output kept:
+  `--cf`, md5 `0640eab1eeb7db5a74f5bcc77808a841`): ELM 4 km | ESA aggregated to the ELM 1/24°
+  grid (exact area-overlap weights, land pixels only) | ELM 0.5° **copied to
+  the 4 km grid** (comparator A). Since 2026-10-01 everything, maps and
+  statistics, is on the 4 km grid, and a cell is shown and scored only where
+  ELM 4 km, ESA and the copied 0.5° value are all valid (n = 75 902; no cell
+  lost to a missing 0.5° parent). The earlier version drew the native 0.5° grid
+  and also scored 0.5° block means; those numbers are superseded. Output kept:
   `figures/figure1/agb_elm4km_esa4km_elm0p5_2005-2023_cf50.png` (the cf47
   variant was deleted 2026-10-01; rerun with `--cf 0.47` if needed).
-- **First-look statistics, carbon fraction 0.50** (common support, area ×
-  landfrac weights for every metric including r; no final mask rules, no
-  30.833°N exclusion; not the D6 evaluation):
+- **First-look statistics, carbon fraction 0.50** (4 km cells, common
+  support; area × landfrac weights for every metric including r; no final
+  mask rules, no 30.833°N exclusion; not the D6 evaluation):
 
   | Comparison | Means (Mg C/ha) | Bias | RMSE | r |
   |---|---|---|---|---|
-  | 4 km cells: ELM 4 km vs ESA→4 km | 48.9 vs 40.8 | +8.1 | 18.0 | 0.79 |
-  | 0.5°: ELM 4 km aggregated vs ESA aggregated | 48.9 vs 40.8 | +8.1 | 14.6 | 0.81 |
-  | 0.5°: ELM 0.5° native vs ESA aggregated | 52.1 vs 40.8 | +11.3 | 17.5 | 0.80 |
-  | 0.5°: ELM 0.5° native vs ELM 4 km aggregated | 52.1 vs 48.9 | +3.2 | 4.9 | 0.99 |
+  | ELM 4 km vs ESA→4 km | 48.9 vs 40.8 | +8.1 | 18.0 | 0.79 |
+  | ELM 0.5° copied vs ESA→4 km | 52.1 vs 40.8 | +11.3 | 23.4 | 0.61 |
+  | ELM 0.5° copied vs ELM 4 km | 52.1 vs 48.9 | +3.2 | 15.7 | 0.80 |
 
-  With 0.47 the ESA means are 38.3 and the biases +10.6/+10.6/+13.8; r is
-  unchanged. ELM is high mainly in the Ozark/Ouachita, Kentucky/Cumberland
+  With 0.47 the ESA means are 38.3 and the biases +10.6 (ELM 4 km) and
+  +13.8 (0.5° copied); r is unchanged. ELM is high mainly in the Ozark/Ouachita, Kentucky/Cumberland
   and Carolina coastal-plain regions; the southern Appalachian high and the
   Delta/Atchafalaya pattern agree.
 

@@ -24,7 +24,7 @@ are preserved in `../figures/legacy/`.
 | `extract_elm_4km_tree_stemc.py` | ESA-matched ELM quantity at either resolution: tree-PFT (itype 1–8) LIVESTEMC+DEADSTEMC × wtgcell per gridcell, plus per-type density and fraction; day-weighted annual means for the ESA epochs 2005–2012, 2015–2023 | Slurm via `submit_py.sbatch`; outputs to `_cache/obs_compare/` under the remote root `/projects/hpcl-cli185/proj-shared/zw5/paper_carbon_offset` |
 | `plot_obs_esacci_agb_v7_mean.py` | Multi-epoch mean map of the ESA AGB file | Locally (cartopy venv), from `_cache/obs/` |
 | `plot_elm_vs_esacci_agb.py` | ELM 4 km tree stem C alone and side by side with ESA × carbon fraction | Locally |
-| `plot_agb_elm4km_esa4km_elm0p5.py` | ELM 4 km \| ESA aggregated to 4 km \| ELM 0.5°, with common-support statistics | Locally |
+| `plot_agb_elm4km_esa4km_elm0p5.py` | ELM 4 km \| ESA aggregated to 4 km \| ELM 0.5° copied to 4 km; everything and all statistics on the 4 km grid, common support | Locally |
 | `plot_agb_4km_comparators.py` | All on the 4 km grid: ELM 4 km (C), ESA, 0.5° copied (A), 0.5° downscaled by 4 km tree-PFT fractions (B); common-support and within-0.5° anomaly statistics | Locally |
 | `obs_soc_soilgrids_wcs_4km.py` | SoilGrids 2.0 SOC 0–30 / 0–100 cm on the ELM 4 km grid: `fetch` (ISRIC WCS, login node, network only) and `process` (Slurm) → `/projects/hpcl-cli185/proj-shared/zw5/obs_data/SOC/soilgrids/` | 2026-10-01, jobs 602046; see notes §3.4 |
 | `obs_soc_hwsd_v12_4km.py` | HWSD v1.2 (0.05°) SOC 0–30 / 0–100 cm remapped to the 4 km grid with overlap weights → `.../obs_data/SOC/hwsd/` | Slurm, job 602047 |

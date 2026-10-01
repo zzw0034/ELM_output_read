@@ -1,6 +1,7 @@
 """
-Three-way map of the same aboveground tree woody carbon quantity:
-ELM 4 km | ESA CCI v7.0 aggregated to the ELM 4 km grid | ELM 0.5 deg,
+Three-way map of the same aboveground tree woody carbon quantity, ALL ON THE
+ELM 4 km GRID: ELM 4 km | ESA CCI v7.0 aggregated to the ELM 4 km grid | ELM
+0.5 deg copied to its 144 child 4 km cells (comparator A of blueprint A4),
 each the mean of the 17 ESA epochs inside the transient (2005-2012,
 2015-2023).
 
@@ -10,12 +11,16 @@ ESA: dry AGB x carbon fraction (default 0.50, decided 2026-09-29;
 --cf overrides), aggregated from its 0.01 deg grid to the 1/24 deg ELM grid
 with exact area-overlap weights, averaging land pixels only (ocean is
 stored as 0 in the file and is excluded with the Natural Earth display
-mask), so it too is per unit land area. Cells where ELM 4 km has no
-vegetation are masked.
+mask), so it too is per unit land area.
 
-Also prints first-look statistics on common support (4 km cells, and 0.5 deg
-cells from area-weighted block means). These are previews, not the D6
-Figure 1 evaluation (no final mask rules, no 30.833N exclusion).
+A 4 km cell is shown and scored only where ELM 4 km, ESA and the copied 0.5 deg
+value are all valid (ELM 4 km vegetated and ESA land; the 0.5 deg parent has
+vegetation), so both models are scored on exactly the same cells. Prints
+statistics at 4 km only (no 0.5 deg-cell scoring since 2026-10-01):
+ELM 4 km vs ESA, ELM 0.5 deg (copied) vs ESA, ELM 0.5 deg (copied) vs ELM 4 km.
+First-look numbers, not the D6 evaluation (no final mask rules, no 30.833N
+exclusion). The land-cover-downscaled comparator B is in
+plot_agb_4km_comparators.py.
 
 Runs locally (cartopy venv), from the analysis root:
     /Users/zw5/ORNL_workplace/ELM_output_read/.venv/bin/python \
@@ -105,6 +110,9 @@ def main():
     assert years == e05["year"].tolist(), "4 km and 0.5 deg extracts cover different years"
     elm4 = np.nanmean(e4["tree_stemc"], axis=0) * GC_M2_TO_MGC_HA
     elm05 = np.nanmean(e05["tree_stemc"], axis=0) * GC_M2_TO_MGC_HA
+    assert np.allclose(e4["lat"].reshape(-1, BLOCK).mean(axis=1), e05["lat"]) and \
+        np.allclose(e4["lon"].reshape(-1, BLOCK).mean(axis=1), e05["lon"]), "0.5 deg grid is not the 12 x 12 block grid"
+    elm05c = np.kron(elm05, np.ones((BLOCK, BLOCK)))  # copy each 0.5 deg cell to its children
     lat4, lon4, lat05, lon05 = e4["lat"], e4["lon"], e05["lat"], e05["lon"]
     assert np.all(np.diff(lat4) > 0) and np.all(np.diff(lat05) > 0)
     w4 = e4["area"] * e4["landfrac"]
@@ -122,16 +130,17 @@ def main():
     esa4, land_share = aggregate_esa_to_grid(esa_c, lat_f, lon_f, is_land, lat4, lon4)
     esa4 = np.where(np.isfinite(elm4), esa4, np.nan)
 
+    common = np.isfinite(elm4) & np.isfinite(esa4) & np.isfinite(elm05c) & (w4 > 0)
+    lost = int((np.isfinite(elm4) & np.isfinite(esa4) & ~np.isfinite(elm05c)).sum())
+    elm4, esa4, elm05c = (np.where(common, x, np.nan) for x in (elm4, esa4, elm05c))
     print(f"epochs ({len(years)}): {' '.join(map(str, years))}; carbon fraction {cf}")
-    print("First-look statistics (not the D6 evaluation):")
-    compare(elm4, esa4, w4, "4 km cells, ELM 4 km vs ESA->4 km")
-    elm4_05, wb = block_mean(elm4, w4)
-    esa_05, _ = block_mean(esa4, w4)
-    compare(elm4_05, esa_05, wb, "0.5 deg, ELM 4 km aggregated vs ESA aggregated")
-    compare(elm05, esa_05, wb, "0.5 deg, ELM 0.5 deg native vs ESA aggregated")
-    compare(elm05, elm4_05, wb, "0.5 deg, ELM 0.5 deg native vs ELM 4 km aggregated")
+    print(f"First-look statistics on the 4 km grid, common support n={int(common.sum())} cells "
+          f"({lost} cells valid in ELM 4 km and ESA but without a vegetated 0.5 deg parent are dropped); not the D6 evaluation:")
+    compare(elm4, esa4, w4, "ELM 4 km vs ESA->4 km")
+    compare(elm05c, esa4, w4, "ELM 0.5 deg copied vs ESA->4 km")
+    compare(elm05c, elm4, w4, "ELM 0.5 deg copied vs ELM 4 km")
 
-    vmax = float(np.ceil(np.nanpercentile(np.concatenate([elm4.ravel(), esa4.ravel(), elm05.ravel()]), 99.5)
+    vmax = float(np.ceil(np.nanpercentile(np.concatenate([elm4.ravel(), esa4.ravel(), elm05c.ravel()]), 99.5)
                          / 20) * 20)
     levels = np.linspace(0, vmax, 17)
     cmap = plt.get_cmap("Greens", len(levels))
@@ -141,15 +150,15 @@ def main():
     fig, axes = plt.subplots(1, 3, figsize=(21, 4.9), subplot_kw={"projection": ccrs.PlateCarree()})
     draw(axes[0], lon4, lat4, elm4, cmap, norm, "(a) ELM 4 km: tree-PFT stem C")
     draw(axes[1], lon4, lat4, esa4, cmap, norm, f"(b) ESA CCI v7.0 AGB × {cf}, aggregated to 4 km")
-    mesh = draw(axes[2], lon05, lat05, elm05, cmap, norm, "(c) ELM 0.5°: tree-PFT stem C")
+    mesh = draw(axes[2], lon4, lat4, elm05c, cmap, norm, "(c) ELM 0.5° copied to 4 km: tree-PFT stem C")
     span = f"{min(years)}–{max(years)}"
     fig.suptitle(f"Aboveground tree woody carbon, mean of the same {len(years)} years {span} (no 2013–2014)",
                  x=0.04, y=1.02, ha="left", fontsize=13)
     cb = fig.colorbar(mesh, ax=axes, orientation="horizontal", pad=0.13, shrink=0.45, aspect=45)
     cb.set_label("Mg C ha$^{-1}$")
     cb.ax.text(0.0, -3.9, "ELM: (LIVESTEMC + DEADSTEMC) of tree PFTs × PFT area fraction, per land area.\n"
-               "ESA: land pixels only, area-weighted to the ELM 1/24° grid; masked where ELM 4 km has no "
-               "vegetation. Grey = ocean/lakes.", transform=cb.ax.transAxes, fontsize=8, color="#555555",
+               "ESA: land pixels only, area-weighted to the ELM 1/24° grid. All panels on the 4 km grid; the 0.5° run is "
+               "copied to its 144 children; only cells valid in all three fields are shown. Grey = ocean/lakes/unscored.", transform=cb.ax.transAxes, fontsize=8, color="#555555",
                va="top")
     os.makedirs(OUT_DIR, exist_ok=True)
     tag = f"cf{int(round(cf * 100)):02d}"

@@ -643,6 +643,23 @@ The ranking DF > RF > RH holds in every SSP; RF varies most between SSPs (3.7 to
 Suggested slide order: one SSP (SSP3-7.0) in full from §3.6 to explain how to read the panels, the summary figure for
 the cross-SSP comparison, the other three §3.6 figures as backup.
 
+### 3.9 Figure 2, forest-area change by SSP and management measure (2026-10-01)
+
+`code/figure2/plot_forest_area_by_ssp_management.py`, md5 `66aabb218b696ca846d8dc3a2cbe2937`, from the forest-area extracts of §3.6 (4 km only):
+`figures/figure2/forest_area_change_by_ssp_management_4km.png`, one column per SSP, 2024–2100, each run's own tree-PFT area
+minus the 2023 value (804.9 ×10³ km²). Row 1: RF, RH and the 36000 s Default; row 2: DF and the 38000 s Default.
+
+| SSP | Default 2050 | Default 2100 | RF | RH | DF (×10³ km², change since 2023) |
+|---|---|---|---|---|---|
+| SSP1-1.9 | +35.7 | +54.8 | +142.3 | +54.8 (= Default) | −804.9 |
+| SSP2-4.5 | +52.5 | +111.4 | +142.3 | +111.4 | −804.9 |
+| SSP3-7.0 | −19.2 | −31.6 | +142.3 | −31.6 | −804.9 |
+| SSP5-8.5 | +9.4 | +24.3 | +142.3 | +24.3 | −804.9 |
+
+RF is identical in every SSP (+5.47 ×10³ km² per year for 26 years, 2024–2049, then fixed at 947.2; 97.0 % of the 1850 forest area
+976.0), RH leaves forest area unchanged (asserted equal to the Default in every year), the two Defaults have the same forest area
+(asserted), and DF has no forest from 2024. The documented RF ramp "2024→2050" reaches its plateau one year earlier in the output (2049).
+
 ## 4. Script and product locations
 
 Since 2026-10-01 `code/` and `figures/` are organized by manuscript figure

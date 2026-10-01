@@ -12,8 +12,10 @@ on Pathfinder must be rechecked when a new job is prepared.
   `/projects/hpcl-cli185/proj-shared/zw5/paper_carbon_offset/`, laid out
   like this folder (`code/`, `figures/`, `_cache/`, `logs/`, docs). It
   replaced `/scratch/hpcl-cli185/zw5/ELM_output_read/analyses/paper_carbon_offset/`
-  (older flat copy, left as is; scratch is purgeable and its project quota
-  was exceeded on 2026-09-29) and absorbed
+  (the original flat copy, kept unchanged as a backup with a `README.md`
+  added 2026-10-01 that points here and lists its unique contents: legacy
+  caches and logs; scratch is purgeable and its project quota was exceeded
+  on 2026-09-29) and absorbed
   `/projects/hpcl-cli185/proj-shared/zw5/ELM_output_read_extracts/paper_carbon_offset/`
   (its `obs_compare/` is now `_cache/obs_compare/`, `logs/` unchanged).
 - Pathfinder raw-output root:

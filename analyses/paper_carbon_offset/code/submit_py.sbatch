@@ -1,11 +1,11 @@
 #!/bin/bash -e
 #SBATCH -A hpcl-cli185
-#SBATCH -p hpcl-cli185
+#SBATCH -p serial
 #SBATCH -q hpcl-cli185
 #SBATCH -N 1
 #SBATCH -n 1
 #SBATCH -c 1
-#SBATCH --mem=32gb
+#SBATCH --mem=128gb
 #SBATCH -t 03:00:00
 #SBATCH -o /projects/hpcl-cli185/proj-shared/zw5/paper_carbon_offset/logs/%x-%j.out
 #SBATCH -e /projects/hpcl-cli185/proj-shared/zw5/paper_carbon_offset/logs/%x-%j.err

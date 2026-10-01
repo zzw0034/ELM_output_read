@@ -781,6 +781,41 @@ Reading (inference from the bins, not a decomposition; there is no NH run):
   explains the −0.13 PgC of §3.10.
 - A clean split of ban and restoration still needs the NH run; the bins only bound them.
 
+### 3.12 Figure 4, SOC depth and the 2024-2100 trajectories, ELM 4 km SSP3-7.0 (2026-10-01)
+
+**SOC depth in Figure 4 (§3.10-3.11).** `TOTSOMC` is the model's own **full soil-column** SOM carbon, not 0-30 or
+0-100 cm. Compared with Figure 1's 0-100 cm integral (`soc_0_100`, 2000-2023 mean, 17.11 PgC, 12.6 kgC/m²), the
+4 km SSP3-7.0 Default `TOTSOMC` is 26.17 PgC in 2024 (26.68 in 2091-2100), so about 9 PgC (≈ 35 %) lies below
+1 m. The h0 column has 15 layers (`dz_m` in `elm4km_soc_2000-2023.npz`; layer bottoms 0.0175 … 1.38, 2.29, 3.80 m
+for layer 10, then bedrock layers to 42 m); how many layers `TOTSOMC` integrates in this ELM version was not
+checked (to read in `ColumnDataType.F90`, `nlevdecomp_full`). The ΔSOC of §3.10-3.11 is therefore a whole-column
+response; a 0-30 or 0-100 cm ΔSOC would need `TOTSOMC_1m` (in h0) or `SOIL1-4C_vr` added to
+`extract_pool_maps.py`. Field studies of afforestation and harvest mostly measure the top 30-100 cm.
+
+**2024-2100 trajectories** (`code/figure4/plot_pool_trajectories.py`, md5 `e146edd5068e86e520d20ff178cfc0a7`;
+input: the annual domain totals of §3.6 in `_cache/figure2/future_4km/`, no new job) → 
+`figures/figure4/fig4_pool_trajectories_4km_SSP3-7.0.{png,csv}`. RF − Default, PgC:
+
+| pool | 2030 | 2050 | 2075 | 2100 | mean 2091-2100 | mean 2024-2100 |
+|---|---:|---:|---:|---:|---:|---:|
+| aboveground vegetation | +0.60 | +2.28 | +3.84 | +4.12 | +4.15 | +2.74 |
+| other vegetation | +0.14 | +0.44 | +0.97 | +1.15 | +1.14 | +0.66 |
+| CWD | −0.09 | +0.07 | +0.38 | +0.60 | +0.56 | +0.22 |
+| SOC | −0.02 | −0.13 | −0.18 | −0.13 | −0.13 | −0.12 |
+| products | −0.30 | −0.60 | −0.74 | −0.73 | −0.76 | −0.61 |
+| **total** | **+0.31** | **+2.03** | **+4.28** | **+5.03** | **+4.97** | **+2.90** |
+
+RH − Default total: +0.11 (2030), +0.61 (2050), +0.90 (2075), +0.95 (2100); RH SOC is slightly negative until
+about 2060 and +0.03 at the end.
+
+- The 2091-2100 mean is the end state of the cumulative response (it equals the 2100 value within 0.06 PgC); it is
+  not an average over the horizon. The 2024-2100 time mean (RF +2.90) mixes the ramp-up with the end state and is not
+  a benefit: use the end-of-horizon stock difference for the headline and the trajectory for timing.
+- Timing: RF reaches 40 % of its 2100 total by 2050 and 85 % by 2075. Products fall at once (−0.60 PgC by 2050) while
+  vegetation builds for decades, so the benefit starts small; CWD is negative until about 2045.
+- RF's SOC difference declines for about 50 years (minimum −0.18 PgC in 2075) and recovers partly (−0.13 PgC in 2100);
+  it is never positive. RH's SOC turns positive late.
+
 ## 4. Script and product locations
 
 Since 2026-10-01 `code/` and `figures/` are organized by manuscript figure

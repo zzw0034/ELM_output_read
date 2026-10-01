@@ -50,6 +50,8 @@ before any benefit is looked at; the restoration stratum is restoration **plus**
 |---|---|---|
 | `extract_pool_maps.py` | Per-gridcell 2091–2100 mean of TOTECOSYSC, TOTVEGC, TOTVEGC_ABG, CWDC, TOTLITC, TOTSOMC (gC/m²) and NBP, NEP, LAND_USE_FLUX, WOOD_HARVESTC (gC/m²/yr) of one run → `_cache/figure4/<res>/<SSP>[_RF\|_RH]__pools_2091-2100.npz` | Slurm via `submit_py.sbatch`; 3 runs per SSP and resolution (36000 s Default, RF, RH) |
 | `extract_tree_fraction.py` | Per-gridcell tree/shrub/grass/crop fraction of one run-year from h1 (`pfts1d_wtgcell` by itype) → `transient__treefrac_2023.npz` and `<SSP>_RF__treefrac_2060.npz` | Slurm; reads only the 1-D PFT arrays |
+| `plot_pool_trajectories.py` | Pool contributions to RF/RH − Default over 2024–2100 (domain totals, 4 km) from the Figure 2 totals extracts; no new job | Locally; `[SSP]` |
+| `check_increment_dose_response.py` | Benefit, SOC and Default harvest by bins of RF's land-cover increment (notes §3.11) | Locally |
 | `plot_pool_strata.py` | Figure 4 panels a–c (default) and the pool CSV; with `--strata` also panels d–f, strata and flux CSVs, threshold-sensitivity table. Asserts pool closure to TOTECOSYSC, strata closure to the domain total, Default products ≥ 0 | Locally (cartopy venv) from the analysis root; `--res 4km\|0.5deg --ssp --years [--strata --rest-thr --harv-thr]` |
 
 Defaults: restoration = RF tree fraction (2060) − transient 2023 ≥ 0.01 of the cell; protection only =

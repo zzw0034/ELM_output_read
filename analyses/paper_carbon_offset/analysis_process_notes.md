@@ -569,6 +569,14 @@ Things to know before interpreting:
   all forest at once), so about half of the 2100 DF benefit (≈ 6 of 11 PgC) accrues in the first year; RF adds
   forest gradually (+2 to +5 ×10³ km² in 2024, ≈ +160 by 2049 for SSP3-7.0). Blueprint D3's "exactly zero in
   2024" holds only for the 1 January 2024 restart state, not for the 2024 annual means.
+- **Why the RF − Default forest-area curve falls after 2049.** RF is one shared policy prescription (not per SSP): forest is
+  added linearly over 2024–2050 and then held fixed (947.2 ×10³ km² in all four SSPs, flat in 2051–2100), whereas the Default
+  keeps changing (SSP2-4.5 +57 ×10³ km² between 2051 and 2100, SSP1-1.9 +20, SSP5-8.5 +14, SSP3-7.0 −11). The paired
+  difference therefore shrinks once the Default catches up (SSP2-4.5: +91 in 2049, +31 in 2100); the RF forest itself does not
+  shrink. `code/figure2/plot_scenario_management_forest_abs.py` (md5 `fcd414f78eef8c455f79fbd28efb408a`) draws the same figures with the
+  absolute forest-area change of each run (`figures/figure2/management_benefits_forest_abs_<SSP>_4km.png`): (c) RF and the
+  36000 s Default (RH has an identical forest area, asserted in the script), (d) DF (−805 ×10³ km² from 2024) and the 38000 s
+  Default; the two Defaults have the same forest area, as expected since `crit_dayl_stress` does not change land cover.
 - RH changes carbon but **not forest area** (difference exactly 0.0 in every year and SSP).
 - The RF forest-area advantage peaks in 2049 and then shrinks in SSP2-4.5 (+91 → +31) and SSP5-8.5, because the
   Default's own forest area changes; it is a paired difference, not the RF forest area.

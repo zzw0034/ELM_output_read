@@ -951,6 +951,16 @@ most heavily harvested land; the benefit rises with the forest added (+87 MgC/ha
 across the bins; SOC (whole column and 0-100 cm) falls with the forest added, so the SOC loss comes with grass-to-forest conversion, not with the ban.
 Every bin has the ban: the bins bound, but do not decompose, the two effects (an NH run would). RF − Default also holds the SSP's own land-use drift.
 
+### 3.17 Figure 4 reduced to stocks, contributions and split trajectories (2026-10-01)
+
+User decision 2026-10-01: the three-boundary panel and the increment-bin panels (§3.16) are removed from Figure 4, and the trajectories are split
+into living vegetation (upper row, no total line) and the other three pools (lower row). Panels now: **a** Default stock by pool and **b** signed
+RF/RH contributions (mean of 2091-2100, four pools); **c/d** RF/RH − Default living vegetation, 2024-2100; **e/f** RF/RH − Default dead wood + litter,
+soil (whole column) and wood products, 2024-2100; every panel its own y axis. `plot_pool_strata.py` (md5 `d98629b970511bf48b9b7614202ee30f`, the `--bins` option and the bin
+code removed; §3.16's bin table came from the commit-f850ac1 version) → `figures/figure4/fig4_pools_4km_SSP3-7.0_2091-2100.png`, pool CSV, trajectory
+CSV. The three-boundary numbers (aboveground +4.15 / +0.83, in-situ +5.73 / +1.27, ecosystem + products +4.97 / +0.96 PgC, RF / RH) are still printed
+and the "of which" rows are in the pool CSV. The local `fig4_pool_bins_*` outputs were deleted. No numbers changed.
+
 ## 4. Script and product locations
 
 Since 2026-10-01 `code/` and `figures/` are organized by manuscript figure

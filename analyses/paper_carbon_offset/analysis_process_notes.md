@@ -432,32 +432,43 @@ cells carry no SOC in HWSD.
 
 **Figures** (local, `figures/figure1/`, git-ignored; script
 `code/figure1/plot_soc_elm4km_obs4km_elm0p5.py`, md5
-`498bd4482b0e6a5ba8c24f026588350a`, run from `_cache/obs_soc/` and
+`226e966487d7afc099a6344c250b444d`, run from `_cache/obs_soc/` and
 `_cache/obs_compare/` pulled with scp, md5 verified): one figure per product,
-rows = 0–30 and 0–100 cm, columns ELM 4 km | observation on the 4 km grid
-(masked where ELM 4 km has no soil column) | ELM 0.5°.
+rows = 0–30 and 0–100 cm, columns ELM 4 km | observation on the 4 km grid |
+ELM 0.5° **copied to the 4 km grid**. Everything, maps and statistics, is on
+the 4 km grid (user requirement, 2026-10-01): each 0.5° cell is copied to its
+12 × 12 children (comparator A of blueprint A4; SOC has no land-cover
+downscaling B because all natural PFTs share one soil column). A 4 km cell is
+shown and scored only if ELM 4 km, the observation and the copied 0.5° value
+are all valid, so both models are scored on the same cells (no cell was lost
+to a missing 0.5° parent; n = 75 672 for SoilGrids, 75 911 for HWSD). An
+earlier version of this figure showed the native 0.5° grid and scored it at
+0.5°; those numbers are superseded.
 `soc_elm4km_soilgrids4km_elm0p5_2000-2023.png`,
 `soc_elm4km_hwsd4km_elm0p5_2000-2023.png`. Colour scales are fixed and shared
 by both products (0–12 and 0–36 kg C m⁻², extend max); with a data-driven
 scale the HWSD wetland hotspots stretched the scale and washed ELM out.
 
-**First-look statistics** (area × landfrac weights, common support; mean of
-ELM 2000–2023; bias = ELM − obs; not the D6 evaluation):
+**First-look statistics** (4 km cells, common support; area × landfrac
+weights; mean of ELM 2000–2023; bias = ELM − obs; not the D6 evaluation):
 
-| Product, depth | 4 km cells: mean ELM / obs | bias | RMSE | r | 0.5°: ELM 0.5° native vs obs | bias | RMSE | r |
+| Product, depth | Mean ELM 4 km / obs | Bias | RMSE | r | Mean ELM 0.5° copied | Bias | RMSE | r |
 |---|---|---|---|---|---|---|---|---|
-| SoilGrids 0–30 | 7.50 / 6.49 | +1.0 | 2.0 | +0.13 | 7.69 / 6.49 | +1.2 | 2.0 | +0.15 |
-| SoilGrids 0–100 | 12.64 / 11.32 | +1.3 | 4.7 | −0.23 | 12.88 / 11.35 | +1.5 | 4.6 | −0.28 |
-| HWSD 0–30 | 7.49 / 4.93 | +2.6 | 4.4 | −0.20 | 7.69 / 4.93 | +2.8 | 4.1 | −0.34 |
-| HWSD 0–100 | 12.62 / 9.91 | +2.7 | 8.7 | −0.26 | 12.88 / 9.91 | +3.0 | 7.6 | −0.40 |
+| SoilGrids 0–30 | 7.50 / 6.49 | +1.0 | 2.0 | +0.13 | 7.70 | +1.2 | 2.1 | +0.14 |
+| SoilGrids 0–100 | 12.64 / 11.32 | +1.3 | 4.7 | −0.23 | 12.90 | +1.6 | 4.8 | −0.24 |
+| HWSD 0–30 | 7.49 / 4.93 | +2.6 | 4.4 | −0.20 | 7.69 | +2.8 | 4.5 | −0.26 |
+| HWSD 0–100 | 12.62 / 9.91 | +2.7 | 8.7 | −0.26 | 12.88 | +3.0 | 8.9 | −0.31 |
 
-ELM 0.5° native vs ELM 4 km aggregated to 0.5°: bias +0.2 to +0.3, RMSE 0.5
-to 0.8, r 0.95 at both depths.
+ELM 0.5° (copied) vs ELM 4 km: bias +0.2 (0–30) and +0.3 (0–100), RMSE 0.8 and
+1.3, r 0.83–0.85.
 
 **Reading (preview).** ELM is higher than both products at both depths and
-agrees poorly in space: r is between −0.40 and +0.15 for 4 km cells and 0.5°
-cells alike, so the 4 km run is not clearly closer to the observations than
-the 0.5° run (e.g. HWSD 0–30 cm at 0.5°: RMSE 3.9 aggregated 4 km vs 4.1 native 0.5°, r −0.35 vs −0.34). ELM's pattern is a north-high, south-low gradient with maxima in the
+agrees poorly in space: r is between −0.31 and +0.14 for both runs. The 4 km
+run has a 0.1–0.2 kg C m⁻² lower RMSE than the copied 0.5° run in all four
+cases and a 0.2–0.3 smaller bias, but r differs by ≤ 0.06 and is not
+consistently better (SoilGrids 0–30 cm: +0.13 vs +0.14), so there is no clear
+sign that running at 4 km improves SOC against these products on the 4 km
+cells. ELM's pattern is a north-high, south-low gradient with maxima in the
 Appalachians and Ozark/Ouachita; both products have little gradient but
 wetland/organic-soil hotspots (South Florida, Mississippi delta and
 Louisiana, North Carolina coastal pocosins) that ELM, with one soil column and

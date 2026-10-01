@@ -29,7 +29,7 @@ are preserved in `../figures/legacy/`.
 | `obs_soc_soilgrids_wcs_4km.py` | SoilGrids 2.0 SOC 0–30 / 0–100 cm on the ELM 4 km grid: `fetch` (ISRIC WCS, login node, network only) and `process` (Slurm) → `/projects/hpcl-cli185/proj-shared/zw5/obs_data/SOC/soilgrids/` | 2026-10-01, jobs 602046; see notes §3.4 |
 | `obs_soc_hwsd_v12_4km.py` | HWSD v1.2 (0.05°) SOC 0–30 / 0–100 cm remapped to the 4 km grid with overlap weights → `.../obs_data/SOC/hwsd/` | Slurm, job 602047 |
 | `extract_elm_soc.py` | ELM SOC 0–30 cm (SOIL1–4C_vr) and 0–100 cm (TOTSOMC_1m), annual day-weighted means 2000–2023, both resolutions → `_cache/obs_compare/` | Slurm via `submit_py.sbatch`, jobs 602050/602051 |
-| `plot_soc_elm4km_obs4km_elm0p5.py` | ELM 4 km \| obs on 4 km \| ELM 0.5°, rows 0–30 and 0–100 cm, one figure per product, with first-look statistics | Locally |
+| `plot_soc_elm4km_obs4km_elm0p5.py` | ELM 4 km \| obs on 4 km \| ELM 0.5° copied to 4 km (everything and all statistics on the 4 km grid), rows 0–30 and 0–100 cm, one figure per product | Locally |
 
 Local plotting scripts read inputs pulled into `../_cache/` and write PNGs to
 `../figures/figure1/` (git-ignored).

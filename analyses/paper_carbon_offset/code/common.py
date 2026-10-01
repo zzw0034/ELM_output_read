@@ -41,6 +41,10 @@ def _rerun_halfdeg():
         date = "20260911" if tag == "ssp370" else "20260915"
         for m in MANAGEMENT:
             cases[f"{ssp} {m}"] = f"{date}_seus_halfdeg_future_{tag}_{m}_dt3600"
+        # crit_dayl_stress = 38000 s pair for the DF comparison (blueprint A2):
+        # DF is paired with this Default, never with the 36000 s Default.
+        cases[f"{ssp} cds38000"] = f"20260922_seus_halfdeg_future_{tag}_cds38000_dt3600"
+        cases[f"{ssp} DF cds38000"] = f"20260922_seus_halfdeg_future_{tag}_DF_cds38000_dt3600"
     return cases
 
 
@@ -53,6 +57,8 @@ def _rerun_fourkm():
         date = "20260917" if tag == "ssp370" else "20260915"
         for m in MANAGEMENT:
             cases[f"{ssp} {m}"] = f"{date}_seus_4km_fut_{tag}_{m}"
+        cases[f"{ssp} cds38000"] = f"20260922_seus_4km_fut_{tag}_cds38000"
+        cases[f"{ssp} DF cds38000"] = f"20260922_seus_4km_fut_{tag}_DF_cds38000"
     return cases
 
 

@@ -926,6 +926,31 @@ Totals and the cross-checks against the annual totals are unchanged (§3.13). Pa
 (vegetation + dead wood and litter + soil on the land); it is larger than ecosystem + products for RF and RH because the harvest reduction lowers the
 product pool.
 
+### 3.16 Figure 4 panels f-h: increment bins replace the threshold strata (2026-10-01)
+
+User decision 2026-10-01: the threshold strata of §3.11 are dropped (not clean: "restoration" = 69 % of the land, share 53-79 % by threshold,
+the "no change" control was not null). Panels f-h now bin the 4 km cells by the forest RF adds (tree fraction RF 2060 − transient 2023, the
+same increment as §3.11) into six bins with round edges: ≤ 0.001, 0.001-0.05, 0.05-0.1, 0.1-0.2, 0.2-0.5, > 0.5. The edges were set after
+the 7-bin diagnostic of §3.11 had been looked at (stated on the figure). No new extraction; no 2041-2060 comparison (user decision).
+`plot_pool_strata.py --bins` (md5 `f0ec41323759a251dfdbc71f7a8d44f6`) → `figures/figure4/fig4_pool_bins_4km_SSP3-7.0_2091-2100.png` and `…_bins.csv` (one row per bin and
+management: area, mean increment, Default harvest, four pools, total, SOC 0-100 cm, flux differences). The old `fig4_pool_strata_*` outputs were
+deleted locally. Panels: f map of the increment, g area per bin (with the Default harvest) and the RF benefit per bin, h signed pool response per
+bin in MgC/ha with RF and RH totals.
+
+| increment bin | area (×10³ km², % land) | Default harvest (gC/m²/yr) | RF − Default (MgC/ha) | RH − Default | RF PgC (share) | ΔSOC whole / 0-100 cm (MgC/ha) |
+|---|---:|---:|---:|---:|---:|---:|
+| ≤ 0.001 | 362.5 (26.7 %) | 56.8 | 27.9 | 9.9 | +1.01 (20 %) | +0.75 / +0.80 |
+| 0.001-0.05 | 274.4 (20.2 %) | 34.1 | 25.3 | 6.2 | +0.69 (14 %) | +0.54 / +0.49 |
+| 0.05-0.1 | 202.6 (14.9 %) | 38.7 | 31.5 | 7.2 | +0.64 (13 %) | +0.06 / −0.08 |
+| 0.1-0.2 | 252.7 (18.6 %) | 35.6 | 40.7 | 6.8 | +1.03 (21 %) | −1.48 / −1.74 |
+| 0.2-0.5 | 247.5 (18.3 %) | 20.9 | 59.1 | 4.2 | +1.46 (29 %) | −4.96 / −5.48 |
+| > 0.5 | 16.4 (1.2 %) | 4.9 | 87.1 | 1.1 | +0.14 (3 %) | −9.73 / −10.63 |
+
+Bins sum to the domain totals (RF +4.975, RH +0.955 PgC). Reading: where RF adds no forest the harvest ban alone gives +27.9 MgC/ha (2.8 × RH), in the
+most heavily harvested land; the benefit rises with the forest added (+87 MgC/ha above 0.5) although Default harvest, and so the ban's effect, falls
+across the bins; SOC (whole column and 0-100 cm) falls with the forest added, so the SOC loss comes with grass-to-forest conversion, not with the ban.
+Every bin has the ban: the bins bound, but do not decompose, the two effects (an NH run would). RF − Default also holds the SSP's own land-use drift.
+
 ## 4. Script and product locations
 
 Since 2026-10-01 `code/` and `figures/` are organized by manuscript figure

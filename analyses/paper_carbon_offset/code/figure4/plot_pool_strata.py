@@ -1,8 +1,7 @@
 """
 Main Figure 4 / Results 3.3 (blueprint E4): which carbon pools carry the
-management benefit, when they move, and (with --strata) what part of the RF
-benefit comes from cells where RF restores forest versus cells where it only
-stops harvest.
+management benefit, when they move, and (with --bins) how the RF benefit
+changes with the amount of forest RF adds to a cell.
 
 Panels (one SSP, 4 km; defaults SSP3-7.0, end state = mean of 2091-2100):
   a  Default stock composition by pool, PgC
@@ -11,8 +10,8 @@ Panels (one SSP, 4 km; defaults SSP3-7.0, end state = mean of 2091-2100):
      ecosystem (excl. products), ecosystem + products (= TOTECOSYSC)
   d  RF - Default pool contributions over 2024-2100 (domain totals, PgC)
   e  the same for RH - Default
-  f-h  (--strata) restoration / protection strata of RF: map, area and benefit
-     per stratum, signed pool response per stratum (MgC/ha of stratum land)
+  f-h  (--bins) RF's land-cover increment: map, area / RF benefit / Default
+     harvest per increment bin, signed pool response per bin (MgC/ha of land)
 
 Pools (D4), four, adding up to TOTECOSYSC (grouping chosen by the user 2026-10-01):
 living vegetation = TOTVEGC; dead wood and litter = CWDC + TOTLITC; soil organic carbon over the
@@ -21,17 +20,27 @@ because TOTPRODC is not in h0 (must be >= 0 in Default). Two finer quantities ar
 printout, the CSVs and the note: aboveground vegetation (TOTVEGC_ABG, panel c's narrowest
 boundary) and SOC 0-100 cm (TOTSOMC_1m, comparable to field studies).
 
+Increment bins (--bins; user decision 2026-10-01, replacing the threshold strata):
+increment = RF tree fraction in a plateau year (default 2060) - transient 2023 tree fraction,
+per 4 km cell (fraction of the cell's land; the same in every SSP). Six bins with round edges:
+<= 0.001 (no land-cover change: harvest ban only), 0.001-0.05, 0.05-0.1, 0.1-0.2, 0.2-0.5,
+> 0.5; the edges were set after a 7-bin diagnostic (check_increment_dose_response.py) had been
+looked at. Every bin also has the region-wide harvest ban, and Default's harvest intensity
+differs between bins (it is printed and shown), so the bins bound, but do not decompose, the
+ban and restoration effects; a clean split needs the NH run. RF - Default also contains the
+SSP's own land-use drift.
+
 Runs locally (cartopy venv), from the analysis root:
     /Users/zw5/ORNL_workplace/ELM_output_read/.venv/bin/python \\
-        code/figure4/plot_pool_strata.py --res 4km [--ssp SSP3-7.0] [--strata]
+        code/figure4/plot_pool_strata.py --res 4km [--ssp SSP3-7.0] [--bins]
 Inputs (pulled from proj-shared, git-ignored): in _cache/figure4/<res>/, made by
 extract_pool_maps.py, extract_soc1m.py and extract_tree_fraction.py:
     <SSP>[_RF|_RH]__pools_2091-2100.npz   <SSP>[_RF|_RH]__soc1m_2024-2100.npz
-    transient__treefrac_2023.npz  <SSP>_RF__treefrac_<rf-year>.npz   (--strata)
+    transient__treefrac_2023.npz  <SSP>_RF__treefrac_<rf-year>.npz   (--bins)
 and, for panels d-e (4 km), the annual domain totals of extract_domain_totals.py in
 _cache/figure2/future_4km/<SSP>[_RF|_RH]__totals.npz.
 Outputs: figures/figure4/fig4_pools_<res>_<SSP>_<y0>-<y1>.png (+ pool CSV and trajectory
-CSV), or fig4_pool_strata_... with --strata (+ strata and sensitivity CSVs).
+CSV), or fig4_pool_bins_... with --bins (+ a per-bin CSV).
 """
 import argparse
 import csv
@@ -41,7 +50,7 @@ import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 import numpy as np
-from matplotlib.colors import ListedColormap
+from matplotlib.colors import LinearSegmentedColormap, Normalize
 
 ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))  # analysis root
 
@@ -49,9 +58,11 @@ ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)
 # pools use slots 3-8 so a pool colour never repeats a management colour.
 INK, INK2, MUTED, GRID, SURFACE = "#0b0b0b", "#52514e", "#8a8984", "#e9e8e4", "#fcfcfb"
 MGMT = {"RF": "#2a78d6", "RH": "#eb6834"}
-STRATA = [(1, "Restoration\n(+ harvest ban)", "#2a78d6"),
-          (2, "Protection only\n(harvest ban)", "#9ec5f4"),
-          (0, "No change", "#cfcdc6")]
+# RF land-cover increment bins (lo < increment <= hi); ordinal blue ramp, lightest step >= 250 for contrast
+BINS = [(-np.inf, 0.001, "≤ 0.001"), (0.001, 0.05, "0.001–0.05"), (0.05, 0.1, "0.05–0.1"),
+        (0.1, 0.2, "0.1–0.2"), (0.2, 0.5, "0.2–0.5"), (0.5, np.inf, "> 0.5")]
+BIN_COLS = ["#86b6ef", "#6da7ec", "#3987e5", "#2a78d6", "#1c5cab", "#0d366b"]
+SEQ = LinearSegmentedColormap.from_list("seq", ["#f0efec", "#cde2fb", "#86b6ef", "#3987e5", "#1c5cab", "#0d366b"])
 POOLS = [("veg", "Living vegetation", "#1baf7a"),
          ("dead", "Dead wood and litter", "#e87ba4"),
          ("soil", "Soil organic carbon (whole column)", "#4a3aa7"),
@@ -60,8 +71,6 @@ POOL_SHORT = {"veg": "Living\nvegetation", "dead": "Dead wood\n+ litter", "soil"
 POOL_LINE = {"veg": "Living vegetation", "dead": "Dead wood + litter", "soil": "Soil (whole column)", "prod": "Wood products"}
 BAD = "#dfe3e8"
 GC_M2_TO_MGC_HA = 0.01
-REST_SENS = (0.005, 0.01, 0.05, 0.10)
-HARV_SENS = (0.01, 0.1, 1.0)
 FLUX_VARS = ["NBP", "NEP", "LAND_USE_FLUX", "WOOD_HARVESTC"]
 
 
@@ -84,24 +93,28 @@ def pg(field, area, mask):
     return float(np.sum(field[mask].astype("f8") * area[mask]) * 1e6 / 1e15)
 
 
-def classify(inc, harv, rest_thr, harv_thr):
-    s = np.zeros(inc.shape, dtype=int)
-    rest = inc >= rest_thr
-    s[rest] = 1
-    s[(~rest) & (harv >= harv_thr)] = 2
-    return s
+def bin_index(inc):
+    """Increment bin of each cell: lo < increment <= hi; -1 only for non-finite increments."""
+    idx = np.full(inc.shape, -1, dtype=int)
+    for k, (lo, hi, _) in enumerate(BINS):
+        idx[(inc > lo) & (inc <= hi)] = k
+    return idx
 
 
-def stratum_rows(P, F, strata, area, valid):
-    """Per stratum: area, RF-Default and RH-Default pool sums (PgC) and total, flux differences (PgC/yr)."""
+def bin_rows(P, F, maps, idx, area, valid, inc, harv):
+    """Per bin: area, mean increment, Default harvest, RF/RH - Default pool sums (PgC), totals, SOC 0-100 cm, fluxes."""
     rows = []
-    for code, label, _ in STRATA:
-        m = valid & (strata == code)
-        row = {"code": code, "label": label.replace("\n", " "), "area_km2": float(area[m].sum())}
+    for k, (lo, hi, label) in enumerate(BINS):
+        m = valid & (idx == k)
+        w = area[m]
+        row = {"label": label, "area_km2": float(w.sum()),
+               "mean_increment": float((inc[m] * w).sum() / w.sum()) if w.sum() > 0 else np.nan,
+               "default_harvest": float((harv[m] * w).sum() / w.sum()) if w.sum() > 0 else np.nan}
         for mg in ("RF", "RH"):
-            d = {k: pg(P[mg][k] - P["Def"][k], area, m) for k, _, _ in POOLS}
+            d = {kk: pg(P[mg][kk] - P["Def"][kk], area, m) for kk, _, _ in POOLS}
             row[f"{mg}_pools"] = d
             row[f"{mg}_total"] = sum(d.values())
+            row[f"{mg}_soc_0_100"] = pg(maps[mg]["TOTSOMC_1m"].astype("f8") - maps["Def"]["TOTSOMC_1m"].astype("f8"), area, m)
             row[f"{mg}_fluxes"] = {v: pg(F[mg][v] - F["Def"][v], area, m) for v in FLUX_VARS}
         rows.append(row)
     return rows
@@ -221,15 +234,12 @@ def panel_c(ax, P, area, valid, abg):
     return b
 
 
-def panel_map(ax_proj, lon, lat, strata, valid, extent):
+def panel_inc_map(fig, ax_proj, lon, lat, inc, valid, extent, rf_year):
     import cartopy.crs as ccrs
     import cartopy.feature as cfeature
-    field = np.where(valid, strata, np.nan).astype("f8")
-    cmap = ListedColormap([c for code, _, c in sorted(STRATA, key=lambda s: s[0])])
-    cmap.set_bad(BAD)
     ax_proj.set_facecolor(BAD)
-    ax_proj.pcolormesh(lon, lat, field, cmap=cmap, vmin=-0.5, vmax=2.5, shading="auto",
-                       transform=ccrs.PlateCarree(), rasterized=True)
+    mesh = ax_proj.pcolormesh(lon, lat, np.ma.masked_invalid(np.where(valid, np.clip(inc, 0, None), np.nan)), cmap=SEQ,
+                              norm=Normalize(0, 0.6), shading="auto", transform=ccrs.PlateCarree(), rasterized=True)
     ax_proj.coastlines(resolution="10m", linewidth=0.5, color="#555555")
     ax_proj.add_feature(cfeature.NaturalEarthFeature("cultural", "admin_1_states_provinces_lakes", "10m",
                                                      facecolor="none", edgecolor="#777777", linewidth=0.3))
@@ -237,63 +247,62 @@ def panel_map(ax_proj, lon, lat, strata, valid, extent):
     gl = ax_proj.gridlines(draw_labels=True, linewidth=0.3, color="#999999", alpha=0.6, linestyle="--")
     gl.top_labels = gl.right_labels = False
     gl.xlabel_style = gl.ylabel_style = {"size": 8}
-    ptitle(ax_proj, "f", "RF strata")
-    handles = [plt.Rectangle((0, 0), 1, 1, color=c) for _, _, c in STRATA]
-    ax_proj.legend(handles, [l.replace("\n", " ") for _, l, _ in STRATA], loc="lower left", fontsize=8.2,
-                   frameon=True, framealpha=0.9, edgecolor="none")
+    ptitle(ax_proj, "f", "Forest RF adds to each cell")
+    cb = fig.colorbar(mesh, ax=ax_proj, orientation="horizontal", fraction=0.045, pad=0.08, shrink=0.85, extend="max")
+    cb.set_label(f"Tree fraction of the cell, RF {rf_year} − 2023", fontsize=9, color=INK)
+    cb.ax.tick_params(labelsize=8.5)
 
 
-def panel_strata_bars(ax_area, ax_ben, rows):
+def panel_bin_bars(ax_area, ax_ben, rows):
     x = np.arange(len(rows))
-    colors = [c for _, _, c in STRATA]
     area = [r["area_km2"] / 1e3 for r in rows]
     ben = [r["RF_total"] for r in rows]
-    ax_area.bar(x, area, 0.62, color=colors, edgecolor=SURFACE, linewidth=1.2, zorder=3)
-    ax_ben.bar(x, ben, 0.62, color=colors, edgecolor=SURFACE, linewidth=1.2, zorder=3)
+    ax_area.bar(x, area, 0.66, color=BIN_COLS, edgecolor=SURFACE, linewidth=1.2, zorder=3)
+    ax_ben.bar(x, ben, 0.66, color=BIN_COLS, edgecolor=SURFACE, linewidth=1.2, zorder=3)
     tot_area, tot_ben = sum(area), sum(ben)
-    for xi, a in zip(x, area):
-        ax_area.text(xi, a, f"{a:.0f}\n({100 * a / tot_area:.0f}%)", ha="center", va="bottom", fontsize=8.5, color=INK2)
+    for xi, a, r in zip(x, area, rows):
+        ax_area.text(xi, a, f"{a:.0f}\nh {r['default_harvest']:.0f}", ha="center", va="bottom", fontsize=7.6, color=INK2)
     for xi, b in zip(x, ben):
-        pct = 100 * b / tot_ben if tot_ben else np.nan
-        ax_ben.text(xi, b, f"{b:+.2f}\n({pct:.0f}%)", ha="center", va="bottom" if b >= 0 else "top",
-                    fontsize=8.5, color=INK2)
+        ax_ben.text(xi, b, f"{100 * b / tot_ben:.0f}%", ha="center", va="bottom" if b >= 0 else "top", fontsize=7.6, color=INK2)
     for ax, ylab in ((ax_area, "Area (10³ km²)"), (ax_ben, "RF − Default (PgC)")):
         style(ax, ylab)
         ax.set_xticks(x)
     ax_area.set_xticklabels([])
-    ax_ben.set_xticklabels([l for _, l, _ in STRATA], fontsize=8.2)
-    ax_area.set_ylim(0, max(area) * 1.3)
-    lo, hi = min(0, min(ben)), max(0, max(ben))
-    ax_ben.set_ylim(lo - 0.25 * (hi - lo + 1e-9) if lo < 0 else 0, hi * 1.35 if hi > 0 else 1)
-    ptitle(ax_area, "g", "Area and benefit by stratum")
+    ax_ben.set_xticklabels([r["label"].replace("–", "–\n") for r in rows], fontsize=7.6)
+    ax_ben.set_xlabel("Forest added (fraction of the cell)", fontsize=9, color=INK)
+    ax_area.set_ylim(0, max(area) * 1.4)
+    hi = max(0, max(ben))
+    ax_ben.set_ylim(min(0, min(ben)) * 1.3, hi * 1.4 if hi > 0 else 1)
+    ptitle(ax_area, "g", "Area and RF benefit by bin")
 
 
-def panel_strata_pools(ax, rows):
+def panel_bin_pools(ax, rows):
     x = np.arange(len(rows))
     colors = [c for _, _, c in POOLS]
     totals = []
     for xi, r in zip(x, rows):
         dens = [density(r["RF_pools"][k], r["area_km2"]) for k, _, _ in POOLS]
-        stacked_signed(ax, xi, dens, 0.55, colors)
+        stacked_signed(ax, xi, dens, 0.58, colors)
         totals.append(density(r["RF_total"], r["area_km2"]))
     ax.scatter(x, totals, s=46, marker="o", color="black", zorder=5, label="RF total")
     ax.scatter(x, [density(r["RH_total"], r["area_km2"]) for r in rows], s=52, marker="D",
                facecolor=SURFACE, edgecolor=MGMT["RH"], linewidth=1.8, zorder=5, label="RH total")
     for xi, t in zip(x, totals):
-        ax.text(xi + 0.33, t, f"{t:+.1f}", va="center", fontsize=8.8, color=INK2)
+        ax.text(xi + 0.34, t, f"{t:+.0f}", va="center", fontsize=8.6, color=INK2)
     ax.set_xticks(x)
-    ax.set_xticklabels([l for _, l, _ in STRATA], fontsize=8.2)
-    style(ax, "RF − Default (MgC/ha of stratum)")
+    ax.set_xticklabels([r["label"].replace("–", "–\n") for r in rows], fontsize=8.4)
+    ax.set_xlabel("Forest added (fraction of the cell)", fontsize=9.5, color=INK)
+    style(ax, "Difference vs Default (MgC/ha of land in the bin)")
     stacks = [[density(r["RF_pools"][k], r["area_km2"]) for k, _, _ in POOLS] for r in rows]
     top = max(sum(v for v in st if v > 0) for st in stacks)
     bot = min(sum(v for v in st if v < 0) for st in stacks)
-    ax.set_ylim(bot - 0.06 * (top - bot), top + 0.55 * (top - bot))
-    ax.set_xlim(-0.6, len(rows) - 0.1)
+    ax.set_ylim(bot - 0.08 * (top - bot), top + 0.42 * (top - bot))
+    ax.set_xlim(-0.6, len(rows) - 0.25)
     pool_handles = [plt.Rectangle((0, 0), 1, 1, color=c) for c in colors]
     h2, l2 = ax.get_legend_handles_labels()
     ax.legend(pool_handles + h2, [n for _, n, _ in POOLS] + l2, ncol=2, fontsize=8, frameon=False,
-              loc="upper right", handlelength=1.2, columnspacing=1.0)
-    ptitle(ax, "h", "Pool response by stratum")
+              loc="upper left", handlelength=1.2, columnspacing=1.0)
+    ptitle(ax, "h", "RF pool response by amount of forest added")
 
 
 # ------------------------------------------------------------- trajectories
@@ -347,11 +356,9 @@ def main():
     ap.add_argument("--res", default="4km", choices=["4km", "0.5deg"])
     ap.add_argument("--ssp", default="SSP3-7.0")
     ap.add_argument("--years", default="2091-2100", help="end-state window of the maps (as extracted)")
-    ap.add_argument("--strata", action="store_true",
-                    help="add the restoration/protection strata (panels f-h); needs the tree-fraction extracts")
+    ap.add_argument("--bins", action="store_true",
+                    help="add the land-cover increment bins (panels f-h); needs the tree-fraction extracts")
     ap.add_argument("--rf-year", type=int, default=2060, help="plateau year of the RF run for the land-cover increment")
-    ap.add_argument("--rest-thr", type=float, default=0.01)
-    ap.add_argument("--harv-thr", type=float, default=0.1)
     ap.add_argument("--cache-root", default=os.path.join(ROOT, "_cache/figure4"))
     ap.add_argument("--fig2-cache", default=os.path.join(ROOT, "_cache/figure2/future_4km"))
     ap.add_argument("--out-dir", default=os.path.join(ROOT, "figures/figure4"))
@@ -369,7 +376,7 @@ def main():
         assert tuple(int(v) for v in soc1[k]["map_years"]) == (y0, y1), f"{k}: soc1m map window is not {win}"
         maps[k]["TOTSOMC_1m"] = soc1[k]["mean_map"]
     extra = {}
-    if a.strata:
+    if a.bins:
         extra = {"base": load(os.path.join(cdir, "transient__treefrac_2023.npz")),
                  "rfcov": load(os.path.join(cdir, f"{a.ssp}_RF__treefrac_{a.rf_year}.npz"))}
     for k, m in extra.items():
@@ -390,7 +397,7 @@ def main():
     for k in F:
         for v in F[k].values():
             valid &= np.isfinite(v)
-    if a.strata:
+    if a.bins:
         inc = extra["rfcov"]["tree_frac"].astype("f8") - extra["base"]["tree_frac"].astype("f8")
         harv = maps["Def"]["WOOD_HARVESTC"].astype("f8")
         valid &= np.isfinite(inc) & np.isfinite(harv)
@@ -454,7 +461,7 @@ def main():
         print("\nNo 2024-2100 trajectories (needs 4 km and the Figure 2 totals); panels d-e skipped")
 
     os.makedirs(a.out_dir, exist_ok=True)
-    tag = "pool_strata" if a.strata else "pools"
+    tag = "pool_bins" if a.bins else "pools"
     base_name = f"fig4_{tag}_{a.res}_{a.ssp}_{win}"
     with open(os.path.join(a.out_dir, f"fig4_pools_{a.res}_{a.ssp}_{win}.csv"), "w", newline="") as fh:
         w = csv.writer(fh)
@@ -484,10 +491,10 @@ def main():
             "In-situ ecosystem = TOTECOSYSC − wood products.\n"
             "RF sets harvest to zero everywhere (restoration plus a region-wide harvest ban); its difference to Default also contains the SSP's own land-use drift. "
             f"Panels a-c: mean of {win}; d-e: annual domain totals. All sums are area × landfrac weighted.")
-    nrows = 1 + int(have_traj) + int(a.strata)
-    heights = [1.0] + ([1.0] if have_traj else []) + ([1.1] if a.strata else [])
+    nrows = 1 + int(have_traj) + int(a.bins)
+    heights = [1.0] + ([1.0] if have_traj else []) + ([1.15] if a.bins else [])
     fig = plt.figure(figsize=(17, 5.0 * nrows + 0.9), facecolor=SURFACE)
-    top, bottom = 1 - 0.75 / fig.get_figheight(), 1.2 / fig.get_figheight()
+    top, bottom = 1 - 0.75 / fig.get_figheight(), (1.75 if a.bins else 1.2) / fig.get_figheight()
     gs = fig.add_gridspec(nrows, 12, height_ratios=heights, hspace=0.4, wspace=2.2, left=0.05, right=0.985, top=top, bottom=bottom)
     panel_a(fig.add_subplot(gs[0, 0:3]), P["Def"], area, valid)
     panel_b(fig.add_subplot(gs[0, 3:8]), P, area, valid)
@@ -497,7 +504,7 @@ def main():
         panel_traj(fig.add_subplot(gs[r, 0:5]), T["year"], T["RF"][0], T["RF"][1], "d", "RF − Default, 2024–2100")
         panel_traj(fig.add_subplot(gs[r, 6:11]), T["year"], T["RH"][0], T["RH"][1], "e", "RH − Default, 2024–2100 (own y axis)")
         r += 1
-    if a.strata:
+    if a.bins:
         import cartopy.crs as ccrs
         d_area = float(np.sum(inc[valid] * area[valid]))
         print(f"\n  RF tree-area increment ({a.rf_year} vs transient 2023): {d_area / 1e3:+.1f} x10^3 km2 "
@@ -505,53 +512,46 @@ def main():
         n_neg = int((inc[valid] < -1e-3).sum())
         if n_neg:
             print(f"  WARNING: {n_neg} cells lose tree fraction (< -0.001) between 2023 and RF {a.rf_year}")
-        strata = classify(inc, harv, a.rest_thr, a.harv_thr)
-        rows = stratum_rows(P, F, strata, area, valid)
+        idx = bin_index(inc)
+        assert (idx[valid] >= 0).all(), "a valid cell has no increment bin"
+        rows = bin_rows(P, F, maps, idx, area, valid, inc, harv)
         for mg in ("RF", "RH"):
             sm = sum(rw[f"{mg}_total"] for rw in rows)
-            assert abs(sm - dom_total[mg]) < 1e-6 * max(1.0, abs(dom_total[mg])), f"strata do not close for {mg}: {sm} vs {dom_total[mg]}"
-        print(f"  closure: strata sum to the domain total (RF {dom_total['RF']:+.3f}, RH {dom_total['RH']:+.3f} PgC)")
-        print(f"\nStrata (rest_thr {a.rest_thr}, harv_thr {a.harv_thr} gC/m2/yr), RF/RH - Default, window mean {win}:")
-        print(f"{'stratum':26s}{'area 10^3km2':>13s}{'RF PgC':>9s}{'RF %':>6s}{'RF MgC/ha':>10s}{'RH PgC':>9s}{'RH MgC/ha':>10s}")
+            assert abs(sm - dom_total[mg]) < 1e-6 * max(1.0, abs(dom_total[mg])), f"bins do not close for {mg}: {sm} vs {dom_total[mg]}"
+        print(f"  closure: bins sum to the domain total (RF {dom_total['RF']:+.3f}, RH {dom_total['RH']:+.3f} PgC)")
+        tot_area = sum(rw["area_km2"] for rw in rows)
+        print(f"\nIncrement bins, RF/RH - Default, mean {win} (MgC/ha of land in the bin unless PgC):")
+        print(f"{'bin':12s}{'area 1e3km2':>12s}{'land %':>7s}{'mean inc':>9s}{'harvest':>8s}{'RF':>7s}{'RH':>6s}{'RF PgC':>8s}{'RF %':>6s}"
+              f"{'dSoil':>7s}{'dSOC1m':>7s}")
         for rw in rows:
-            print(f"{rw['label']:26s}{rw['area_km2'] / 1e3:13.1f}{rw['RF_total']:+9.3f}{100 * rw['RF_total'] / dom_total['RF']:6.0f}"
-                  f"{density(rw['RF_total'], rw['area_km2']):10.2f}{rw['RH_total']:+9.3f}{density(rw['RH_total'], rw['area_km2']):10.2f}")
-        print("\nStratum fluxes RF - Default (PgC/yr; implied fire = NEP - LAND_USE_FLUX - NBP, D4 identity):")
+            ar = rw["area_km2"]
+            print(f"{rw['label']:12s}{ar / 1e3:12.1f}{100 * ar / tot_area:7.1f}{rw['mean_increment']:9.3f}{rw['default_harvest']:8.1f}"
+                  f"{density(rw['RF_total'], ar):7.1f}{density(rw['RH_total'], ar):6.1f}{rw['RF_total']:+8.3f}{100 * rw['RF_total'] / dom_total['RF']:6.0f}"
+                  f"{density(rw['RF_pools']['soil'], ar):+7.2f}{density(rw['RF_soc_0_100'], ar):+7.2f}")
+        print("(harvest = Default WOOD_HARVESTC, gC/m2/yr; dSoil = whole-column SOC, dSOC1m = SOC 0-100 cm, RF - Default)")
+        print("\nBin fluxes RF - Default (PgC/yr; implied fire = NEP - LAND_USE_FLUX - NBP, D4 identity):")
         for rw in rows:
             f = rw["RF_fluxes"]
-            print(f"  {rw['label']:26s} NBP {f['NBP']:+.4f}  NEP {f['NEP']:+.4f}  LUF {f['LAND_USE_FLUX']:+.4f}  "
+            print(f"  {rw['label']:12s} NBP {f['NBP']:+.4f}  NEP {f['NEP']:+.4f}  LUF {f['LAND_USE_FLUX']:+.4f}  "
                   f"harvest {f['WOOD_HARVESTC']:+.4f}  implied fire {f['NEP'] - f['LAND_USE_FLUX'] - f['NBP']:+.4f}")
-        sens = []
-        print("\nThreshold sensitivity (area 10^3 km2 | RF benefit share %) restoration / protection only / no change:")
-        for rt in REST_SENS:
-            for ht in HARV_SENS:
-                rr = stratum_rows(P, F, classify(inc, harv, rt, ht), area, valid)
-                sens.append((rt, ht, rr))
-                print(f"  rest {rt:5.3f} harv {ht:5.2f}: " + " | ".join(
-                    f"{x['area_km2'] / 1e3:6.1f} {100 * x['RF_total'] / dom_total['RF']:4.0f}%" for x in rr))
         extent = [float(lon.min()), float(lon.max()), float(lat.min()), float(lat.max())]
-        panel_map(fig.add_subplot(gs[r, 0:4], projection=ccrs.PlateCarree()), lon, lat, strata, valid, extent)
-        sub = gs[r, 4:7].subgridspec(2, 1, hspace=0.25)
-        panel_strata_bars(fig.add_subplot(sub[0]), fig.add_subplot(sub[1]), rows)
-        panel_strata_pools(fig.add_subplot(gs[r, 7:12]), rows)
-        foot += (f"\nStrata from RF land cover (tree fraction {a.rf_year} − 2023 ≥ {a.rest_thr:g}) and Default harvest "
-                 f"(≥ {a.harv_thr:g} gC/m²/yr); the restoration stratum is restoration plus the harvest ban, not restoration alone.")
-        with open(os.path.join(a.out_dir, base_name + "_strata.csv"), "w", newline="") as fh:
+        panel_inc_map(fig, fig.add_subplot(gs[r, 0:4], projection=ccrs.PlateCarree()), lon, lat, inc, valid, extent, a.rf_year)
+        sub = gs[r, 4:8].subgridspec(2, 1, hspace=0.3)
+        panel_bin_bars(fig.add_subplot(sub[0]), fig.add_subplot(sub[1]), rows)
+        panel_bin_pools(fig.add_subplot(gs[r, 8:12]), rows)
+        foot += ("\nf-h: cells binned by the forest RF adds (tree fraction " + f"{a.rf_year}" + " − 2023). Every bin also has the harvest ban, and Default's harvest "
+                 "differs between bins (g: h = Default harvest, gC/m²/yr),\n"
+                 "so the bins bound, but do not separate, the ban and restoration effects. Bin edges were set after a diagnostic run.")
+        with open(os.path.join(a.out_dir, base_name + "_bins.csv"), "w", newline="") as fh:
             w = csv.writer(fh)
-            w.writerow(["stratum", "area_km2", "mgmt", "total_PgC", "MgC_per_ha"] + [k for k, _, _ in POOLS] + [f"d{v}_PgC_per_yr" for v in FLUX_VARS])
+            w.writerow(["bin", "area_km2", "mean_increment", "default_harvest_gC_m2_yr", "mgmt", "total_PgC", "MgC_per_ha", "soc_0_100cm_PgC"]
+                       + [f"{k}_PgC" for k, _, _ in POOLS] + [f"d{v}_PgC_per_yr" for v in FLUX_VARS])
             for rw in rows:
                 for mg in ("RF", "RH"):
-                    w.writerow([rw["label"], f"{rw['area_km2']:.1f}", mg, f"{rw[mg + '_total']:.5f}",
-                                f"{density(rw[mg + '_total'], rw['area_km2']):.4f}"]
+                    w.writerow([rw["label"], f"{rw['area_km2']:.1f}", f"{rw['mean_increment']:.4f}", f"{rw['default_harvest']:.3f}", mg,
+                                f"{rw[mg + '_total']:.5f}", f"{density(rw[mg + '_total'], rw['area_km2']):.4f}", f"{rw[mg + '_soc_0_100']:.5f}"]
                                + [f"{rw[mg + '_pools'][k]:.5f}" for k, _, _ in POOLS]
                                + [f"{rw[mg + '_fluxes'][v]:.5f}" for v in FLUX_VARS])
-        with open(os.path.join(a.out_dir, base_name + "_sensitivity.csv"), "w", newline="") as fh:
-            w = csv.writer(fh)
-            w.writerow(["rest_thr", "harv_thr_gC_m2_yr", "stratum", "area_km2", "RF_PgC", "RF_share_pct", "RH_PgC"])
-            for rt, ht, rr in sens:
-                for x in rr:
-                    w.writerow([rt, ht, x["label"], f"{x['area_km2']:.1f}", f"{x['RF_total']:.5f}",
-                                f"{100 * x['RF_total'] / dom_total['RF']:.2f}", f"{x['RH_total']:.5f}"])
 
     fig.suptitle(f"SEUS {a.res} {a.ssp}: which pools carry the management benefit, and when (RF, RH − Default)",
                  fontsize=13, color=INK, x=0.05, y=1 - 0.2 / fig.get_figheight(), ha="left")

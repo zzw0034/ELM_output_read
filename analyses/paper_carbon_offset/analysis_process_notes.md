@@ -580,7 +580,7 @@ Things to know before interpreting:
 
 ### 3.7 Figure 2, Default trajectories of the four SSPs, ELM 4 km (2026-10-01)
 
-`code/figure2/plot_default_ssp_trajectories.py`, md5 `b46387680752d9d4bb3adf4b6be452f8`, from the extracts of §3.5 (history
+`code/figure2/plot_default_ssp_trajectories.py`, md5 `0bb931a8a8f9885b21ce696aa88b6c3d`, from the extracts of §3.5 (history
 2000–2023) and §3.6 (the four **36000 s Default** runs, 2024–2100; the Default paired with RF and RH):
 
 - `figures/figure2/ssp_forest_area_change_2000-2100_4km.png`: tree-PFT area change since 2023 (805 ×10³ km²),
@@ -602,15 +602,16 @@ Checks and open points:
 - **Extreme negative years.** Each SSP has several years far below the historical range (2000–2023 minimum −0.22
   PgC/yr): minimum −0.69 (2086, SSP1-1.9), −0.74 (2054, SSP2-4.5), −0.80 (2056, SSP3-7.0), −1.27 (2094, SSP5-8.5);
   6–10 years per SSP below −0.3. Cause (drought, fire, heat) not yet diagnosed.
-- `figures/figure2/ssp_nbp_cumulative_2024-2100_4km.png`: cumulative NBP **since 2024** (0 at the end of 2023) as
-  four coloured lines on one panel, 2024–2100 only. At 2050 / 2075 / 2100 (PgC): SSP1-1.9 −0.42 / +0.72 / +0.49,
-  SSP2-4.5 +0.37 / +1.09 / +2.33, SSP3-7.0 +0.26 / +1.04 / +1.49, SSP5-8.5 −0.08 / +0.84 / +1.45. The curves wiggle
-  by several tenths of a PgC from single weather years (lowest values on the way: −0.59 SSP1-1.9 in 2046, −0.35
-  SSP2-4.5 in 2063, −0.66 SSP3-7.0 in 2056, −0.68 SSP5-8.5 in 2025; highest: +1.37 in 2082, +2.73 in 2095, +1.75 in
-  2093, +2.17 in 2093). The order SSP2-4.5 > SSP3-7.0 ≈ SSP5-8.5 > SSP1-1.9 holds at 2100 but not along the way:
-  SSP2-4.5 is the highest curve in 2027–2038 and from 2085, SSP3-7.0 in 2042–2046 and 2065–2069, SSP5-8.5 in
-  2078–2081; SSP5-8.5 is the lowest in 2024–2030, SSP1-1.9 in 2045–2048, 2068–2075 and 2083–2100. Versions that
-  accumulated from 2000, or drew the annual lines, were replaced by this one.
+- `figures/figure2/ssp_nbp_cumulative_2010-2100_4km.png`: cumulative NBP **since 2010** as four coloured lines on one
+  panel: the 2010–2023 history in grey (+0.89 PgC by 2023), then each SSP continues from it. At 2050 / 2075 / 2100
+  (PgC): SSP1-1.9 +0.47 / +1.61 / +1.38, SSP2-4.5 +1.26 / +1.98 / +3.22, SSP3-7.0 +1.15 / +1.93 / +2.38, SSP5-8.5
+  +0.81 / +1.73 / +2.34 (added since 2023: +0.49, +2.33, +1.49, +1.45). All four curves stay positive through the
+  century (lowest: +0.21 SSP5-8.5 in 2025, +0.23 SSP3-7.0 in 2056, +0.30 SSP1-1.9 in 2046, +0.54 SSP2-4.5 in 2063; highest:
+  +2.26 in 2082, +3.62 in 2095, +2.63 and +3.06 in 2093). The curves wiggle by several tenths of a PgC from single weather
+  years. The order SSP2-4.5 > SSP3-7.0 ≈ SSP5-8.5 > SSP1-1.9 holds at 2100 but not along the way: SSP2-4.5 is the
+  highest curve in 2027–2038 and from 2085, SSP3-7.0 in 2042–2046 and 2065–2069, SSP5-8.5 in 2078–2081; SSP5-8.5 is the
+  lowest in 2024–2030, SSP1-1.9 in 2045–2048, 2068–2075 and 2083–2100. The start year is a parameter (`cumulative_start`);
+  versions starting in 2000 or 2024, and the annual-line version, were replaced by this one.
 - Forest area at 2024 jumps for SSP1-1.9 (+10.3 ×10³ km² from 2023) and little for the others (+0.2 to +3.5).
 
 ## 4. Script and product locations

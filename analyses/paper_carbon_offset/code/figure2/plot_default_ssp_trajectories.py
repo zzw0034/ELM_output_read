@@ -20,7 +20,7 @@ grey; black axes; one y axis per panel.
 
 Runs locally, from the analysis root:
     /Users/zw5/ORNL_workplace/ELM_output_read/.venv/bin/python \\
-        code/figure2/plot_default_ssp_trajectories.py [year_min]
+        code/figure2/plot_default_ssp_trajectories.py [year_min [cumulative_start]]   # defaults 2000, 2010
 """
 import os
 import sys
@@ -145,21 +145,26 @@ def main():
     fig.savefig(out2, dpi=200, facecolor="white")
     plt.close(fig)
     print(f"Saved {out1}\nSaved {out2}")
-    # ---- 3. cumulative NBP of the four SSPs from the first projection year (2024), one panel
-    fy0 = int(fut[SSPS[0]]["year"][0])
+    # ---- 3. cumulative NBP since CSTART (default 2010): grey history, then the four SSPs continue from the 2023 value
+    cstart = int(sys.argv[2]) if len(sys.argv) > 2 else 2010
+    assert cstart >= hist["year"][0], f"history starts in {hist['year'][0]}; pass year_min <= {cstart}"
+    hm = hist["year"] >= cstart
+    hyr, chist = hist["year"][hm], np.cumsum(hist["NBP"][hm])
     fig, ax = plt.subplots(figsize=(12, 6.8))
+    ax.plot(hyr, chist, color=HIST_DARK, lw=3.0, solid_capstyle="round", zorder=3, label="historical")
     ends = {}
     for ssp in SSPS:
         d = fut[ssp]
-        yr = np.concatenate([[fy0 - 1], d["year"]])
-        cum = np.concatenate([[0.0], np.cumsum(d["NBP"])])
+        yr = np.concatenate([[hyr[-1]], d["year"]])
+        cum = np.concatenate([[chist[-1]], chist[-1] + np.cumsum(d["NBP"])])
         ends[ssp] = cum
         ax.plot(yr, cum, color=COLORS[ssp], lw=3.0, solid_capstyle="round", zorder=4, label=ssp)
     ax.axhline(0, color="black", lw=0.9, zorder=2)
-    ax.set_xlim(fy0 - 3, 2100 + 2)
-    style(ax, f"cumulative NBP since {fy0}  (PgC)")
+    ax.axvline(hyr[-1] + 0.5, color=HIST_DARK, lw=0.9, ls=(0, (4, 3)), zorder=1)
+    ax.set_xlim(cstart - 2, 2100 + 2)
+    style(ax, f"cumulative NBP since {cstart}  (PgC)")
     ax.set_xlabel("year", color=INK, fontsize=12)
-    ax.set_title(f"Cumulative regional NBP since {fy0} (positive = sink) under the four SSPs, ELM 4 km Default runs", loc="left",
+    ax.set_title(f"Cumulative regional NBP since {cstart} (positive = sink) under the four SSPs, ELM 4 km Default runs", loc="left",
                  fontsize=14, fontweight="semibold", pad=12)
     # end labels, nudged apart when two values are closer than the label height
     order = sorted(SSPS, key=lambda k: ends[k][-1])
@@ -173,15 +178,16 @@ def main():
         ax.annotate(f"{ssp}  {ends[ssp][-1]:+.1f}", xy=(2100, ends[ssp][-1]), xytext=(2103, pos[ssp]), textcoords="data", fontsize=12,
                     color=INK, va="center", fontweight="semibold", annotation_clip=False,
                     arrowprops=dict(arrowstyle="-", color="#b9b8b3", lw=0.8, shrinkA=0, shrinkB=3))
-    ax.legend(frameon=False, loc="upper left", fontsize=11, labelcolor=INK2, ncol=4, handlelength=2.0, columnspacing=1.4)
-    fig.text(0.075, 0.005, f"Cumulative sum of the annual regional NBP from {fy0} (0 at the end of {fy0 - 1}).\n"
-             "SSP runs use crit_dayl_stress = 36000 s. NBP includes fire, land use and harvest.", fontsize=9.5, color=INK2, va="bottom")
+    ax.legend(frameon=False, loc="upper left", fontsize=11, labelcolor=INK2, ncol=5, handlelength=2.0, columnspacing=1.4)
+    fig.text(0.075, 0.005, f"Cumulative sum of the annual regional NBP from {cstart}; the {hyr[-1] + 1}–2100 projections continue from the "
+             f"2023 value ({chist[-1]:+.2f} PgC).\nSSP runs use crit_dayl_stress = 36000 s. NBP includes fire, land use and harvest.",
+             fontsize=9.5, color=INK2, va="bottom")
     fig.tight_layout(rect=(0, 0.04, 0.87, 1))
-    out3 = os.path.join(OUT_DIR, f"ssp_nbp_cumulative_{fy0}-2100_4km.png")
+    out3 = os.path.join(OUT_DIR, f"ssp_nbp_cumulative_{cstart}-2100_4km.png")
     fig.savefig(out3, dpi=200, facecolor="white", bbox_inches="tight")
     plt.close(fig)
     print(f"Saved {out3}")
-    print(f"cumulative NBP since {fy0}, at 2050 / 2075 / 2100 (PgC); lowest and highest value on the way:")
+    print(f"cumulative NBP since {cstart}: 2023 {chist[-1]:+.2f} PgC; at 2050 / 2075 / 2100 (PgC), min and max on the way:")
     for ssp in SSPS:
         yrs = fut[ssp]["year"]; c = ends[ssp][1:]
         i = lambda yy: int(np.where(yrs == yy)[0][0])

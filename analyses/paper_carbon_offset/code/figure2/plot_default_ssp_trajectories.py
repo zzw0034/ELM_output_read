@@ -128,9 +128,9 @@ def main():
         ax.axhline(0, color="black", lw=0.9, zorder=3)
         ax.axvline(hist["year"][-1] + 0.5, color=HIST_DARK, lw=0.9, ls=(0, (4, 3)), zorder=1)
         ax.set_title(ssp, loc="left", fontsize=14, fontweight="semibold", pad=8, color=INK)
-        m = d["NBP"].mean()
-        ax.text(0.97, 0.05, f"2024–2100 mean {m:+.3f} PgC yr$^{{-1}}$", transform=ax.transAxes, ha="right", va="bottom",
-                fontsize=11.5, color=INK, fontweight="semibold")
+        tot = d["NBP"].sum()
+        ax.text(0.97, 0.05, f"cumulative {d['year'][0]}–{d['year'][-1]}: {tot:+.2f} PgC", transform=ax.transAxes, ha="right",
+                va="bottom", fontsize=11.5, color=INK, fontweight="semibold")
         style(ax, "PgC yr$^{-1}$" if ax in axes[:, 0] else None)
         ax.set_xlim(y0 - 2, 2102)
         ax.set_ylim(lo, hi)

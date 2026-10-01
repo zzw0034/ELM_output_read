@@ -580,14 +580,15 @@ Things to know before interpreting:
 
 ### 3.7 Figure 2, Default trajectories of the four SSPs, ELM 4 km (2026-10-01)
 
-`code/figure2/plot_default_ssp_trajectories.py`, md5 `0bb931a8a8f9885b21ce696aa88b6c3d`, from the extracts of §3.5 (history
+`code/figure2/plot_default_ssp_trajectories.py`, md5 `364cd4ca465f27a7e5ba99e636fbdf65`, from the extracts of §3.5 (history
 2000–2023) and §3.6 (the four **36000 s Default** runs, 2024–2100; the Default paired with RF and RH):
 
 - `figures/figure2/ssp_forest_area_change_2000-2100_4km.png`: tree-PFT area change since 2023 (805 ×10³ km²),
   four SSPs on one panel. At 2100: SSP1-1.9 +55, SSP2-4.5 +111, SSP3-7.0 −32, SSP5-8.5 +24 ×10³ km² (2050:
   +36, +53, −19, +9). Lines have kinks about every 5 years, probably the spacing of the land-use input (not checked).
 - `figures/figure2/ssp_nbp_annual_2000-2100_4km.png`: annual NBP, one panel per SSP, annual bars and an 11-year
-  running mean. 2024–2100 mean NBP +0.006 (SSP1-1.9), +0.030 (SSP2-4.5), +0.019 (SSP3-7.0), +0.019 (SSP5-8.5)
+  running mean. Each panel is annotated with the **cumulative** 2024–2100 NBP (+0.49, +2.33, +1.49, +1.45 PgC for
+  SSP1-1.9, SSP2-4.5, SSP3-7.0, SSP5-8.5), not a mean (user request 2026-10-01). 2024–2100 mean NBP +0.006 (SSP1-1.9), +0.030 (SSP2-4.5), +0.019 (SSP3-7.0), +0.019 (SSP5-8.5)
   PgC/yr, against +0.051 for 2000–2023 (the later means are small sinks; the 11-year mean dips below zero in
   several decades).
 

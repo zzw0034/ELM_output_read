@@ -615,6 +615,22 @@ Checks and open points:
   versions starting in 2000 or 2024, and the annual-line version, were replaced by this one.
 - Forest area at 2024 jumps for SSP1-1.9 (+10.3 ×10³ km² from 2023) and little for the others (+0.2 to +3.5).
 
+### 3.8 Figure 2, presentation versions that show the four SSPs on one slide (2026-10-01)
+
+`code/figure2/plot_management_summary_across_ssps.py`, md5 `1d74e265d0b5cfdde829771fb06a22fa`, built from the same paired benefit
+curves as §3.6 (4 km only):
+
+- `figures/figure2/management_summary_2100_4km.png`: values at 2100, x = the four SSPs; row 1 cumulative NBP benefit
+  since 2024, row 2 forest-area change; left RF and RH (36000 s Default), right DF (38000 s Default, own axes).
+  RF +3.7 / +4.5 / +5.2 / +5.3 PgC and RH +1.0 / +1.5 / +1.0 / +1.2 PgC (SSP1-1.9 / 2-4.5 / 3-7.0 / 5-8.5), DF +11.2 /
+  +11.8 / +10.9 / +10.7; forest area RF +87 / +31 / +174 / +118, RH 0, DF +860 / +916 / +773 / +829 ×10³ km².
+- `figures/figure2/management_rf_rh_cumNBP_4ssp_4km.png`: one panel per SSP with the RF and RH cumulative NBP benefit
+  curves on a shared axis (DF, ≈ +11 PgC, is on the summary figure).
+
+The ranking DF > RF > RH holds in every SSP; RF varies most between SSPs (3.7 to 5.3 PgC, ≈ 40 %), RH 1.0 to 1.5.
+Suggested slide order: one SSP (SSP3-7.0) in full from §3.6 to explain how to read the panels, the summary figure for
+the cross-SSP comparison, the other three §3.6 figures as backup.
+
 ## 4. Script and product locations
 
 Since 2026-10-01 `code/` and `figures/` are organized by manuscript figure

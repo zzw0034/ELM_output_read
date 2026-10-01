@@ -25,6 +25,7 @@ __pycache__/
 # Model output and large binary data
 *.nc
 *.nc4
+*.npz
 *.h5
 *.hdf5
 *.zarr/

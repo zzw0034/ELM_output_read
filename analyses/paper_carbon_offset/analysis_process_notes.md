@@ -625,7 +625,7 @@ Checks and open points:
 
 ### 3.8 Figure 2, presentation versions that show the four SSPs on one slide (2026-10-01)
 
-`code/figure2/plot_management_summary_across_ssps.py`, md5 `8d99f1a1c5cdf8d375e61312d22e9208`, built from the same paired benefit
+`code/figure2/plot_management_summary_across_ssps.py`, md5 `13c71564ec7956b4efced540787ad790`, built from the same paired benefit
 curves as §3.6 (4 km only):
 
 - `figures/figure2/management_summary_2100_4km.png`: values at 2100, x = the four SSPs; row 1 cumulative NBP benefit
@@ -638,6 +638,9 @@ curves as §3.6 (4 km only):
 - `figures/figure2/management_summary_carbon_2100_4km.png`: the carbon-only version of the 2100 summary (one row, RF and RH |
   DF, no forest-area panel), made at the user's request because the forest-area panels of the paired-difference version were
   hard to read (the DF forest panel is just the Default's own forest area, since DF holds zero forest). The original figure is kept.
+  It carries a short RF design note beside the RF bars (grassland converted back to forest where forest was lost since 1850, limited
+  by the grass there, +142 ×10³ km² by 2050 = 97 % of the 1850 forest area; linear ramp 2024–2050 then held fixed; one land-use file
+  for all SSPs; all harvest banned, also on the existing forest), numbers from the RF forest-area extracts (804.9 in 2023, 947.2 from 2049).
 
 The ranking DF > RF > RH holds in every SSP; RF varies most between SSPs (3.7 to 5.3 PgC, ≈ 40 %), RH 1.0 to 1.5.
 Suggested slide order: one SSP (SSP3-7.0) in full from §3.6 to explain how to read the panels, the summary figure for

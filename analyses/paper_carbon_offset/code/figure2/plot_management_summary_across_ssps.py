@@ -136,9 +136,21 @@ def main():
     bars(axes[1], data, ("DF",), 0, fc, None)
     axes[0].set_title("Forest restoration/protection (RF) and reduced harvest (RH)", loc="left", fontsize=14, fontweight="semibold", pad=10)
     axes[1].set_title("Avoided loss (DF, upper bound)", loc="left", fontsize=14, fontweight="semibold", pad=10)
-    axes[0].legend(handles=[Patch(color=COLORS["RF"], label="RF  restoration/protection"),
-                            Patch(color=COLORS["RH"], label="RH  reduced harvest")],
-                   frameon=False, loc="upper left", fontsize=11.5, labelcolor=INK2)
+    axes[0].set_ylim(0, 9.4)  # headroom for the RF design note, which sits above the lower SSP1 and SSP2 bars
+    axes[0].legend(handles=[Patch(color=COLORS["RF"], label="RF"), Patch(color=COLORS["RH"], label="RH")],
+                   frameon=False, loc="upper right", bbox_to_anchor=(1.0, 0.99), fontsize=12.5, labelcolor=INK2)
+    # RF design note (numbers from the RF forest-area extract: 804.9 in 2023, 947.2 from 2049; 1850 forest 976.0)
+    axes[0].text(0.015, 0.985,
+                 "RF design: restoration + protection\n"
+                 "• grassland → forest where forest was lost\n"
+                 "   since 1850, limited by the grass there\n"
+                 "   (+142 ×10³ km² by 2050, 97 % of the\n"
+                 "   1850 forest area)\n"
+                 "• linear ramp 2024–2050, then held fixed;\n"
+                 "   one land-use file for all four SSPs\n"
+                 "• all harvest banned, also on existing forest",
+                 transform=axes[0].transAxes, ha="left", va="top", fontsize=10.5, color=INK, linespacing=1.45,
+                 bbox=dict(boxstyle="round,pad=0.55", fc="#f4f3ef", ec=COLORS["RF"], lw=1.8), zorder=6)
     fig.suptitle("Carbon benefit of forest management at 2100 under the four SSPs, ELM 4 km", x=0.045, y=1.0, ha="left",
                  fontsize=17, fontweight="semibold")
     fig.text(0.045, -0.02, "RF − Default and RH − Default (36000 s Default); Default − DF (38000 s Default). Positive = more carbon stored "

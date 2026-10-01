@@ -55,8 +55,13 @@ def main():
         with netCDF4.Dataset(f) as ds:
             tb = np.ma.filled(ds["time_bounds"][:], np.nan)
             y0 = int(ds["time"].units.split("since")[1].strip()[:4])
-            assert (tb[0, 0], tb[-1, 1]) == (365 * (year - y0), 365 * (year - y0 + 1)), \
+            lo, hi = 365 * (year - y0), 365 * (year - y0 + 1)
+            # The very first record of a run starts one model time step early
+            # (1850 file: -1/24 d), so allow < 1 day of slack, and say so.
+            assert abs(tb[0, 0] - lo) < 1.0 and abs(tb[-1, 1] - hi) < 1.0, \
                 f"{os.path.basename(f)}: time_bounds {tb[0, 0]}-{tb[-1, 1]} do not span {year}"
+            if (tb[0, 0], tb[-1, 1]) != (lo, hi):
+                print(f"  note: {year} time_bounds {tb[0, 0]:.4f}-{tb[-1, 1]:.4f} d (expected {lo}-{hi}); weights used as stored", flush=True)
             nlon = ds.dimensions["lon"].size
             cell_km2 = np.ma.filled(ds["area"][:], np.nan) * np.ma.filled(ds["landfrac"][:], np.nan)
             cell_km2 = np.where(np.isfinite(cell_km2), cell_km2, 0.0)

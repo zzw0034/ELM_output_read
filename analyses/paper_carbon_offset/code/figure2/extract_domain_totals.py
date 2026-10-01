@@ -14,7 +14,7 @@ is the product-pool term (TOTPRODC is not in h0, blueprint D4): it should be
 ~0 early in the transient and positive where wood products accumulate. The
 h0 long_name of TOTECOSYSC says "excl product pools" while ColumnDataType.F90
 sums TOTPRODC into it; the residual decides, so it is saved, not assumed.
-Fluxes (gC/m2/s x 365 x 86400 -> per year): NBP, WOOD_HARVESTC, LAND_USE_FLUX.
+Fluxes (gC/m2/s x 365 x 86400 -> per year): GPP, NBP, WOOD_HARVESTC, LAND_USE_FLUX.
 
 Self-contained on purpose (the Pathfinder mirror is an rsync copy; do not
 import common.py). 4 km h0 files are ~12 GB but only these 2-D variables are
@@ -34,7 +34,7 @@ import numpy as np
 
 CASE_ROOT = "/scratch/hpcl-cli185/zw5/cime_output_dirs/20260910_seus_rerun"
 STOCKS = ["TOTECOSYSC", "TOTVEGC", "TOTVEGC_ABG", "CWDC", "TOTLITC", "TOTSOMC"]
-FLUXES = ["NBP", "WOOD_HARVESTC", "LAND_USE_FLUX"]
+FLUXES = ["GPP", "NBP", "WOOD_HARVESTC", "LAND_USE_FLUX"]
 SEC_PER_YEAR = 365 * 86400.0  # noleap calendar
 
 

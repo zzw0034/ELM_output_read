@@ -271,7 +271,10 @@ cite the catalogue record in Methods. Foliage is **not** included.
   The two files without `_bytype` (jobs 596693, 596700) come from the
   previous version (md5 `bba97d47f1ff411f0e2945f56f2297ee`, commit `76bc6f5`),
   which was overwritten on Pathfinder and survives only in Git. The
-  plotting scripts never ran on Pathfinder.
+  plotting scripts never ran on Pathfinder. After the 2026-10-01
+  reorganization the script (`code/figure1/`, md5
+  `e91f200c9655defc73bd03bb15b33eb8`) differs from the `1fd2a9a9…` version
+  only in the usage path in its docstring; the computation is unchanged.
 
 ## 4. Script and product locations
 

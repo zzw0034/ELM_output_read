@@ -702,9 +702,20 @@ Things to know before interpreting:
 - **Derived products are plausible:** Default 0.88 PgC, positive in every cell (minimum +0.21 gC/m²),
   so TOTPRODC is inside TOTECOSYSC as in blueprint D4. Management lowers the product pool (RF −0.76,
   RH −0.31): the in-situ benefit is larger than the ecosystem + products benefit.
-- **SOC holds 60 % of the Default stock but none of the RF benefit:** RF − Default SOC is −0.13 PgC
-  (RH +0.03). Aboveground vegetation is 83 % of the RF total (87 % of RH). A negative SOC response is a
-  model result for this scenario and horizon, not a general empirical claim (blueprint E4).
+- **SOC: large stock, small and uncertain increment (wording corrected 2026-10-01; the first version
+  said "none of the RF benefit").** RF − Default SOC is −0.133 PgC, −0.5 % of the 26.68 PgC SOC stock
+  (RH +0.03), against +4.97 PgC in total; aboveground vegetation is 83 % of the RF total (87 % of RH).
+  The mean hides a wide spread: 54 % of the land area has a negative ΔSOC, and the area-weighted
+  5/25/50/75/95 percentiles of ΔSOC are −749/−197/−7/+67/+249 gC/m², so positive and negative cells
+  cancel. The sign is a model result for this scenario and horizon (blueprint E4), not an empirical
+  claim, and ELM SOC accuracy is limited (the two observed products agree at r ≈ 0.33, §3.4). A small
+  mineral-soil response on decadal scales is what the literature tends to find, and grass-to-forest
+  conversion can lower SOC at first (to be checked and cited before use). Test with the strata.
+- **Most of the vegetation gain is not land-cover change.** 792 ×10³ km² of land has ΔTOTVEGC > 3000
+  gC/m² (mean +5545) and carries 83 % of the total vegetation gain, but the paired forest-area
+  difference is only +173.8 ×10³ km² (§3.6). The gain is therefore mostly where RF's region-wide harvest
+  ban acts on existing forest, not where it restores forest. This is an inference from the maps
+  (ΔTOTVEGC is not a restoration indicator); the strata (`--strata`) decide it.
 - RF is restoration **plus** a region-wide harvest ban, and RF − Default also contains the SSP's own
   land-use drift (RF replaces the land trajectory); this is stated in the figure footnote.
 - float32 maps: the closure check adds the stocks in float64 (the first run failed a 1e-3 tolerance on

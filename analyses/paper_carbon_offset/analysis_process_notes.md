@@ -792,9 +792,9 @@ checked (to read in `ColumnDataType.F90`, `nlevdecomp_full`). The ΔSOC of §3.1
 response; a 0-30 or 0-100 cm ΔSOC would need `TOTSOMC_1m` (in h0) or `SOIL1-4C_vr` added to
 `extract_pool_maps.py`. Field studies of afforestation and harvest mostly measure the top 30-100 cm.
 
-**2024-2100 trajectories** (`code/figure4/plot_pool_trajectories.py`, md5 `e146edd5068e86e520d20ff178cfc0a7`;
-input: the annual domain totals of §3.6 in `_cache/figure2/future_4km/`, no new job) → 
-`figures/figure4/fig4_pool_trajectories_4km_SSP3-7.0.{png,csv}`. RF − Default, PgC:
+**2024-2100 trajectories** (first drawn by a stand-alone script, since 2026-10-01 panels d-e of
+`plot_pool_strata.py`, §3.13; input: the annual domain totals of §3.6 in `_cache/figure2/future_4km/`, no new job).
+Whole-column SOC (`TOTSOMC`) version, RF − Default, PgC:
 
 | pool | 2030 | 2050 | 2075 | 2100 | mean 2091-2100 | mean 2024-2100 |
 |---|---:|---:|---:|---:|---:|---:|
@@ -815,6 +815,45 @@ about 2060 and +0.03 at the end.
   vegetation builds for decades, so the benefit starts small; CWD is negative until about 2045.
 - RF's SOC difference declines for about 50 years (minimum −0.18 PgC in 2075) and recovers partly (−0.13 PgC in 2100);
   it is never positive. RH's SOC turns positive late.
+
+### 3.13 Figure 4 with SOC to 1 m and the 2024-2100 trajectory panels, ELM 4 km SSP3-7.0 (2026-10-01)
+
+Redo of the Figure 4 soil carbon at 0-100 cm (`TOTSOMC_1m`) and the trajectories added to the figure (user decision
+2026-10-01). Extractor `code/figure4/extract_soc1m.py` (md5 `a5fa0a6a0833882a087dc193b56a8d82`): per case the annual domain
+total of `TOTSOMC_1m` for 2024-2100 and the 2091-2100 mean map. **Slurm jobs 602384 (Default), 602385 (RF), 602386 (RH)**,
+`serial`/`normal`, 1 core, 32 GB, 4 h limit, COMPLETED in 79-88 s, empty stderr (dedicated partition occupied).
+Outputs `_cache/figure4/4km/SSP3-7.0[_RF|_RH]__soc1m_2024-2100.npz`, copied locally, md5 identical:
+`29b0d435e0fd77cbd1063458b411c5d0` (Default), `09b6e736d55e816768a310847dcb8ec2` (RF),
+`9c35c67530bfe73ab41f8fa667e4c371` (RH). Plot `code/figure4/plot_pool_strata.py` (md5
+`2cc55af28cf30fd7f459e6d415fefe63`; `--strata` adds the strata row) → `figures/figure4/fig4_pool_strata_4km_SSP3-7.0_2091-2100.png`
+(without `--strata`: `fig4_pools_…png`) and the pool and trajectory CSVs. The superseded stand-alone
+`plot_pool_trajectories.py` (md5 `e146edd5068e86e520d20ff178cfc0a7`) was removed.
+
+Seven pools now add up to TOTECOSYSC: aboveground vegetation, other vegetation, CWD, litter, **SOC 0-100 cm
+(`TOTSOMC_1m`)**, **SOC below 1 m (`TOTSOMC` − `TOTSOMC_1m`)**, derived wood products. Default 2091-2100 stocks (PgC): 8.02, 5.70, 2.75,
+0.47, 17.71, 8.96, 0.88 (total 44.50); the 0-100 cm SOC (17.71 PgC) is 66 % of the whole-column 26.68 PgC.
+
+| pool | RF − Default, 2091-2100 (PgC) | RH − Default |
+|---|---:|---:|
+| aboveground vegetation | +4.15 | +0.83 |
+| other vegetation | +1.14 | +0.33 |
+| CWD | +0.56 | +0.07 |
+| litter | +0.01 | +0.01 |
+| **SOC 0-100 cm** | **−0.156** | **+0.030** |
+| SOC below 1 m | +0.023 | −0.002 |
+| wood products (derived) | −0.76 | −0.31 |
+| total | +4.97 | +0.96 |
+
+- **Checks passed:** the annual totals reproduce the maps exactly (2091-2100 mean of the trajectory vs the map: total
+  +4.975 vs +4.975 RF, +0.955 vs +0.955 RH; SOC 0-100 cm −0.156 vs −0.156, +0.030 vs +0.030; below 1 m +0.023 vs +0.023).
+  `TOTSOMC_1m` never exceeds `TOTSOMC` in a cell; seven pools sum to TOTECOSYSC.
+- **The SOC result holds at 0-100 cm and is a little larger:** RF −0.156 PgC (−0.9 % of the 17.71 PgC top-metre stock),
+  not −0.133. The soil below 1 m is nearly unchanged (+0.023), so the loss is in the top metre, where the field
+  studies measure. RF's SOC 0-100 cm difference falls for about 50 years (minimum −0.197 PgC in 2075) and recovers
+  partly (−0.151 in 2100); it is never positive. RH's is slightly negative until about 2060 (minimum −0.012 in 2039),
+  positive from 2064 and +0.036 PgC in 2100.
+- The end-state figures of §3.10-3.11 are unchanged except for the SOC split; the strata table of §3.11 is the
+  whole-column version of the same maps and its totals did not change.
 
 ## 4. Script and product locations
 

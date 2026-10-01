@@ -341,7 +341,8 @@ def main():
     lat, lon, area = maps["Def"]["lat"], maps["Def"]["lon"], maps["Def"]["area_km2"].astype("f8")
     lon = np.where(lon > 180, lon - 360, lon)
 
-    P = {k: pools_of({v: m[v] for v in ("TOTECOSYSC", "TOTVEGC", "TOTVEGC_ABG", "CWDC", "TOTLITC", "TOTSOMC")})
+    # float32 stocks of ~3e4 gC/m2 carry ~2e-3 gC/m2 rounding: add them in float64
+    P = {k: pools_of({v: m[v].astype("f8") for v in ("TOTECOSYSC", "TOTVEGC", "TOTVEGC_ABG", "CWDC", "TOTLITC", "TOTSOMC")})
          for k, m in maps.items()}
     F = {k: {v: m[v] for v in FLUX_VARS} for k, m in maps.items()}
 
@@ -361,8 +362,8 @@ def main():
 
     # ---- checks, all printed
     for k in P:
-        closure = np.abs(sum(P[k].values())[valid] - maps[k]["TOTECOSYSC"][valid]).max()
-        assert closure < 1e-3, f"{k}: pools do not sum to TOTECOSYSC (max {closure})"
+        closure = np.abs(sum(P[k].values())[valid] - maps[k]["TOTECOSYSC"][valid].astype("f8")).max()
+        assert closure < 1e-6, f"{k}: pools do not sum to TOTECOSYSC (max {closure})"
         pr = pg(P[k]["prod"], area, valid)
         print(f"  derived product pool {k:3s}: {pr:+.4f} PgC  (min per cell {P[k]['prod'][valid].min():+.2f} gC/m2)")
     assert pg(P["Def"]["prod"], area, valid) >= -1e-3, \

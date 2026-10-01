@@ -664,6 +664,55 @@ RF is identical in every SSP (+5.47 ×10³ km² per year for 26 years, 2024–20
 976.0) and RH leaves forest area unchanged (asserted equal to the Default in every year). The documented RF ramp "2024→2050" reaches
 its plateau one year earlier in the output (2049).
 
+### 3.10 Figure 4, pool contributions and three boundaries, ELM 4 km SSP3-7.0 (2026-10-01)
+
+First pass of Figure 4 (user decision 2026-10-01: panels a-c only, no strata yet). 4 km, SSP3-7.0,
+mean of 2091-2100. RF − Default and RH − Default against the 36000 s Default (blueprint A2).
+Extractor `code/figure4/extract_pool_maps.py` (md5 `e36ca89225b8ac1b5b5981652f20661e`): per-gridcell
+2091-2100 mean of TOTECOSYSC, TOTVEGC, TOTVEGC_ABG, CWDC, TOTLITC, TOTSOMC (gC/m²) and NBP, NEP,
+LAND_USE_FLUX, WOOD_HARVESTC (gC/m²/yr). **Slurm jobs 602350 (Default), 602351 (RF), 602352 (RH)** on
+`serial`/`normal`, 1 core, 32 GB, 2 h limit (dedicated partition occupied by another user), all
+COMPLETED in 51-58 s, empty stderr. Outputs `_cache/figure4/4km/SSP3-7.0[_RF|_RH]__pools_2091-2100.npz`
+on Pathfinder (proj-shared root), copied to the same local path, md5 identical:
+`3078046da217df677ccebf2d502ec2c6` (Default), `f33fa43e88e0500d7b1900088af720d7` (RF),
+`acf22634b8d215a3a9e2fee1a54e231b` (RH). Plot `code/figure4/plot_pool_strata.py` (md5
+`fad48adb4c5dbb91b8934e4eef6876b6`) → `figures/figure4/fig4_pools_4km_SSP3-7.0_2091-2100.{png,csv}`.
+
+Pools: aboveground vegetation = TOTVEGC_ABG; other vegetation = TOTVEGC − TOTVEGC_ABG (roots plus
+storage/transfer); CWDC; TOTLITC; TOTSOMC; wood products derived as TOTECOSYSC − (TOTVEGC + CWDC +
+TOTLITC + TOTSOMC). All sums area × landfrac weighted over 75,916 valid cells (1,356.1 ×10³ km²).
+
+| pool | Default (PgC) | RF − Default | RH − Default |
+|---|---:|---:|---:|
+| aboveground vegetation | 8.02 | +4.15 | +0.83 |
+| other vegetation | 5.70 | +1.14 | +0.33 |
+| coarse woody debris | 2.75 | +0.56 | +0.07 |
+| litter | 0.47 | +0.01 | +0.01 |
+| soil organic carbon | 26.68 | −0.13 | +0.03 |
+| wood products (derived) | 0.88 | −0.76 | −0.31 |
+| **total (TOTECOSYSC)** | **44.50** | **+4.97** | **+0.96** |
+
+Three boundaries (RF / RH, PgC): aboveground vegetation +4.15 / +0.83; in-situ ecosystem (excluding
+products) +5.73 / +1.27; ecosystem + products +4.97 / +0.96. RF:RH ratio 5.0 / 4.5 / 5.2.
+
+Things to know before interpreting:
+
+- **Cross-check against §3.6:** the TOTECOSYSC differences (RF +4.97, RH +0.96) match that table's
+  2100 values for SSP3-7.0 (+5.03, +0.95), which are single-year, here a 10-year mean.
+- **Derived products are plausible:** Default 0.88 PgC, positive in every cell (minimum +0.21 gC/m²),
+  so TOTPRODC is inside TOTECOSYSC as in blueprint D4. Management lowers the product pool (RF −0.76,
+  RH −0.31): the in-situ benefit is larger than the ecosystem + products benefit.
+- **SOC holds 60 % of the Default stock but none of the RF benefit:** RF − Default SOC is −0.13 PgC
+  (RH +0.03). Aboveground vegetation is 83 % of the RF total (87 % of RH). A negative SOC response is a
+  model result for this scenario and horizon, not a general empirical claim (blueprint E4).
+- RF is restoration **plus** a region-wide harvest ban, and RF − Default also contains the SSP's own
+  land-use drift (RF replaces the land trajectory); this is stated in the figure footnote.
+- float32 maps: the closure check adds the stocks in float64 (the first run failed a 1e-3 tolerance on
+  float32 rounding of ~2e-3 gC/m², not on a real gap).
+- Not done: the restoration/protection strata (panels d-f, `--strata`; needs two
+  `extract_tree_fraction.py` runs and its thresholds are untested on real data), the other SSPs, the
+  0.5° version, an NBP/fire budget panel (COL_FIRE_CLOSS is not in h0).
+
 ## 4. Script and product locations
 
 Since 2026-10-01 `code/` and `figures/` are organized by manuscript figure

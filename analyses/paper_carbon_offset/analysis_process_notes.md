@@ -573,7 +573,7 @@ Things to know before interpreting:
   added linearly over 2024–2050 and then held fixed (947.2 ×10³ km² in all four SSPs, flat in 2051–2100), whereas the Default
   keeps changing (SSP2-4.5 +57 ×10³ km² between 2051 and 2100, SSP1-1.9 +20, SSP5-8.5 +14, SSP3-7.0 −11). The paired
   difference therefore shrinks once the Default catches up (SSP2-4.5: +91 in 2049, +31 in 2100); the RF forest itself does not
-  shrink. `code/figure2/plot_scenario_management_forest_abs.py` (md5 `fcd414f78eef8c455f79fbd28efb408a`) draws the same figures with the
+  shrink. `code/figure2/plot_scenario_management_forest_abs.py` (md5 `f2fe988e3a53a1bff2545fb355e8d98a`) draws the same figures with the
   absolute forest-area change of each run (`figures/figure2/management_benefits_forest_abs_<SSP>_4km.png`): (c) RF and the
   36000 s Default (RH has an identical forest area, asserted in the script), (d) DF (−805 ×10³ km² from 2024) and the 38000 s
   Default; the two Defaults have the same forest area, as expected since `crit_dayl_stress` does not change land cover.

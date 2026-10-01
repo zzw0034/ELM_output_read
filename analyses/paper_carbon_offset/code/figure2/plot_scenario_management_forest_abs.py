@@ -40,10 +40,10 @@ def forest(key):
     return f["year"], f["tree_area_km2"] / 1e3
 
 
-def line(ax, year, y, color, label, ls="-", lw=2.8):
+def line(ax, year, y, color, label, ls="-", lw=2.8, text=None):
     ax.plot(year, y, color=color, lw=lw, ls=ls, solid_capstyle="round", zorder=3)
     ax.plot([year[-1]], [y[-1]], "o", color=color, ms=6, mec="white", mew=1.4, zorder=4)
-    ax.annotate(f"{label} {y[-1]:+.0f}".replace("-", "−"), xy=(year[-1], y[-1]), xytext=(6, 0), textcoords="offset points", fontsize=11.5,
+    ax.annotate(text or f"{label} {y[-1]:+.0f}".replace("-", "−"), xy=(year[-1], y[-1]), xytext=(6, 0), textcoords="offset points", fontsize=11.5,
                 color=INK, va="center", fontweight="semibold", annotation_clip=False)
 
 
@@ -70,7 +70,7 @@ def main():
         line(axes[1, 0], year, chg["RF"], COLORS["RF"], "RF")
         line(axes[1, 0], year, chg["Def36"], DEFAULT_GREY, "Default", ls=(0, (5, 2)))
         line(axes[1, 1], year, chg["Def38"], DEFAULT_GREY, "Default", ls=(0, (5, 2)))
-        line(axes[1, 1], year, chg["DF"], COLORS["DF"], "DF")
+        line(axes[1, 1], year, chg["DF"], COLORS["DF"], "DF", text="DF: no forest")
         titles = {(0, 0): "(a) Cumulative NBP benefit: RF − Default, RH − Default",
                   (0, 1): "(b) Cumulative NBP benefit: Default − DF (avoided loss)",
                   (1, 0): "(c) Forest area change since 2023: RF and Default (RH = Default)",

@@ -14,31 +14,12 @@ Panels (one SSP, 4 km; defaults SSP3-7.0, end state = mean of 2091-2100):
   f-h  (--strata) restoration / protection strata of RF: map, area and benefit
      per stratum, signed pool response per stratum (MgC/ha of stratum land)
 
-Pools (D4), seven, adding up to TOTECOSYSC: aboveground vegetation = TOTVEGC_ABG;
-other vegetation = TOTVEGC - TOTVEGC_ABG (roots plus storage/transfer pools); CWDC;
-TOTLITC; SOC 0-100 cm = TOTSOMC_1m (the model's own 1 m integral, Figure 1's 0-100 cm);
-SOC below 1 m = TOTSOMC - TOTSOMC_1m (TOTSOMC is the whole soil column, notes 3.12);
-wood products = TOTECOSYSC - (TOTVEGC + CWDC + TOTLITC + TOTSOMC), derived because
-TOTPRODC is not in h0. The derived product term is printed for every run and must be
->= 0 in Default; the SOC-below-1-m term must be >= 0 in every cell.
-
-Strata, fixed from RF's land cover and Default's harvest BEFORE any carbon
-benefit is looked at (user decision 2026-10-01: scheme 1, no NH run):
-  increment  = RF tree fraction in a plateau year (default 2060)
-               - transient 2023 tree fraction            (fraction of gridcell land)
-  restoration     increment >= REST_THR  (default 0.01 of the cell)
-  protection only increment <  REST_THR and Default WOOD_HARVESTC >= HARV_THR
-                  (default 0.1 gC/m2/yr, window mean)
-  no change       everything else (should show benefit ~0: the null control)
-CAVEAT, repeated on the figure: RF also sets harvest to zero everywhere, so the
-restoration stratum is restoration PLUS the harvest ban, not restoration alone.
-A pure split needs the NH run (PCT_NAT_PFT = Default, HARVEST = 0): then
-NH - Default is the ban and RF - NH the restoration under protection. RF - Default
-also absorbs the SSP's own land-use drift (RF replaces the land trajectory).
-Mixed cells (part restored) are classified by the threshold only; the printed
-sensitivity table varies both thresholds.
-
-All sums are area x landfrac weighted (never cell counts, never bare means).
+Pools (D4), four, adding up to TOTECOSYSC (grouping chosen by the user 2026-10-01):
+living vegetation = TOTVEGC; dead wood and litter = CWDC + TOTLITC; soil organic carbon over the
+whole column = TOTSOMC; wood products = TOTECOSYSC - (TOTVEGC + CWDC + TOTLITC + TOTSOMC), derived
+because TOTPRODC is not in h0 (must be >= 0 in Default). Two finer quantities are kept in the
+printout, the CSVs and the note: aboveground vegetation (TOTVEGC_ABG, panel c's narrowest
+boundary) and SOC 0-100 cm (TOTSOMC_1m, comparable to field studies).
 
 Runs locally (cartopy venv), from the analysis root:
     /Users/zw5/ORNL_workplace/ELM_output_read/.venv/bin/python \\
@@ -71,17 +52,12 @@ MGMT = {"RF": "#2a78d6", "RH": "#eb6834"}
 STRATA = [(1, "Restoration\n(+ harvest ban)", "#2a78d6"),
           (2, "Protection only\n(harvest ban)", "#9ec5f4"),
           (0, "No change", "#cfcdc6")]
-POOLS = [("abg", "Aboveground vegetation", "#1baf7a"),
-         ("veg_other", "Other vegetation (roots, storage)", "#eda100"),
-         ("cwd", "Coarse woody debris", "#e87ba4"),
-         ("lit", "Litter", "#008300"),
-         ("soc", "SOC 0-100 cm", "#4a3aa7"),
-         ("soc_deep", "SOC below 1 m", "#a99fe0"),
+POOLS = [("veg", "Living vegetation", "#1baf7a"),
+         ("dead", "Dead wood and litter", "#e87ba4"),
+         ("soil", "Soil organic carbon (whole column)", "#4a3aa7"),
          ("prod", "Wood products (derived)", "#e34948")]
-POOL_SHORT = {"abg": "Aboveground\nveg.", "veg_other": "Other\nveg.", "cwd": "CWD",
-              "lit": "Litter", "soc": "SOC\n0-100 cm", "soc_deep": "SOC\n>1 m", "prod": "Products"}
-POOL_LINE = {"abg": "Aboveground veg.", "veg_other": "Other veg.", "cwd": "CWD", "lit": "Litter",
-             "soc": "SOC 0-100 cm", "soc_deep": "SOC >1 m", "prod": "Products"}
+POOL_SHORT = {"veg": "Living\nvegetation", "dead": "Dead wood\n+ litter", "soil": "Soil\n(whole column)", "prod": "Wood\nproducts"}
+POOL_LINE = {"veg": "Living vegetation", "dead": "Dead wood + litter", "soil": "Soil (whole column)", "prod": "Wood products"}
 BAD = "#dfe3e8"
 GC_M2_TO_MGC_HA = 0.01
 REST_SENS = (0.005, 0.01, 0.05, 0.10)
@@ -98,10 +74,9 @@ def load(path):
 
 
 def pools_of(m):
-    """Seven pools in gC/m2 from the h0 stock maps (D4 closure, products and deep SOC derived)."""
+    """Four pools in gC/m2 from the h0 stock maps (D4 closure, products derived)."""
     prod = m["TOTECOSYSC"] - (m["TOTVEGC"] + m["CWDC"] + m["TOTLITC"] + m["TOTSOMC"])
-    return {"abg": m["TOTVEGC_ABG"], "veg_other": m["TOTVEGC"] - m["TOTVEGC_ABG"], "cwd": m["CWDC"],
-            "lit": m["TOTLITC"], "soc": m["TOTSOMC_1m"], "soc_deep": m["TOTSOMC"] - m["TOTSOMC_1m"], "prod": prod}
+    return {"veg": m["TOTVEGC"], "dead": m["CWDC"] + m["TOTLITC"], "soil": m["TOTSOMC"], "prod": prod}
 
 
 def pg(field, area, mask):
@@ -223,10 +198,11 @@ def panel_b(ax, P, area, valid):
     return vals
 
 
-def panel_c(ax, P, area, valid):
+def panel_c(ax, P, area, valid, abg):
+    """abg: {mgmt: aboveground-vegetation difference, PgC} (TOTVEGC_ABG, not one of the four pools)."""
     def bounds(mg):
         d = {k: pg(P[mg][k] - P["Def"][k], area, valid) for k, _, _ in POOLS}
-        return [d["abg"], sum(d.values()) - d["prod"], sum(d.values())]
+        return [abg[mg], sum(d.values()) - d["prod"], sum(d.values())]
     b = {mg: bounds(mg) for mg in ("RF", "RH")}
     x = np.arange(3)
     w = 0.36
@@ -322,31 +298,30 @@ def panel_strata_pools(ax, rows):
 
 # ------------------------------------------------------------- trajectories
 
-def traj_pools(tot, s1):
-    """Seven pools as annual domain totals (PgC) from the Figure 2 totals and the soc1m extract."""
-    assert np.array_equal(tot["year"], s1["year"]), "year axes of totals and soc1m differ"
-    soc1 = s1["total_PgC"]
+def traj_pools(tot):
+    """Four pools as annual domain totals (PgC) from the Figure 2 totals."""
     prod = tot["TOTECOSYSC"] - (tot["TOTVEGC"] + tot["CWDC"] + tot["TOTLITC"] + tot["TOTSOMC"])
-    soc_deep = tot["TOTSOMC"] - soc1
-    assert (soc_deep >= -1e-6).all(), "TOTSOMC_1m exceeds TOTSOMC"
-    return {"abg": tot["TOTVEGC_ABG"], "veg_other": tot["TOTVEGC"] - tot["TOTVEGC_ABG"], "cwd": tot["CWDC"],
-            "lit": tot["TOTLITC"], "soc": soc1, "soc_deep": soc_deep, "prod": prod}
+    return {"veg": tot["TOTVEGC"], "dead": tot["CWDC"] + tot["TOTLITC"], "soil": tot["TOTSOMC"], "prod": prod}
 
 
 def traj_deltas(fig2_dir, soc_dir, ssp):
-    """{'year', 'RF': (pool deltas, total delta), 'RH': ...} vs the 36000 s Default, 2024-2100."""
+    """{'year', mgmt: (pool deltas, total delta, extras)} vs the 36000 s Default, 2024-2100.
+    extras: aboveground vegetation and SOC 0-100 cm differences (from the soc1m extract)."""
     ld = lambda sfx: (np.load(os.path.join(fig2_dir, f"{ssp}{sfx}__totals.npz"), allow_pickle=True),
                       np.load(os.path.join(soc_dir, f"{ssp}{sfx}__soc1m_2024-2100.npz"), allow_pickle=True))
     (tD, sD), runs = ld(""), {"RF": ld("_RF"), "RH": ld("_RH")}
-    PD = traj_pools(tD, sD)
+    assert np.array_equal(tD["year"], sD["year"]), "year axes of totals and soc1m differ"
+    assert (tD["TOTSOMC"] - sD["total_PgC"] >= -1e-6).all(), "TOTSOMC_1m exceeds TOTSOMC"
+    PD = traj_pools(tD)
     out = {"year": tD["year"]}
     for nm, (t, s1) in runs.items():
-        assert np.array_equal(t["year"], tD["year"]), f"{nm}: year axis differs"
-        PR = traj_pools(t, s1)
+        assert np.array_equal(t["year"], tD["year"]) and np.array_equal(s1["year"], tD["year"]), f"{nm}: year axis differs"
+        PR = traj_pools(t)
         delta = {k: PR[k] - PD[k] for k, _, _ in POOLS}
         total = t["TOTECOSYSC"] - tD["TOTECOSYSC"]
         assert np.allclose(sum(delta.values()), total, atol=1e-9), f"{nm}: pools do not add up to TOTECOSYSC"
-        out[nm] = (delta, total)
+        extras = {"abg": t["TOTVEGC_ABG"] - tD["TOTVEGC_ABG"], "soc_0_100": s1["total_PgC"] - sD["total_PgC"]}
+        out[nm] = (delta, total, extras)
     return out
 
 
@@ -426,10 +401,10 @@ def main():
     for k in P:
         closure = np.abs(sum(P[k].values())[valid] - maps[k]["TOTECOSYSC"][valid].astype("f8")).max()
         assert closure < 1e-6, f"{k}: pools do not sum to TOTECOSYSC (max {closure})"
-        deep_min = float(P[k]["soc_deep"][valid].min())
-        assert deep_min > -0.01, f"{k}: TOTSOMC_1m exceeds TOTSOMC in a cell by {-deep_min} gC/m2"
+        deep = maps[k]["TOTSOMC"].astype("f8") - maps[k]["TOTSOMC_1m"].astype("f8")
+        assert float(deep[valid].min()) > -0.01, f"{k}: TOTSOMC_1m exceeds TOTSOMC in a cell by {-float(deep[valid].min())} gC/m2"
         print(f"  derived product pool {k:3s}: {pg(P[k]['prod'], area, valid):+.4f} PgC (min per cell {P[k]['prod'][valid].min():+.2f} gC/m2); "
-              f"SOC 0-100 cm {pg(P[k]['soc'], area, valid):.2f}, below 1 m {pg(P[k]['soc_deep'], area, valid):.2f} PgC")
+              f"soil whole column {pg(P[k]['soil'], area, valid):.2f}, of which 0-100 cm {pg(maps[k]['TOTSOMC_1m'], area, valid):.2f} PgC")
     assert pg(P["Def"]["prod"], area, valid) >= -1e-3, \
         "derived product pool of Default is negative: TOTPRODC is not in TOTECOSYSC here, re-check D4"
     dom_total = {mg: pg(maps[mg]["TOTECOSYSC"].astype("f8") - maps["Def"]["TOTECOSYSC"].astype("f8"), area, valid)
@@ -445,10 +420,15 @@ def main():
         assert abs(sum(d_pool[mg].values()) - dom_total[mg]) < 1e-6 * max(1.0, abs(dom_total[mg]))
     print(f"{'Total (= TOTECOSYSC difference)':36s}{dom_total['RF']:+11.3f}{dom_total['RH']:+11.3f}")
     insitu = {mg: dom_total[mg] - d_pool[mg]["prod"] for mg in ("RF", "RH")}
+    diff = lambda mg, v: pg(maps[mg][v].astype("f8") - maps["Def"][v].astype("f8"), area, valid)
+    d_extra = {mg: {"abg": diff(mg, "TOTVEGC_ABG"), "soc_0_100": diff(mg, "TOTSOMC_1m")} for mg in ("RF", "RH")}
+    def_extra = {"abg": pg(maps["Def"]["TOTVEGC_ABG"], area, valid), "soc_0_100": pg(maps["Def"]["TOTSOMC_1m"], area, valid)}
+    print(f"{'  of which aboveground vegetation':36s}{d_extra['RF']['abg']:+11.3f}{d_extra['RH']['abg']:+11.3f}")
+    print(f"{'  of which SOC 0-100 cm':36s}{d_extra['RF']['soc_0_100']:+11.3f}{d_extra['RH']['soc_0_100']:+11.3f}")
     print("Boundaries (PgC)   aboveground | in-situ (excl. products) | ecosystem + products")
     for mg in ("RF", "RH"):
-        print(f"  {mg}-Def  {d_pool[mg]['abg']:+.3f} | {insitu[mg]:+.3f} | {dom_total[mg]:+.3f}")
-    print(f"  RF/RH ratio  {d_pool['RF']['abg'] / d_pool['RH']['abg']:.2f} | {insitu['RF'] / insitu['RH']:.2f} "
+        print(f"  {mg}-Def  {d_extra[mg]['abg']:+.3f} | {insitu[mg]:+.3f} | {dom_total[mg]:+.3f}")
+    print(f"  RF/RH ratio  {d_extra['RF']['abg'] / d_extra['RH']['abg']:.2f} | {insitu['RF'] / insitu['RH']:.2f} "
           f"| {dom_total['RF'] / dom_total['RH']:.2f}")
     print("  (RF = restoration + harvest ban everywhere; its difference also holds the SSP's own land-use drift)")
 
@@ -460,15 +440,16 @@ def main():
         end = T["year"] >= y0
         print(f"\nCross-check, mean {win} of the annual totals vs the maps (PgC):")
         for mg in ("RF", "RH"):
-            dlt, tot = T[mg]
-            print(f"  {mg}: total {tot[end].mean():+.3f} vs {dom_total[mg]:+.3f}; SOC 0-100 cm {dlt['soc'][end].mean():+.3f} "
-                  f"vs {d_pool[mg]['soc']:+.3f}; SOC >1 m {dlt['soc_deep'][end].mean():+.3f} vs {d_pool[mg]['soc_deep']:+.3f}")
+            dlt, tot, ext = T[mg]
+            print(f"  {mg}: total {tot[end].mean():+.3f} vs {dom_total[mg]:+.3f}; soil {dlt['soil'][end].mean():+.3f} vs {d_pool[mg]['soil']:+.3f}; "
+                  f"SOC 0-100 cm {ext['soc_0_100'][end].mean():+.3f} vs {d_extra[mg]['soc_0_100']:+.3f}")
             if abs(tot[end].mean() - dom_total[mg]) > 0.02:
                 print(f"  WARNING: {mg} totals differ by more than 0.02 PgC between the two sources")
         print(f"{'RF - Default, PgC':24s}" + "".join(f"{y:>8d}" for y in (2030, 2050, 2075, 2100)))
         for k, _, _ in POOLS:
             print(f"  {POOL_LINE[k]:22s}" + "".join(f"{T['RF'][0][k][list(T['year']).index(y)]:+8.2f}" for y in (2030, 2050, 2075, 2100)))
         print(f"  {'Total':22s}" + "".join(f"{T['RF'][1][list(T['year']).index(y)]:+8.2f}" for y in (2030, 2050, 2075, 2100)))
+        print(f"  {'(SOC 0-100 cm)':22s}" + "".join(f"{T['RF'][2]['soc_0_100'][list(T['year']).index(y)]:+8.2f}" for y in (2030, 2050, 2075, 2100)))
     else:
         print("\nNo 2024-2100 trajectories (needs 4 km and the Figure 2 totals); panels d-e skipped")
 
@@ -482,20 +463,26 @@ def main():
             w.writerow([name, f"{pg(P['Def'][k], area, valid):.5f}", f"{d_pool['RF'][k]:.5f}", f"{d_pool['RH'][k]:.5f}"])
         w.writerow(["Total", f"{sum(pg(P['Def'][k], area, valid) for k, _, _ in POOLS):.5f}",
                     f"{dom_total['RF']:.5f}", f"{dom_total['RH']:.5f}"])
+        for k, name in (("abg", "of which: aboveground vegetation (TOTVEGC_ABG)"), ("soc_0_100", "of which: SOC 0-100 cm (TOTSOMC_1m)")):
+            w.writerow([name, f"{def_extra[k]:.5f}", f"{d_extra['RF'][k]:.5f}", f"{d_extra['RH'][k]:.5f}"])
     if have_traj:
         with open(os.path.join(a.out_dir, f"fig4_pool_trajectories_{a.res}_{a.ssp}.csv"), "w", newline="") as fh:
             w = csv.writer(fh)
             w.writerow(["mgmt", "pool", "year", "diff_vs_Default_PgC"])
             for mg in ("RF", "RH"):
-                dlt, tot = T[mg]
+                dlt, tot, ext = T[mg]
                 for k in [p[0] for p in POOLS]:
                     w.writerows([[mg, k, int(y), f"{v:.5f}"] for y, v in zip(T["year"], dlt[k])])
+                for k in ("abg", "soc_0_100"):
+                    w.writerows([[mg, f"of_which_{k}", int(y), f"{v:.5f}"] for y, v in zip(T["year"], ext[k])])
                 w.writerows([[mg, "total", int(y), f"{v:.5f}"] for y, v in zip(T["year"], tot)])
 
-    foot = ("Seven pools add up to TOTECOSYSC. SOC 0-100 cm = TOTSOMC_1m; SOC below 1 m = TOTSOMC − TOTSOMC_1m; "
+    foot = ("Four pools add up to TOTECOSYSC: living vegetation (TOTVEGC), dead wood and litter (CWDC + TOTLITC), soil organic carbon over the whole column (TOTSOMC), "
             "wood products derived as TOTECOSYSC − (TOTVEGC + CWDC + TOTLITC + TOTSOMC).\n"
-            "Other vegetation = TOTVEGC − TOTVEGC_ABG (roots plus storage/transfer pools). RF sets harvest to zero everywhere "
-            "(restoration plus a region-wide harvest ban); its difference to Default also contains the SSP's own land-use drift.\n"
+            f"Within these: SOC 0–100 cm (TOTSOMC_1m) RF {d_extra['RF']['soc_0_100']:+.2f}, RH {d_extra['RH']['soc_0_100']:+.2f} PgC; "
+            f"aboveground vegetation (panel c) RF {d_extra['RF']['abg']:+.2f}, RH {d_extra['RH']['abg']:+.2f} PgC. "
+            "In-situ ecosystem = TOTECOSYSC − wood products.\n"
+            "RF sets harvest to zero everywhere (restoration plus a region-wide harvest ban); its difference to Default also contains the SSP's own land-use drift. "
             f"Panels a-c: mean of {win}; d-e: annual domain totals. All sums are area × landfrac weighted.")
     nrows = 1 + int(have_traj) + int(a.strata)
     heights = [1.0] + ([1.0] if have_traj else []) + ([1.1] if a.strata else [])
@@ -504,11 +491,11 @@ def main():
     gs = fig.add_gridspec(nrows, 12, height_ratios=heights, hspace=0.4, wspace=2.2, left=0.05, right=0.985, top=top, bottom=bottom)
     panel_a(fig.add_subplot(gs[0, 0:3]), P["Def"], area, valid)
     panel_b(fig.add_subplot(gs[0, 3:8]), P, area, valid)
-    panel_c(fig.add_subplot(gs[0, 8:12]), P, area, valid)
+    panel_c(fig.add_subplot(gs[0, 8:12]), P, area, valid, {mg: d_extra[mg]['abg'] for mg in ('RF', 'RH')})
     r = 1
     if have_traj:
-        panel_traj(fig.add_subplot(gs[r, 0:5]), T["year"], *T["RF"], "d", "RF − Default, 2024–2100")
-        panel_traj(fig.add_subplot(gs[r, 6:11]), T["year"], *T["RH"], "e", "RH − Default, 2024–2100 (own y axis)")
+        panel_traj(fig.add_subplot(gs[r, 0:5]), T["year"], T["RF"][0], T["RF"][1], "d", "RF − Default, 2024–2100")
+        panel_traj(fig.add_subplot(gs[r, 6:11]), T["year"], T["RH"][0], T["RH"][1], "e", "RH − Default, 2024–2100 (own y axis)")
         r += 1
     if a.strata:
         import cartopy.crs as ccrs

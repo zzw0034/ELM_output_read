@@ -905,6 +905,27 @@ with ≥ 100 common children, the largest SD and the cell closest to the median 
 - RF is restoration plus a region-wide harvest ban and its gain contains the SSP's own land-use drift, which differs between the runs only through their own land
   cover. Not done: other SSPs, the downscaled comparator B, the equal-area selection loss of Figure 5.
 
+### 3.15 Figure 4 regrouped into four pools (2026-10-01)
+
+User decision 2026-10-01: Figure 4's pools are merged into four groups, used in panels a, b, d, e and h alike: **living vegetation** (`TOTVEGC`),
+**dead wood and litter** (`CWDC + TOTLITC`), **soil organic carbon over the whole column** (`TOTSOMC`) and **wood products** (derived). Aboveground
+vegetation (`TOTVEGC_ABG`, panel c's narrowest boundary) and SOC 0-100 cm (`TOTSOMC_1m`) are kept as "of which" rows in the printout, the pool
+CSV, the trajectory CSV and the figure note. Plot `code/figure4/plot_pool_strata.py` md5 `0babd71b173d0bf1cb599e9014471d3a`; no new extraction.
+
+| pool, 2091-2100 (PgC) | Default stock | RF − Default | RH − Default |
+|---|---:|---:|---:|
+| living vegetation | 13.72 | +5.29 | +1.16 |
+| dead wood and litter | 3.23 | +0.57 | +0.08 |
+| soil organic carbon (whole column) | 26.68 | −0.13 | +0.03 |
+| wood products (derived) | 0.88 | −0.76 | −0.31 |
+| total (TOTECOSYSC) | 44.50 | +4.97 | +0.96 |
+| of which aboveground vegetation | 8.02 | +4.15 | +0.83 |
+| of which SOC 0-100 cm | 17.71 | −0.16 | +0.03 |
+
+Totals and the cross-checks against the annual totals are unchanged (§3.13). Panel c defines the **in-situ ecosystem** as TOTECOSYSC − wood products
+(vegetation + dead wood and litter + soil on the land); it is larger than ecosystem + products for RF and RH because the harvest reduction lowers the
+product pool.
+
 ## 4. Script and product locations
 
 Since 2026-10-01 `code/` and `figures/` are organized by manuscript figure

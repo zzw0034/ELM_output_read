@@ -35,16 +35,14 @@ are preserved in `../figures/legacy/`.
 Local plotting scripts read inputs pulled into `../_cache/` and write PNGs to
 `../figures/figure1/` (git-ignored).
 
-## figure4/ — pool contributions and restoration/protection strata (Results 3.3)
+## figure4/ — pool contributions, timing and the RF land-cover increment (Results 3.3)
 
-Written 2026-10-01. Simplified first pass (user decision 2026-10-01): `plot_pool_strata.py` draws
-panels a-c only (Default stock by pool, signed RF/RH pool contributions, three boundaries) from three
-h0 extracts. The restoration/protection strata (panels d-f, `--strata`, needs the two
-`extract_tree_fraction.py` extracts) were run on real data 2026-10-01 (notes §3.11); the threshold strata
-are not clean (restoration = 69 % of the land, share 53-79 % by threshold), so
-`check_increment_dose_response.py` bins the benefit by the size of the land-cover increment instead. Scheme 1 of the RF split (no NH run): strata are fixed from RF's land cover and Default's harvest
-before any benefit is looked at; the restoration stratum is restoration **plus** the harvest ban
-(blueprint E4; RF definition in the scenario notes).
+`plot_pool_strata.py` draws Figure 4 (notes §3.10–3.16): a–c Default stock, signed RF/RH contributions in four
+pools (living vegetation, dead wood + litter, whole-column soil, wood products) and the three accounting
+boundaries, mean of 2091–2100; d–e the pool trajectories 2024–2100; with `--bins`, f–h the cells binned by
+the forest RF adds (tree fraction 2060 − 2023), which replaced the threshold strata on 2026-10-01 (those were not
+clean, notes §3.11). Every bin also has the harvest ban, so the bins bound, but do not decompose, the ban and
+restoration effects (no NH run). The script keeps its old name.
 
 | Script | What it does | How it runs |
 |---|---|---|
@@ -52,11 +50,10 @@ before any benefit is looked at; the restoration stratum is restoration **plus**
 | `extract_soc1m.py` | `TOTSOMC_1m` (SOC 0–100 cm): annual domain total 2024–2100 and the 2091–2100 mean map of one run → `_cache/figure4/4km/<SSP>[_RF\|_RH]__soc1m_2024-2100.npz` | Slurm via `submit_py.sbatch`; jobs 602384–602386 |
 | `extract_tree_fraction.py` | Per-gridcell tree/shrub/grass/crop fraction of one run-year from h1 (`pfts1d_wtgcell` by itype) → `transient__treefrac_2023.npz` and `<SSP>_RF__treefrac_2060.npz` | Slurm; reads only the 1-D PFT arrays |
 | `check_increment_dose_response.py` | Benefit, SOC and Default harvest by bins of RF's land-cover increment (notes §3.11) | Locally |
-| `plot_pool_strata.py` | Figure 4: panels a–c (stock, signed contributions in four pools: living vegetation, dead wood + litter, whole-column soil, wood products; three boundaries) and d–e (RF/RH pool trajectories 2024–2100, 4 km), pool and trajectory CSVs; with `--bins` also panels f–h (RF land-cover increment map, area / benefit / Default harvest per increment bin, pool response per bin) and a per-bin CSV. Asserts pool closure to TOTECOSYSC, strata closure to the domain total, Default products ≥ 0 | Locally (cartopy venv) from the analysis root; `--res 4km\|0.5deg --ssp --years [--strata --rest-thr --harv-thr]` |
+| `plot_pool_strata.py` | Figure 4: panels a–c (stock, signed contributions in four pools: living vegetation, dead wood + litter, whole-column soil, wood products; three boundaries) and d–e (RF/RH pool trajectories 2024–2100, 4 km), pool and trajectory CSVs; with `--bins` also panels f–h (RF land-cover increment map, area / benefit / Default harvest per increment bin, pool response per bin) and a per-bin CSV. Asserts pool closure to TOTECOSYSC, bin closure to the domain total, Default products ≥ 0 | Locally (cartopy venv) from the analysis root; `--res 4km\|0.5deg --ssp --years [--bins]` |
 
-Defaults: restoration = RF tree fraction (2060) − transient 2023 ≥ 0.01 of the cell; protection only =
-not restored and Default WOOD_HARVESTC ≥ 0.1 gC/m²/yr. Check the printed RF tree-area increment against
-the +142.3 ×10³ km² of notes §3.9 (4 km) first.
+Bins (`--bins`): ≤ 0.001, 0.001–0.05, 0.05–0.1, 0.1–0.2, 0.2–0.5, > 0.5 of the cell. Check the printed RF tree-area
+increment against the +142.3 ×10³ km² of notes §3.9 (4 km) first.
 
 ## figure3/ — heterogeneity hidden by aggregation (Results 3.3)
 

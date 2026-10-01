@@ -2,7 +2,8 @@
 Main Figure 3 / Results 3.3 (blueprint E3): how the management gain differs between the
 native 4 km run and the native 0.5 deg run. RF is the main example, RH the consistency
 check. SSP3-7.0, end state = mean of 2091-2100, gain = TOTECOSYSC difference to the
-(36000 s) Default, in MgC/ha of land.
+(36000 s) Default, in MgC/ha of land. TOTECOSYSC is the total ecosystem carbon STOCK (vegetation + CWD +
+litter + whole soil column + wood products), so the gain is a stock difference, not a flux such as NBP.
 
 Only two versions are compared (user decision 2026-10-01; no 4 km-averaged-to-0.5 deg
 comparator):
@@ -307,11 +308,11 @@ def main():
     mesh = draw_map(axs[0], b["lon4"], b["lat4"], c_map, DIV, norm, ("a", "C  native 4 km"), extent)
     draw_map(axs[1], b["lon5"], b["lat5"], a_map, DIV, norm, ("b", "A  native 0.5° run"), extent)
     cb = fig.colorbar(mesh, ax=axs[:2], orientation="horizontal", fraction=0.04, pad=0.09, shrink=0.55, extend="both")
-    cb.set_label("RF − Default, total ecosystem carbon (MgC/ha of land), mean 2091–2100", fontsize=9.5, color=INK)
+    cb.set_label("Δ ecosystem carbon stock, RF − Default (TOTECOSYSC, MgC/ha of land), mean 2091–2100", fontsize=9.5, color=INK)
     cb.ax.tick_params(labelsize=9)
     meshx = draw_map(axs[2], b["lon4"], b["lat4"], diff, DIV, Normalize(-dmax, dmax), ("c", "A − C  (A copied to the 4 km cells)"), extent)
     cbx = fig.colorbar(meshx, ax=axs[2], orientation="horizontal", fraction=0.04, pad=0.09, shrink=0.8, extend="both")
-    cbx.set_label("MgC/ha of land", fontsize=9.5, color=INK)
+    cbx.set_label("A − C, Δ ecosystem carbon stock (MgC/ha of land)", fontsize=9.5, color=INK)
     cbx.ax.tick_params(labelsize=9)
 
     axd = fig.add_subplot(gs[1, 0:4], projection=ccrs.PlateCarree())
@@ -349,7 +350,7 @@ def main():
         axg.plot(v[o][::25], 100 * cdf[::25], color=col, lw=2.2, label=lab)
     axg.set_xlim(float(np.min(b["c"][m])) - 5, float(np.percentile(b["c"][m], 99.9)) + 5)
     axg.legend(frameon=False, fontsize=9.5, loc="lower right")
-    style(axg, "Share of land area with gain ≤ x (%)", "RF − Default, total ecosystem carbon (MgC/ha of land)")
+    style(axg, "Share of land area with gain ≤ x (%)", "Δ ecosystem carbon stock, RF − Default (MgC/ha of land)")
     ptitle(axg, "g", "Area-weighted distribution of the gain")
     axg.grid(axis="x", color=GRID, lw=0.9)
 
@@ -381,12 +382,13 @@ def main():
 
     st = S[("RF", "all common support")]
     fig.suptitle(f"SEUS {a.ssp}, {win}: the management gain at 4 km and at 0.5°", fontsize=13, color=INK, x=0.05, y=0.985, ha="left")
-    fig.text(0.05, 0.008,
-             "Gain = TOTECOSYSC (RF or RH) − Default, mean of the window, MgC/ha of land, on the common support of the 4 km and 0.5° runs; weights area × landfrac. "
-             "A is a separately configured run, so A − C combines resolution and configuration.\n"
-             f"RF: SD(A)/SD(C) = {st['sd_ratio_A_over_C']:.2f}, mean A − C = {st['mean_diff_A_minus_C']:+.1f} MgC/ha. RF is restoration plus a region-wide harvest ban; "
-             "its gain contains the SSP's own land-use drift. Panel d: SD of the 4 km gain inside each 0.5° cell, about that cell's own mean.\n"
-             "h-i: top 10% = the cells with the largest gain holding 10% of the common-support land area in each run; the 0.5° top decile is made of whole 0.5° cells.",
+    fig.text(0.05, 0.006,
+             "Gain = change in the total ecosystem carbon STOCK, management run − Default, mean of the window (TOTECOSYSC = vegetation + CWD + litter + soil, whole column, + wood products; "
+             "MgC/ha of land). A stock difference, not a flux: it is not NBP.\n"
+             "Common support of the 4 km and 0.5° runs; weights area × landfrac. A is a separately configured run, so A − C combines resolution and configuration. "
+             f"RF: SD(A)/SD(C) = {st['sd_ratio_A_over_C']:.2f}, mean A − C = {st['mean_diff_A_minus_C']:+.1f} MgC/ha.\n"
+             "RF is restoration plus a region-wide harvest ban; its gain contains the SSP's own land-use drift. Panel d: SD of the 4 km gain inside each 0.5° cell, about that cell's own mean.\n"
+             "h-i: top 10% = the cells with the largest gain holding 10% of the common-support land area in each run (the 0.5° top decile is made of whole 0.5° cells).",
              fontsize=8.6, color=INK2, va="bottom", ha="left")
     png = os.path.join(a.out_dir, f"fig3_gain_heterogeneity_{a.ssp}_{win}.png")
     fig.savefig(png, dpi=170, facecolor=SURFACE)

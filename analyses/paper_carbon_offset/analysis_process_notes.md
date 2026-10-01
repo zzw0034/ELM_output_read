@@ -864,7 +864,7 @@ End state = mean of 2091-2100, gain = TOTECOSYSC difference to the 36000 s Defau
 **Slurm jobs 602388 (Default), 602389 (RF), 602390 (RH)**, `serial`/`normal`, 1 core, 8 GB, 1 h limit, COMPLETED in 4-5 s, empty stderr (dedicated
 partition occupied). Outputs `_cache/figure3/0.5deg/SSP3-7.0[_RF|_RH]__pools_2091-2100.npz`, copied locally, md5 identical:
 `6d386c0aaefaee77cfadd1880d7f00fa` (Default), `c3f34631ed4a3f995fb83eab43a88b5d` (RF), `7fd7279e48d41eb4c31ea898df63d018` (RH). The 4 km input is Figure 4's
-`_cache/figure4/4km/` maps (§3.10). Plot `code/figure3/plot_gain_heterogeneity.py` (md5 `c2f3a5da87d3382c01e389a99987c57a`) →
+`_cache/figure4/4km/` maps (§3.10). Plot `code/figure3/plot_gain_heterogeneity.py` (md5 `84c09a73fc6492fa8ad1b42d78134b65`) →
 `figures/figure3/fig3_gain_heterogeneity_SSP3-7.0_2091-2100.png`, `fig3_stats_…csv` (all metrics, three subsets, both managements), `fig3_cells_RF_…csv`.
 
 Method: the 4 km grid (324×504) nests exactly in the 0.5° grid (27×42; cell centres equal the means of their 12×12 children, asserted). C and A are compared
@@ -890,6 +890,11 @@ with ≥ 100 common children, the largest SD and the cell closest to the median 
   are 7.1 and 74.1 against 2.0 and 91.4 at 4 km.
 - Pattern agreement is moderate (RF r 0.71, ρ 0.75). Of the area in the 4 km top decile of the gain, 43 % is also in the 0.5° top decile (RH 56 %); the
   bottom decile 52 % (RH 62 %). The results hold with the 0.5° row 30.5-31.0°N excluded (RF r 0.70, top-decile overlap 43 %) and for cells with ≥ 72 children (r 0.71, 44 %).
+- **Labelling (2026-10-01):** the gain is a change in the carbon **stock** (`TOTECOSYSC` = vegetation + CWD + litter + whole soil column + wood products), not a flux; it is
+  not NBP. The colorbar, the CDF axis and the figure note now say "Δ ecosystem carbon stock (TOTECOSYSC)" and "not NBP". The cumulative NBP difference would
+  approximate it (notes §3.6, within 2-4 %) but needs the annual NBP maps, which are not extracted.
+- In the zoom panels the 0.5° values are constant in every 0.5° cell (checked in all 571 cells) but the land mask is the 4 km one, so coastal 0.5° cells
+  (e.g. 69-93 of 144 land children in zoom 1's southern row) are clipped at the 4 km coastline.
 - **Where the top decile is (panels h-i, a spatial version of the overlap).** Each 4 km cell is "both" (in the top 10 % of the common-support land area by
   gain in C and in A), "C only" (a top-decile cell of the 4 km run that the 0.5° run misses), "A only" or "neither". RF: both 4.3 %, C only 5.7 %,
   A only 5.7 % of the land (C top decile 10.0 %, A 10.1 %), so the 0.5° run finds 43 % of the 4 km top decile; RH: 5.6 / 4.4 / 4.5 %, 56 %.

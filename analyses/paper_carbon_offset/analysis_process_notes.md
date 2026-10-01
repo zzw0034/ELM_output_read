@@ -454,6 +454,15 @@ by both products (0–12 and 0–24 kg C m⁻², extend max) with the continuous
 sits near the typical value). With a data-driven scale the HWSD wetland
 hotspots stretched the scale and washed ELM out; hotspots now saturate.
 
+A one-row companion, SOC 0–30 cm only, ELM 4 km | ELM 0.5° (copied to 4 km) |
+SoilGrids | HWSD on the same 4 km cells (`figures/figure1/soc030_elm4km_elm0p5_soilgrids_hwsd_2000-2023.png`,
+`code/figure1/plot_soc030_elm4km_elm0p5_soilgrids_hwsd.py`, md5
+`3fba90e709a68da31183fdfd89eae192`; same BrBG 0–12 scale). A cell is shown only if all four
+fields are valid (n = 75 671). It also annotates HWSD vs SoilGrids
+(bias −1.6, RMSE 3.2, r +0.33 at 4 km cells), the two products' mutual
+agreement, next to ELM's scores against each (ELM 4 km: +1.0/2.0/+0.13 vs
+SoilGrids, +2.6/4.4/−0.20 vs HWSD).
+
 **First-look statistics** (4 km cells, common support; area × landfrac
 weights; mean of ELM 2000–2023; bias = ELM − obs; not the D6 evaluation):
 

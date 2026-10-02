@@ -79,9 +79,9 @@ def main():
 
     import cartopy.crs as ccrs
     import cartopy.feature as cfeature
-    fig = plt.figure(figsize=(20, 10.8), facecolor=ps.SURFACE)
-    outer = fig.add_gridspec(1, 2, width_ratios=[2.05, 1], wspace=0.1, left=0.035, right=0.985, top=0.9, bottom=0.12)
-    gm = outer[0].subgridspec(2, 2, hspace=0.16, wspace=0.05)
+    fig = plt.figure(figsize=(24, 13.5), facecolor=ps.SURFACE)
+    outer = fig.add_gridspec(1, 2, width_ratios=[2.05, 1], wspace=0.12, left=0.035, right=0.985, top=0.92, bottom=0.15)
+    gm = outer[0].subgridspec(2, 2, hspace=0.2, wspace=0.06)
     for k, ssp in enumerate(SSPS):
         r, m = R[ssp], R[ssp]["m"]
         ax = fig.add_subplot(gm[k // 2, k % 2], projection=ccrs.PlateCarree())
@@ -98,13 +98,11 @@ def main():
         gl.bottom_labels = k // 2 == 1
         gl.xlabel_style = gl.ylabel_style = {"size": 8}
         ps.ptitle(ax, "abcd"[k], ssp)
-        ax.text(0.98, 0.03, f"{r['agree']:.0f}% of the 4 km selection\nalso selected at 0.5°\nloss at 0.5°: {r['loss']:.1f}%",
-                transform=ax.transAxes, ha="right", va="bottom", fontsize=9, color=ps.INK,
-                bbox=dict(facecolor=ps.SURFACE, edgecolor="none", alpha=0.9, pad=3))
-        if k == 0:
-            handles = [plt.Rectangle((0, 0), 1, 1, color=ps.CLS_COLS[c]) for c in (3, 1, 2, 0)]
-            ax.legend(handles, [ps.CLS_NAMES[c] for c in (3, 1, 2, 0)], loc="lower left", fontsize=8.3, framealpha=0.92,
-                      edgecolor="none")
+        ax.set_title(f"{r['agree']:.0f}% of the 4 km selection also at 0.5°  ·  loss at 0.5° {r['loss']:.1f}%",
+                     loc="right", fontsize=10, color=ps.INK2)
+    handles = [plt.Rectangle((0, 0), 1, 1, color=ps.CLS_COLS[c]) for c in (3, 1, 2, 0)]
+    fig.legend(handles, [ps.CLS_NAMES[c] for c in (3, 1, 2, 0)], loc="upper center", bbox_to_anchor=(0.345, 0.135), ncol=4,
+               fontsize=10.5, frameon=False, handlelength=2.2, columnspacing=2.2)
 
     gr = outer[1].subgridspec(2, 1, height_ratios=[1.35, 1], hspace=0.28)
     axb, axl = fig.add_subplot(gr[0]), fig.add_subplot(gr[1])

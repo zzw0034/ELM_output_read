@@ -69,7 +69,8 @@ def main():
     for f, year in zip(files, years):
         with netCDF4.Dataset(f) as ds:
             tb = np.ma.filled(ds["time_bounds"][:], np.nan)
-            assert tb.shape[0] == 12 and np.allclose(tb[:, 1] - tb[:, 0], MONTH_DAYS), f"{os.path.basename(f)}: not 12 Jan-Dec months"
+            # the first record of a run starts one model time step early (2024: -1/24 d), so allow < 0.1 d per month
+            assert tb.shape[0] == 12 and np.allclose(tb[:, 1] - tb[:, 0], MONTH_DAYS, atol=0.1), f"{os.path.basename(f)}: not 12 Jan-Dec months"
             y0 = int(ds["time"].units.split("since")[1].strip()[:4])
             lo, hi = 365 * (year - y0), 365 * (year - y0 + 1)
             assert abs(tb[0, 0] - lo) < 1.0 and abs(tb[-1, 1] - hi) < 1.0, f"{os.path.basename(f)}: time_bounds do not span {year}"

@@ -26,17 +26,18 @@ coarse information (G_4km - G_0.5)/G_4km; benefit per selected hectare; area ove
 only / 0.5 deg only); 4 km risk of the selected land. In sample the 4 km selection is best by
 construction: the result measures model-internal information lost at 0.5 deg, not a real-world gain.
 
-Risk components (D7), from the RF run, 2091-2100, used separately (no composite):
+Risk components (D7), from the RF run, 2091-2100, used separately (no composite). Only fire loss and water
+stress are used (user decision 2026-10-01): NBP variability was dropped because about half of it is fire
+(rank correlation 0.83 with the fire component, notes 3.18).
   fire          mean(NEP - LAND_USE_FLUX - NBP) / mean(TOTECOSYSC), %/yr (complete column fire loss from
                 the D4 identity; 4 km fire has ~0.5 deg effective resolution, blueprint A3)
   water stress  1 - BTRAN averaged over April-October (user decision 2026-10-01)
-  variability   SD of the linearly detrended annual NBP, gC/m2/yr
 Screen (D9 B): one absolute threshold per component, the area-weighted PCT-th percentile (default 80,
 user decision 2026-10-01; 90 and 95 as sensitivity) of the 4 km component over all eligible land,
 shared by both resolutions. 4 km excludes 4 km cells above it, 0.5 deg excludes 0.5 deg cells whose
 0.5 deg run value is above it; both then fill the same budget and are scored with 4 km benefit and
 4 km risk. If the screened land cannot fill the budget, the shortfall is reported, the threshold is
-not relaxed. Screens: each component alone, and all three.
+not relaxed. Screens: each component alone, and both together.
 
 Runs locally (cartopy venv), from the analysis root:
     /Users/zw5/ORNL_workplace/ELM_output_read/.venv/bin/python code/figure5/plot_priority_selection.py
@@ -63,8 +64,8 @@ RES_COL = {"4km": "#1baf7a", "0.5deg": "#e87ba4"}          # as C and A in Figur
 RES_LAB = {"4km": "4 km", "0.5deg": "0.5°"}
 CLS_COLS = ["#e1e0dc", "#1baf7a", "#e87ba4", "#4a3aa7"]     # neither, 4 km only (4 km colour), 0.5 deg only (0.5 deg colour), both
 CLS_NAMES = ["Eligible, not selected", "4 km only", "0.5° only", "Both"]
-COMPONENTS = [("fire", "Fire loss (%/yr)"), ("water", "Water stress (1 − BTRAN, Apr–Oct)"), ("var", "NBP variability (gC/m²/yr)")]
-SCREENS = [("none", "No screen"), ("fire", "Fire"), ("water", "Water stress"), ("var", "Variability"), ("all", "All three")]
+COMPONENTS = [("fire", "Fire loss (%/yr)"), ("water", "Water stress (1 − BTRAN, Apr–Oct)")]
+SCREENS = [("none", "No screen"), ("fire", "Fire"), ("water", "Water stress"), ("all", "Fire + water")]
 
 
 # ---------------------------------------------------------------------- helpers
@@ -106,16 +107,10 @@ def take(order_vals, areas, budget):
 
 
 def risk_components(ann):
-    """fire (%/yr), water stress, detrended NBP SD from an annual-map extract (year, lat, lon)."""
-    yrs = ann["year"].astype("f8")
+    """fire (%/yr) and water stress from an annual-map extract (year, lat, lon)."""
     fire = (ann["NEP"] - ann["LAND_USE_FLUX"] - ann["NBP"]).astype("f8").mean(0) / ann["TOTECOSYSC"].astype("f8").mean(0) * 100
     water = 1 - ann["BTRAN_GS"].astype("f8").mean(0)
-    nbp = ann["NBP"].astype("f8")
-    t = yrs - yrs.mean()
-    slope = (t[:, None, None] * (nbp - nbp.mean(0))).sum(0) / (t ** 2).sum()
-    resid = nbp - nbp.mean(0) - slope * t[:, None, None]
-    var = resid.std(0, ddof=1)
-    return {"fire": fire, "water": water, "var": var}
+    return {"fire": fire, "water": water}
 
 
 # ------------------------------------------------------------------- the model
@@ -279,7 +274,7 @@ def main():
     for p in a.budgets:
         print(f"\n--- budget {p:g}% of eligible land ({p / 100 * m['E'] / 1e3:.1f} x10^3 km2), thresholds p{a.pct:g} ---")
         print(f"{'screen':13s}{'res':>7s}{'G PgC':>8s}{'MgC/ha':>8s}{'loss %':>8s}{'forgone %':>10s}{'short km2':>10s}"
-              f"{'>fire':>7s}{'>water':>7s}{'>var':>7s}{'>any':>7s}")
+              f"{'>fire':>7s}{'>water':>7s}{'>any':>7s}")
         for sname, _ in SCREENS:
             w4, w5, sc4, sc5, both, only4, only5 = res[(a.pct, p, sname)]
             loss = 100 * (sc4["G_PgC"] - sc5["G_PgC"]) / sc4["G_PgC"]
@@ -287,7 +282,7 @@ def main():
                 r = next(x for x in rows if x["pct"] == a.pct and x["budget_pct"] == p and x["screen"] == sname and x["res"] == rn)
                 print(f"{sname:13s}{RES_LAB[rn]:>7s}{sc['G_PgC']:8.3f}{sc['per_ha']:8.1f}{(loss if rn == '0.5deg' else 0):8.1f}"
                       f"{100 * r['forgone_vs_noscreen']:10.1f}{r['shortfall_km2']:10.0f}"
-                      + "".join(f"{100 * sc[f'exceed_{k}']:7.1f}" for k in ("fire", "water", "var", "any")))
+                      + "".join(f"{100 * sc[f'exceed_{k}']:7.1f}" for k in ("fire", "water", "any")))
             if sname == "none":
                 sel = both + only4
                 print(f"{'':13s} overlap: both {both / 1e3:.1f}, 4 km only {only4 / 1e3:.1f}, 0.5 deg only {only5 / 1e3:.1f} x10^3 km2 "
@@ -385,7 +380,7 @@ def main():
         axd.bar(x + (k - 1.5) * wd, vals, wd, color=RES_COL[rn] if hatch is None else SURFACE, edgecolor=RES_COL[rn],
                 hatch=hatch, linewidth=1.4, zorder=3, label=lab)
     axd.set_xticks(x)
-    axd.set_xticklabels(["Fire", "Water stress", "Variability"], fontsize=9)
+    axd.set_xticklabels(["Fire", "Water stress"], fontsize=9)
     style(axd, "Selected land above the threshold (%)")
     axd.legend(frameon=False, fontsize=8, loc="upper left", ncol=2)
     axd.set_ylim(0, max(axd.get_ylim()[1], 10) * 1.25)
@@ -404,9 +399,9 @@ def main():
     axe.axvline(cut, color=INK, lw=1, ls="--")
     axe.axhline(T["water"], color=INK, lw=1, ls=":")
     axe.text(cut, axe.get_ylim()[1], " budget cutoff", fontsize=8, color=INK2, va="top")
-    axe.text(axe.get_xlim()[1], T["water"], f"threshold p{a.pct:g} ", fontsize=8, color=INK2, ha="right", va="bottom")
+    axe.text(axe.get_xlim()[0], T["water"], f" threshold p{a.pct:g}", fontsize=8, color=INK2, ha="left", va="bottom")
     style(axe, "Water stress (1 − BTRAN, Apr–Oct)", "Benefit per eligible ha, 4 km (MgC/ha)")
-    axe.legend(frameon=False, fontsize=7.8, loc="lower right", markerscale=3)
+    axe.legend(frameon=True, framealpha=0.92, edgecolor="none", fontsize=7.8, loc="upper left", markerscale=3)
     ptitle(axe, "e", f"Benefit vs water stress, {p0:g}% budget")
 
     fig.suptitle(f"SEUS {a.ssp}, RF, {win}: does 4 km information change where to manage, and at what risk?", fontsize=13,
@@ -416,8 +411,8 @@ def main():
              "Both selections cover the same physical area and are scored on the 4 km field;\n"
              "in sample the 4 km selection is best by construction (model-internal information loss). The 0.5° map is the native 0.5° run (separately configured). "
              f"Screen thresholds: area-weighted p{a.pct:g} of the 4 km component over eligible land, shared by both maps;\n"
-             "the 0.5° side screens with its own 0.5° risk. Fire = (NEP − LAND_USE_FLUX − NBP)/TOTECOSYSC, ~0.5° effective resolution at 4 km; water stress = 1 − BTRAN, Apr–Oct; "
-             "variability = SD of detrended annual NBP. RF is restoration plus a region-wide harvest ban.",
+             "the 0.5° side screens with its own 0.5° risk. Fire = (NEP − LAND_USE_FLUX − NBP)/TOTECOSYSC, ~0.5° effective resolution at 4 km; water stress = 1 − BTRAN, Apr–Oct "
+             "(NBP variability not used: about half of it is fire). RF is restoration plus a region-wide harvest ban.",
              fontsize=8.4, color=INK2, va="bottom", ha="left")
     png = os.path.join(a.out_dir, f"fig5_priority_{a.ssp}_{win}.png")
     fig.savefig(png, dpi=170, facecolor=SURFACE)

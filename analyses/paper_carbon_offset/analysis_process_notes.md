@@ -961,6 +961,111 @@ code removed; §3.16's bin table came from the commit-f850ac1 version) → `figu
 CSV. The three-boundary numbers (aboveground +4.15 / +0.83, in-situ +5.73 / +1.27, ecosystem + products +4.97 / +0.96 PgC, RF / RH) are still printed
 and the "of which" rows are in the pool CSV. The local `fig4_pool_bins_*` outputs were deleted. No numbers changed.
 
+### 3.18 Figure 5, equal-area selection at 4 km and 0.5° with a risk screen, SSP3-7.0 (2026-10-01)
+
+Blueprint E5/D9; user decisions 2026-10-01: native 0.5° run as the coarse comparator (no 4 km-averaged one), growing season fixed at April-October,
+screen threshold p80 (p90, p95 as sensitivity). Eligibility floor 0.05 (cells with an RF 2060 tree fraction below 5 % are not eligible) was added in
+the code, not yet decided by the user. Code commit `13290ee` (tested on synthetic data first).
+
+Extractor `code/figure5/extract_annual_maps.py` (md5 `0245e5b5013f82c84a48d927967763a9`): per-year 2091-2100 maps of NBP, NEP, LAND_USE_FLUX
+(gC/m²/yr), TOTECOSYSC (gC/m²) and April-October BTRAN, from the monthly h0. Tree fraction of the 0.5° RF run in 2060 from
+`code/figure4/extract_tree_fraction.py` (md5 `382885de4f46211bfc7591900e67cb0e`). **Slurm jobs 602447-602451**, `serial`/`normal` (dedicated partition
+occupied: 18 nodes allocated, 5 jobs of another user pending), 1 core, 32 GB / 2 h (4 km) and 8 GB / 1 h (0.5°), all COMPLETED in 4-55 s, exit 0,
+empty stderr, peak RSS 0.1 GB. Outputs under `_cache/figure5/` on the remote root, copied to the same local path, md5 identical:
+
+| job | run | output | md5 |
+|---|---|---|---|
+| 602447 | `20260917_seus_4km_fut_ssp370_RF` | `4km/SSP3-7.0_RF__annual_2091-2100.npz` | `6c65f541d7037d6eea6b1de3a10a70b7` |
+| 602448 | `20260917_seus_4km_fut_ssp370` | `4km/SSP3-7.0__annual_2091-2100.npz` | `444697121fad91762e914ed3e554baff` |
+| 602449 | `20260911_seus_halfdeg_future_ssp370_RF_dt3600` | `0.5deg/SSP3-7.0_RF__annual_2091-2100.npz` | `fb09fb5833264e1a4c6444cb463460bc` |
+| 602450 | `20260911_seus_halfdeg_future_ssp370_dt3600` | `0.5deg/SSP3-7.0__annual_2091-2100.npz` | `bf281a08aa21286d98affbeb58cb1252` |
+| 602451 | `20260911_seus_halfdeg_future_ssp370_RF_dt3600`, 2060 | `0.5deg/SSP3-7.0_RF__treefrac_2060.npz` | `9277a69f35488fb90896239b1e6ad28e` |
+
+Extract checks (land means 2091-2100, from the logs): NBP 35.1 (4 km RF), 25.7 (4 km Default), 29.6 (0.5° RF), 21.6 (0.5° Default) gC/m²/yr;
+implied fire NEP − LAND_USE_FLUX − NBP 94.5, 73.9, 104.2, 81.1 gC/m²/yr; 1 − BTRAN_GS 0.077, 0.076, 0.074, 0.074. Four 4 km land cells have no
+finite BTRAN_GS and drop out of eligibility. 0.5° RF tree area in 2060 is 947,158 km² (the RF plateau 947.2 ×10³ km², §3.9); PFT weights sum to 1.
+The Default extracts are for the Default-based risk check of the blueprint; `plot_priority_selection.py` does not read them yet.
+
+Plot `code/figure5/plot_priority_selection.py` (md5 `f5787d74ce53c31459d01a7f64c9bd5d`) → `figures/figure5/fig5_priority_SSP3-7.0_2091-2100.png`,
+`fig5_selections_*.csv`, `fig5_budget_curve_*.csv`. Eligible 4 km land 946.9 ×10³ km² in 75,425 cells, 571 eligible 0.5° cells; benefit on eligible
+land 4.974 PgC. Thresholds (area-weighted p80 of the 4 km component over eligible land): fire 0.589 %/yr, water stress 0.104, NBP variability 457.7 gC/m²/yr.
+
+| budget, screen | G 4 km (PgC) | G 0.5° (PgC) | loss at 0.5° | 4 km land above any threshold, 4 km / 0.5° selection |
+|---|---:|---:|---:|---:|
+| 20 %, none | 2.183 | 1.828 | 16.2 % | 12.4 % / 12.4 % |
+| 20 %, all three | 2.115 | 1.804 | 14.7 % | 0.0 % / 4.3 % |
+| 30 %, none | 2.864 | 2.506 | 12.5 % | 15.0 % / 13.0 % |
+| 30 %, all three | 2.729 | 2.449 | 10.3 % | 0.0 % / 5.1 % |
+
+Reading: at 20 % the 0.5° map captures 16 % less of the 4 km benefit and shares 61 % of the selected area with the 4 km selection (69 % at 30 %).
+Unscreened, the high-benefit land is rarely above the fire threshold (1.2 % / 0.3 %) and mostly crosses the water-stress one (10.0 % / 10.6 %), so the
+screen that matters is water stress; after it the 0.5° selection still has 2.8 % of its land above the threshold (0 at 4 km by construction), 2.3 %
+at p90 and 1.0 % at p95. The screen costs 3.1 % of the 4 km benefit (all three, 20 %). In sample the 4 km selection is best by construction, so the
+loss is model-internal information lost at 0.5°, not a real-world gain. The variability threshold is large against mean NBP and is probably driven by
+episodic fire; the components are not independent (not checked).
+
+### 3.19 Figure 5 revised: two risk components and the poster-style main figure (2026-10-01)
+
+User decisions 2026-10-01, applied to the selections of §3.18 (no new extraction, same inputs):
+
+- **NBP variability dropped from the screen**; only fire loss and water stress are used. Reason: about half of the variability is fire
+  (cell rank correlation 0.83 with the fire component; removing the fire term halves the median detrended NBP SD, 267 → 148 gC/m²/yr).
+  The combined screen is now fire + water.
+- **Implied fire is not a residual artefact.** The D4 identity is exact in this ELM version (`supplement/NBP_RESIDUAL_REVIEW_20260915.md`), no
+  land-year has an implied fire below −1 gC/m²/yr, and the 2091-2100 mean (94.5 gC/m²/yr domain mean in RF) is dominated by the 2094-2096 fire
+  years (2095: 412, 2096: 237 gC/m²/yr). The fire component is therefore sensitive to the window, besides having ~0.5° effective resolution.
+- **Main figure in the poster layout** (`code/figure5/plot_priority_maps.py`, md5 `900afe46651424c3ae2515c0d6c0380b`) →
+  `figures/figure5/fig5_priority_maps_SSP3-7.0_2091-2100.png`: a benefit per eligible ha (4 km), b water stress (4 km) with the p80 threshold,
+  c 4 km siting quadrants (top 20 % benefit × water-stress threshold), d the same rule with the native 0.5° run on its 0.5° cells. Unlike the poster
+  (`carbon_offset_poster/outputs/panel4_siting_RF_4km_ABCD.png`) the split is an equal-area budget and one absolute threshold shared by both resolutions,
+  and the risk is water stress alone. Quadrant shares of eligible land, 4 km / 0.5°: selected & low risk 18.0 / 17.7 %, selected & high risk 2.0 / 2.3 %,
+  not selected & low risk 62.0 / 63.6 %, not selected & high risk 18.0 / 16.3 %.
+- **Supplement figures**: `plot_priority_selection.py` (md5 `1c8b6b7898e0463fb0bc7e592bd23a9e`; budget curve, benefit and exposure bars, scatter; panel e
+  legend moved) and `plot_risk_maps.py` (md5 `73324f0c41bc8eb9fca66fb85cb7be4a`; fire and water-stress maps at both resolutions with the threshold;
+  above the threshold: fire 20.0 % of eligible land at 4 km vs 23.1 % at 0.5°, water stress 20.0 % vs 18.6 %).
+
+Numbers at the 20 % budget, thresholds p80 (fire 0.589 %/yr, water stress 0.104), scored on the 4 km field:
+
+| screen | 4 km map (PgC) | 0.5° map (PgC) | loss at 0.5° | 4 km exposure of the selection, water (4 km / 0.5°) |
+|---|---:|---:|---:|---:|
+| none | 2.183 | 1.828 | 16.2 % | 10.0 / 10.6 % |
+| fire | 2.179 | 1.828 | 16.1 % | 9.8 / 10.6 % |
+| water stress | 2.127 | 1.809 | 14.9 % | 0.0 / 2.8 % |
+| fire + water | 2.123 | 1.809 | 14.8 % | 0.0 / 2.8 % |
+
+At 30 %: loss 12.5 % without a screen, 10.7 % with fire + water. The fire screen changes almost nothing because high-fire land has low benefit
+(mean 24 vs 60 MgC/ha per eligible ha below the threshold), so little of it is selected (1.2 % of the 4 km selection). Still open: the 5 %
+eligibility floor (set in code, not yet confirmed by the user); out-of-sample tests; RH.
+
+### 3.20 Figure 5 main figure with the benefit without fire loss (2026-10-02)
+
+User decisions 2026-10-01/02: panel a shows the RF benefit **without fire loss** (fire loss added back), then fire risk, water stress, and
+only the 4 km siting (the 4 km vs 0.5° comparison goes to the supplement).
+
+Extractor `code/figure5/extract_fire_cumulative.py` (md5 `12c5ee6b846b021cb508ab95b4a9e17e`): per cell, fire = NEP − LAND_USE_FLUX − NBP each year
+2024-2100 (annual day-weighted means), its cumulative sum, and the 2091-2100 mean of the cumulative sum to each year (`fire_cum_endmean`). A first
+submission (jobs 602935-602938) failed in 8-13 s on a month-length check: the first record of a run starts one model time step early (2024 time_bounds
+−1/24 to 31 d); the check now allows 0.1 d. **Slurm jobs 602940 (4 km RF), 602941 (4 km Default), 602942 (0.5° RF), 602943 (0.5° Default)**,
+`serial`/`normal`, 32 GB / 8 GB, COMPLETED in 2 min 15 s (4 km) and 26-29 s (0.5°), empty stderr. Outputs `_cache/figure5/{4km,0.5deg}/SSP3-7.0[_RF]__firecum_2024-2100.npz`,
+copied locally, md5 identical: 4 km RF `be644c9aa3455fa1a28e5e74bdbbc3b6`, 4 km Default `9643b8c7d51258a0a8ed111a0dc922b9`, 0.5° RF `46a1ccfa963f5a51f6f03d86ca6488af`,
+0.5° Default `7c20fa586399325b99c89e901e018deb`. Cumulative domain fire 2024-2100: 4 km RF 7.17, Default 5.85 PgC; 0.5° RF 8.03, Default 6.54 PgC.
+
+Plot `code/figure5/plot_priority_maps.py` (rewritten; md5 `4859f67e657c1c3ac033f45911369ab0`) → `figures/figure5/fig5_priority_maps_SSP3-7.0_2091-2100.png`:
+a benefit without fire loss = window-mean TOTECOSYSC difference + window mean of the cumulative fire-loss difference RF − Default, per eligible ha;
+b fire risk (2091-2100, %/yr) and c water stress (1 − BTRAN, Apr-Oct) with the p80 thresholds; d 4 km siting = rank by panel a, remove land above
+either threshold, fill 20 % of eligible land; land in the unscreened top 20 % removed by the screen is marked by risk.
+
+Results (4 km, 20 % budget, p80):
+- Benefit on eligible land: net 4.97 PgC; fire-loss difference added back +1.19 PgC (RF burns more: more forest, more fuel); without fire loss 6.16 PgC.
+- Rank correlation of the benefit with and without fire loss 0.90; their unscreened top 20 % overlap by 84 %.
+- **Fire now matters for the screen**: of the unscreened top 20 % by the benefit without fire loss, 7.3 % is above the fire threshold and 9.5 % above the
+  water-stress threshold only (with the net benefit, where fire loss is already subtracted, only 1.2 % was above the fire threshold, §3.19). The screen
+  removes 1.5 % (fire) and 1.9 % (water) of the eligible land from the top 20 % and gives up 5.3 % of the benefit without fire loss (2.53 → 2.40 PgC);
+  scored on the net benefit the same selections hold 2.10 and 2.09 PgC.
+- Classes of eligible land: selected 20.0 %, high benefit excluded for fire 1.5 %, for water stress 1.9 %, eligible not selected 76.6 %.
+- Caveats on the figure: adding the fire loss back is an approximation (unburnt carbon would partly be respired later; fire also changes stand dynamics);
+  fire has ~0.5° effective resolution at 4 km and its 2091-2100 mean is dominated by the 2094-2096 fire years.
+
 ## 4. Script and product locations
 
 Since 2026-10-01 `code/` and `figures/` are organized by manuscript figure

@@ -55,7 +55,7 @@ BAND_LAT = 30.833           # crit_dayl_stress line; its 0.5 deg row is 30.5-31.
 GC_M2_TO_MGC_HA = 0.01
 INK, INK2, GRID, SURFACE, BAD = "#0b0b0b", "#52514e", "#e9e8e4", "#fcfcfb", "#dfe3e8"
 MGMT = {"RF": "#2a78d6", "RH": "#eb6834"}
-SERIES = {"C": ("#1baf7a", "C  native 4 km"), "A": ("#e87ba4", "A  native 0.5°")}
+SERIES = {"C": ("#1baf7a", "4 km run"), "A": ("#e87ba4", "0.5° run")}
 DIV = LinearSegmentedColormap.from_list("div", ["#e34948", "#f0efec", "#1c5cab"])
 SEQ = LinearSegmentedColormap.from_list("seq", ["#cde2fb", "#86b6ef", "#3987e5", "#1c5cab", "#0d366b"])
 QS = (0.05, 0.25, 0.5, 0.75, 0.95)
@@ -305,20 +305,20 @@ def main():
     fig = plt.figure(figsize=(17, 16), facecolor=SURFACE)
     gs = fig.add_gridspec(3, 12, height_ratios=[1, 1, 0.9], hspace=0.42, wspace=1.7, left=0.05, right=0.985, top=0.935, bottom=0.115)
     axs = [fig.add_subplot(gs[0, 4 * k:4 * k + 4], projection=ccrs.PlateCarree()) for k in range(3)]
-    mesh = draw_map(axs[0], b["lon4"], b["lat4"], c_map, DIV, norm, ("a", "C  native 4 km"), extent)
-    draw_map(axs[1], b["lon5"], b["lat5"], a_map, DIV, norm, ("b", "A  native 0.5° run"), extent)
+    mesh = draw_map(axs[0], b["lon4"], b["lat4"], c_map, DIV, norm, ("a", "4 km run"), extent)
+    draw_map(axs[1], b["lon5"], b["lat5"], a_map, DIV, norm, ("b", "0.5° run"), extent)
     cb = fig.colorbar(mesh, ax=axs[:2], orientation="horizontal", fraction=0.04, pad=0.09, shrink=0.55, extend="both")
     cb.set_label("Δ ecosystem carbon stock, RF − Default (TOTECOSYSC, MgC/ha of land), mean 2091–2100", fontsize=9.5, color=INK)
     cb.ax.tick_params(labelsize=9)
-    meshx = draw_map(axs[2], b["lon4"], b["lat4"], diff, DIV, Normalize(-dmax, dmax), ("c", "A − C  (A copied to the 4 km cells)"), extent)
+    meshx = draw_map(axs[2], b["lon4"], b["lat4"], diff, DIV, Normalize(-dmax, dmax), ("c", "0.5° run − 4 km run, on the 4 km cells"), extent)
     cbx = fig.colorbar(meshx, ax=axs[2], orientation="horizontal", fraction=0.04, pad=0.09, shrink=0.8, extend="both")
-    cbx.set_label("A − C, Δ ecosystem carbon stock (MgC/ha of land)", fontsize=9.5, color=INK)
+    cbx.set_label("0.5° run − 4 km run, Δ ecosystem carbon stock (MgC/ha of land)", fontsize=9.5, color=INK)
     cbx.ax.tick_params(labelsize=9)
 
     axd = fig.add_subplot(gs[1, 0:4], projection=ccrs.PlateCarree())
     sd_max = float(np.ceil(np.nanpercentile(b["within_sd"], 98) / 5) * 5)
     meshd = draw_map(axd, b["lon5"], b["lat5"], np.where(b["wb"] > 0, b["within_sd"], np.nan), SEQ, Normalize(0, sd_max),
-                     ("d", "SD of C inside each 0.5° cell"), extent)
+                     ("d", "SD of the 4 km run inside each 0.5° cell"), extent)
     cbd = fig.colorbar(meshd, ax=axd, orientation="horizontal", fraction=0.045, pad=0.09, shrink=0.8, extend="max")
     cbd.set_label("MgC/ha (area-weighted SD of the 4 km gain)", fontsize=9, color=INK)
     cbd.ax.tick_params(labelsize=9)
@@ -334,11 +334,10 @@ def main():
         ax1, ax2 = fig.add_subplot(sub[0]), fig.add_subplot(sub[1])
         lon_e = np.append(b["lon5"][i0:i1] - 0.25, b["lon5"][i1 - 1] + 0.25)
         lat_e = np.append(b["lat5"][j0:j1] - 0.25, b["lat5"][j1 - 1] + 0.25)
-        draw_zoom(ax1, b["lon4"][q0:q1], b["lat4"][r0:r1], c_map[r0:r1, q0:q1], norm, "C  4 km", lon_e, lat_e)
-        draw_zoom(ax2, b["lon4"][q0:q1], b["lat4"][r0:r1], np.where(b["common"], b["a"], np.nan)[r0:r1, q0:q1], norm,
-                  "A  0.5°", lon_e, lat_e)
+        draw_zoom(ax1, b["lon4"][q0:q1], b["lat4"][r0:r1], c_map[r0:r1, q0:q1], norm, "4 km run", lon_e, lat_e)
+        draw_zoom(ax2, b["lon5"][i0:i1], b["lat5"][j0:j1], a_map[j0:j1, i0:i1], norm, "0.5° run", lon_e, lat_e)
         ax2.set_yticklabels([])
-        ptitle(ax1, letter, f"Zoom {k + 1}: SD of C in the centre cell {b['within_sd'][j, i]:.0f}" + (" MgC/ha" if k == 0 else " (median)"))
+        ptitle(ax1, letter, f"Zoom {k + 1}: 4 km SD in the centre cell {b['within_sd'][j, i]:.0f}" + (" MgC/ha" if k == 0 else " (median)"))
 
     # g: area-weighted cumulative distributions of C and A
     axg = fig.add_subplot(gs[2, 0:4])
@@ -356,7 +355,7 @@ def main():
 
     # h-i: where the top-10 % land area of the 4 km run is, and whether the 0.5 deg run finds it
     cls_cols = ["#e1e0dc", "#eb6834", "#1baf7a", "#2a78d6"]     # neither, C only, A only, both
-    cls_names = ["Neither", "C only (missed by 0.5°)", "A only", "Both"]
+    cls_names = ["Neither", "4 km only (missed by 0.5°)", "0.5° only", "Both"]
     cmap_cls = matplotlib.colors.ListedColormap(cls_cols)
     for letter, mg, col in (("h", "RF", slice(4, 8)), ("i", "RH", slice(8, 12))):
         bm = B[mg]
@@ -385,7 +384,8 @@ def main():
     fig.text(0.05, 0.006,
              "Gain = change in the total ecosystem carbon STOCK, management run − Default, mean of the window (TOTECOSYSC = vegetation + CWD + litter + soil, whole column, + wood products; "
              "MgC/ha of land). A stock difference, not a flux: it is not NBP.\n"
-             "Common support of the 4 km and 0.5° runs; weights area × landfrac. A is a separately configured run, so A − C combines resolution and configuration. "
+             "C = native 4 km run, A = native 0.5° run (Methods notation). Common support of the two runs; weights area × landfrac. "
+             "A is a separately configured run, so A − C combines resolution and configuration. "
              f"RF: SD(A)/SD(C) = {st['sd_ratio_A_over_C']:.2f}, mean A − C = {st['mean_diff_A_minus_C']:+.1f} MgC/ha.\n"
              "RF is restoration plus a region-wide harvest ban; its gain contains the SSP's own land-use drift. Panel d: SD of the 4 km gain inside each 0.5° cell, about that cell's own mean.\n"
              "h-i: top 10% = the cells with the largest gain holding 10% of the common-support land area in each run (the 0.5° top decile is made of whole 0.5° cells).",

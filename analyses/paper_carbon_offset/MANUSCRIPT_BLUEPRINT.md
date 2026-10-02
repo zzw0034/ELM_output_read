@@ -99,6 +99,16 @@ the ELM grid (server-side resampling). D6 step 1 still reads "0–30 cm,
 SoilGrids" and has **not** been updated to this wider scope; which product and
 depth carry the within-cell test is open. Details and first statistics: [analysis_process_notes.md](analysis_process_notes.md) §3.4.
 
+### A6. Figure 5 choices (decided 2026-10-01/02)
+
+Coarse comparator = the native 0.5° run (not the 4 km map averaged to 0.5°), as in Figure 3. Risk = fire loss and water stress only
+(water stress = 1 − BTRAN averaged April–October; NBP variability dropped because about half of it is fire). One threshold per
+component, the area-weighted 80th percentile of the 4 km component over eligible land, shared by both resolutions (50th, 90th and
+95th as sensitivity). Eligible land = RF 2060 forest fraction ≥ 5 % (results unchanged for floors of 1–20 %). **Main figure**: a RF
+benefit without fire loss (stock difference plus the cumulative fire-loss difference since 2024; an approximation), b fire risk,
+c water stress, d 4 km siting after removing land above either threshold. The 4 km vs 0.5° comparison (agreement map, budget curve,
+exposure), the risk maps and the screen comparison go to the supplement. Details: [analysis_process_notes.md](analysis_process_notes.md) §3.18–3.20.
+
 ---
 
 ## Part B — Scientific story

@@ -54,14 +54,15 @@ f850ac1). The script keeps its old name.
 ## figure5/ — consequences for prioritization (Results 3.4)
 
 Notes §3.18–3.20; decisions in blueprint A6. RF, SSP3-7.0, 2091–2100, 20 % of eligible land (RF 2060 forest fraction ≥ 0.05),
-risk thresholds = area-weighted p80 of the 4 km component over eligible land.
+risk thresholds = area-weighted p80 of the 4 km component over eligible land; the other SSPs use the same (SSP3-7.0) absolute thresholds (§3.22).
 
 | Script | What it does | How it runs |
 |---|---|---|
 | `extract_annual_maps.py` | Annual maps of NBP, NEP, LAND_USE_FLUX, TOTECOSYSC and April–October BTRAN of one run (2091–2100) → `_cache/figure5/<res>/<SSP>[_RF]__annual_<window>.npz` | Slurm; jobs 602447–602451 |
 | `extract_fire_cumulative.py` | Cumulative fire loss (NEP − LAND_USE_FLUX − NBP) 2024–2100 and its 2091–2100 mean of the running sum → `…__firecum_2024-2100.npz` | Slurm; jobs 602940–602943 |
-| `plot_priority_maps.py` | **Main Figure 5**: a benefit without fire loss, b fire risk, c water stress, d 4 km siting after the fire + water screen | Locally |
-| `plot_priority_selection.py` | Supplement: 4 km vs native 0.5° equal-area selection, budget curve, benefit and exposure before/after screens, scatter; selection CSVs | Locally |
+| `plot_priority_maps.py` | **Main Figure 5**: a benefit without fire loss, b fire risk, c water stress, d 4 km siting after the fire + water screen; `--thresholds`/`--vmax` fix thresholds and colour scales | Locally; `--ssp` |
+| `plot_priority_ssps.py` | All four SSPs (notes §3.22): fixed SSP3-7.0 p80 thresholds and shared colour scales, redraws `fig5_priority_maps_<SSP>` for each SSP and the cross-SSP summary `fig5_ssp_summary` (cells selected in k SSPs, captured benefit, land above the thresholds, 0.5° loss) | Locally |
+| `plot_priority_selection.py` | Supplement: 4 km vs native 0.5° equal-area selection, budget curve, benefit and exposure before/after screens, scatter; selection CSVs | Locally; `--ssp`, `--thresholds FIRE WATER` for the other SSPs |
 | `plot_priority_ab.py` | Supplement variant: only the 4 km vs 0.5° agreement map and the budget curve (no screen) | Locally |
 | `plot_risk_maps.py` | Supplement: fire and water-stress maps at 4 km and 0.5° with the thresholds | Locally |
 | `plot_selection_noscreen.py` | Supplement: siting by the benefit without fire loss with and without the screen (what the screen removes and adds) | Locally |

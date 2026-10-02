@@ -39,8 +39,12 @@ shared by both resolutions. 4 km excludes 4 km cells above it, 0.5 deg excludes 
 4 km risk. If the screened land cannot fill the budget, the shortfall is reported, the threshold is
 not relaxed. Screens: each component alone, and both together.
 
+Fixed thresholds (--thresholds FIRE WATER, user decision 2026-10-02 for the cross-SSP set: the SSP3-7.0 p80
+applied to every SSP) replace the main percentile thresholds; the --sens percentiles stay each SSP's own.
+
 Runs locally (cartopy venv), from the analysis root:
-    /Users/zw5/ORNL_workplace/ELM_output_read/.venv/bin/python code/figure5/plot_priority_selection.py
+    /Users/zw5/ORNL_workplace/ELM_output_read/.venv/bin/python code/figure5/plot_priority_selection.py [--ssp SSP3-7.0]
+        [--thresholds FIRE WATER --threshold-label "SSP3-7.0 p80"]
 Inputs (git-ignored):
     _cache/figure4/4km/SSP3-7.0{,_RF}__pools_2091-2100.npz, _cache/figure3/0.5deg/SSP3-7.0{,_RF}__pools_2091-2100.npz
     _cache/figure4/4km/SSP3-7.0_RF__treefrac_2060.npz, _cache/figure5/0.5deg/SSP3-7.0_RF__treefrac_2060.npz
@@ -225,6 +229,9 @@ def main():
     ap.add_argument("--pct", type=float, default=80, help="threshold percentile (main)")
     ap.add_argument("--sens", type=float, nargs="*", default=[90, 95], help="threshold percentiles (sensitivity)")
     ap.add_argument("--budgets", type=float, nargs="*", default=[20, 30])
+    ap.add_argument("--thresholds", type=float, nargs=2, metavar=("FIRE", "WATER"),
+                    help="fixed absolute main thresholds instead of this SSP's own p<pct> (sensitivity percentiles stay this SSP's own)")
+    ap.add_argument("--threshold-label", default=None, help="how the fixed thresholds were derived, e.g. 'SSP3-7.0 p80'")
     ap.add_argument("--cache-4km", default=os.path.join(ROOT, "_cache/figure4/4km"))
     ap.add_argument("--cache-05", default=os.path.join(ROOT, "_cache/figure3/0.5deg"))
     ap.add_argument("--risk-cache", default=os.path.join(ROOT, "_cache/figure5"))
@@ -240,10 +247,15 @@ def main():
     print(f"total benefit on eligible 4 km land {tot:.3f} PgC")
 
     def thresholds(pct):
+        if a.thresholds and pct == a.pct:
+            return dict(zip(("fire", "water"), a.thresholds))
         return {k: wquantile(m["R4"][k][elig_all], m["a4"][elig_all], pct / 100) for k, _ in COMPONENTS}
 
     T = thresholds(a.pct)
-    print(f"thresholds (4 km eligible, area-weighted p{a.pct:g}): " + ", ".join(f"{k} {v:.4g}" for k, v in T.items()))
+    tlab = (a.threshold_label or "fixed") if a.thresholds else f"p{a.pct:g}"
+    print(f"thresholds ({'fixed: ' + tlab if a.thresholds else f'4 km eligible, area-weighted p{a.pct:g}'}): "
+          + ", ".join(f"{k} {v:.4g}" for k, v in T.items()) + "; eligible land above: "
+          + ", ".join(f"{k} {100 * m['a4'][elig_all & (m['R4'][k] > T[k])].sum() / m['E']:.1f}%" for k, _ in COMPONENTS))
 
     # ---- selections for every budget, screen and threshold percentile
     rows = []
@@ -399,7 +411,7 @@ def main():
     axe.axvline(cut, color=INK, lw=1, ls="--")
     axe.axhline(T["water"], color=INK, lw=1, ls=":")
     axe.text(cut, axe.get_ylim()[1], " budget cutoff", fontsize=8, color=INK2, va="top")
-    axe.text(axe.get_xlim()[0], T["water"], f" threshold p{a.pct:g}", fontsize=8, color=INK2, ha="left", va="bottom")
+    axe.text(axe.get_xlim()[0], T["water"], f" threshold {tlab}", fontsize=8, color=INK2, ha="left", va="bottom")
     style(axe, "Water stress (1 − BTRAN, Apr–Oct)", "Benefit per eligible ha, 4 km (MgC/ha)")
     axe.legend(frameon=True, framealpha=0.92, edgecolor="none", fontsize=7.8, loc="upper left", markerscale=3)
     ptitle(axe, "e", f"Benefit vs water stress, {p0:g}% budget")
@@ -410,8 +422,9 @@ def main():
              f"Benefit = TOTECOSYSC stock difference RF − Default, per eligible hectare; eligible land = RF's 2060 forest fraction of each run (cells ≥ {a.floor:g} of the cell). "
              "Both selections cover the same physical area and are scored on the 4 km field;\n"
              "in sample the 4 km selection is best by construction (model-internal information loss). The 0.5° map is the native 0.5° run (separately configured). "
-             f"Screen thresholds: area-weighted p{a.pct:g} of the 4 km component over eligible land, shared by both maps;\n"
-             "the 0.5° side screens with its own 0.5° risk. Fire = (NEP − LAND_USE_FLUX − NBP)/TOTECOSYSC, ~0.5° effective resolution at 4 km; water stress = 1 − BTRAN, Apr–Oct "
+             + (f"Screen thresholds: fixed at the {tlab} (fire {T['fire']:.3g} %/yr, water {T['water']:.3g}), shared by both maps;\n" if a.thresholds else
+              f"Screen thresholds: area-weighted p{a.pct:g} of the 4 km component over eligible land, shared by both maps;\n")
+             + "the 0.5° side screens with its own 0.5° risk. Fire = (NEP − LAND_USE_FLUX − NBP)/TOTECOSYSC, ~0.5° effective resolution at 4 km; water stress = 1 − BTRAN, Apr–Oct "
              "(NBP variability not used: about half of it is fire). RF is restoration plus a region-wide harvest ban.",
              fontsize=8.4, color=INK2, va="bottom", ha="left")
     png = os.path.join(a.out_dir, f"fig5_priority_{a.ssp}_{win}.png")

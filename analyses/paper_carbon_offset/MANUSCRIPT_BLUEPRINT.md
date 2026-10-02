@@ -107,7 +107,10 @@ component, the area-weighted 80th percentile of the 4 km component over eligible
 95th as sensitivity). Eligible land = RF 2060 forest fraction ≥ 5 % (results unchanged for floors of 1–20 %). **Main figure**: a RF
 benefit without fire loss (stock difference plus the cumulative fire-loss difference since 2024; an approximation), b fire risk,
 c water stress, d 4 km siting after removing land above either threshold. The 4 km vs 0.5° comparison (agreement map, budget curve,
-exposure), the risk maps and the screen comparison go to the supplement. Details: [analysis_process_notes.md](analysis_process_notes.md) §3.18–3.20.
+exposure), the risk maps and the screen comparison go to the supplement. **Other SSPs (2026-10-02)**: every SSP uses the fixed
+SSP3-7.0 p80 thresholds (absolute, not each SSP's own percentile) and one shared colour scale per map panel; main text keeps SSP3-7.0, and the
+cross-SSP robustness (how many SSPs select each cell, captured benefit, land above the thresholds, 0.5° loss) is the planned Figure 5e or a
+supplement figure (layout open). Details: [analysis_process_notes.md](analysis_process_notes.md) §3.18–3.20, §3.22.
 
 ---
 

@@ -1066,6 +1066,81 @@ Results (4 km, 20 % budget, p80):
 - Caveats on the figure: adding the fire loss back is an approximation (unburnt carbon would partly be respired later; fire also changes stand dynamics);
   fire has ~0.5° effective resolution at 4 km and its 2091-2100 mean is dominated by the 2094-2096 fire years.
 
+### 3.22 Figure 5 for all four SSPs with fixed thresholds and shared colour scales (2026-10-02)
+
+User decisions 2026-10-02: Figure 5 is drawn for SSP1-1.9, SSP2-4.5 and SSP5-8.5 as well; every SSP uses the **same absolute risk
+thresholds, the SSP3-7.0 p80** (fire 0.5889 %/yr, water stress 0.1037), so that differences between SSPs come from the scenarios and
+not from re-ranking; the maps of all four SSPs share **one colour scale** per panel (p98 of the eligible cells of the four SSPs pooled:
+benefit 160.3 MgC/ha, fire 1.047 %/yr, water stress 0.152). The SSP3-7.0 main figure was redrawn with the shared scale (its numbers are
+unchanged). Main text keeps SSP3-7.0; the cross-SSP summary is proposed as the robustness evidence (panel a as Figure 5e or a supplement figure,
+layout not decided).
+
+Extraction: the same scripts and versions as §3.10, §3.18 and §3.20 (remote md5s identical to the recorded ones), cases from `common.py`
+(4 km Default `20260917_seus_4km_fut_<tag>`, RF `20260915_seus_4km_fut_<tag>_RF`; 0.5° Default `20260911_seus_halfdeg_future_<tag>_dt3600`,
+RF `20260915_seus_halfdeg_future_<tag>_RF_dt3600`; all 77 h0 years 2024-2100 present). The Default annual maps and the 0.5° cumulative fire
+were not extracted (no plot reads them). **Slurm jobs 602988-603017**, `serial`/`normal` (dedicated partition: 4 idle nodes but 4 jobs of another
+user pending), 1 core, 32 GB / 2 h (4 km), 8 GB / 1 h (0.5°), all COMPLETED exit 0 in 2 s-4 min 18 s, empty stderr. Outputs under `_cache/` on
+the remote root, copied to the same local paths, md5 identical:
+
+| job | SSP | extract | output (under `_cache/`) | md5 |
+|---|---|---|---|---|
+| 602988 | SSP1-1.9 | 4 km Default pools | `figure4/4km/SSP1-1.9__pools_2091-2100.npz` | `e6b29d93391f89365be45820aa3c6ee6` |
+| 602989 | SSP1-1.9 | 4 km RF pools | `figure4/4km/SSP1-1.9_RF__pools_2091-2100.npz` | `5bd80f074cf10fd7b6bea87c6508d275` |
+| 602990 | SSP1-1.9 | 0.5° Default pools | `figure3/0.5deg/SSP1-1.9__pools_2091-2100.npz` | `21a17b42c894478c07f38fee798147b0` |
+| 602991 | SSP1-1.9 | 0.5° RF pools | `figure3/0.5deg/SSP1-1.9_RF__pools_2091-2100.npz` | `8785d0c293933c909d671baa67dad9ca` |
+| 602992 | SSP1-1.9 | 4 km RF tree fraction 2060 | `figure4/4km/SSP1-1.9_RF__treefrac_2060.npz` | `3a4eb8f2f9a1e5d9b4dd129ba9cc71d9` |
+| 602993 | SSP1-1.9 | 0.5° RF tree fraction 2060 | `figure5/0.5deg/SSP1-1.9_RF__treefrac_2060.npz` | `c711ad65537b7777cc506ebe525a0a7b` |
+| 602994 | SSP1-1.9 | 4 km RF annual maps | `figure5/4km/SSP1-1.9_RF__annual_2091-2100.npz` | `d5e4ba0e85cb714385a74134c10a36c5` |
+| 602995 | SSP1-1.9 | 0.5° RF annual maps | `figure5/0.5deg/SSP1-1.9_RF__annual_2091-2100.npz` | `c45073b05171dd546fb29bb4b2104525` |
+| 602996 | SSP1-1.9 | 4 km Default cumulative fire | `figure5/4km/SSP1-1.9__firecum_2024-2100.npz` | `d9082d5a4aba7cdf7fe05f47b4542c8f` |
+| 602997 | SSP1-1.9 | 4 km RF cumulative fire | `figure5/4km/SSP1-1.9_RF__firecum_2024-2100.npz` | `ad50182166531fc730a1ee5c7b2ff3ca` |
+| 602998 | SSP2-4.5 | 4 km Default pools | `figure4/4km/SSP2-4.5__pools_2091-2100.npz` | `0c2659fa4126584ed884706d939f1056` |
+| 602999 | SSP2-4.5 | 4 km RF pools | `figure4/4km/SSP2-4.5_RF__pools_2091-2100.npz` | `cb5c4587839755fa9c3371f4a3908aec` |
+| 603000 | SSP2-4.5 | 0.5° Default pools | `figure3/0.5deg/SSP2-4.5__pools_2091-2100.npz` | `f643e945714152ed3eaae6392ca07f78` |
+| 603001 | SSP2-4.5 | 0.5° RF pools | `figure3/0.5deg/SSP2-4.5_RF__pools_2091-2100.npz` | `a05663d3a14ddc7d8a801f178f4e6e59` |
+| 603002 | SSP2-4.5 | 4 km RF tree fraction 2060 | `figure4/4km/SSP2-4.5_RF__treefrac_2060.npz` | `05899b0079de8c35c9ea157021f7d757` |
+| 603003 | SSP2-4.5 | 0.5° RF tree fraction 2060 | `figure5/0.5deg/SSP2-4.5_RF__treefrac_2060.npz` | `04edbe8baccf04b32f89401e0b67b63d` |
+| 603004 | SSP2-4.5 | 4 km RF annual maps | `figure5/4km/SSP2-4.5_RF__annual_2091-2100.npz` | `e6acab06773a4180bdb9cd0f22d11deb` |
+| 603005 | SSP2-4.5 | 0.5° RF annual maps | `figure5/0.5deg/SSP2-4.5_RF__annual_2091-2100.npz` | `e200e75f597ebc770e3b17f2b495583e` |
+| 603006 | SSP2-4.5 | 4 km Default cumulative fire | `figure5/4km/SSP2-4.5__firecum_2024-2100.npz` | `9c853bad20a75380f630d8d197892178` |
+| 603007 | SSP2-4.5 | 4 km RF cumulative fire | `figure5/4km/SSP2-4.5_RF__firecum_2024-2100.npz` | `b3049fb403e1fb8978cf5afde728a502` |
+| 603008 | SSP5-8.5 | 4 km Default pools | `figure4/4km/SSP5-8.5__pools_2091-2100.npz` | `47ffa7e33d195be6b262d3b72c3e16ae` |
+| 603009 | SSP5-8.5 | 4 km RF pools | `figure4/4km/SSP5-8.5_RF__pools_2091-2100.npz` | `5749a16eea889a1bd47e8b7d9d24008f` |
+| 603010 | SSP5-8.5 | 0.5° Default pools | `figure3/0.5deg/SSP5-8.5__pools_2091-2100.npz` | `7a1a7d2a6429c16e0bdbd8cdb76173d9` |
+| 603011 | SSP5-8.5 | 0.5° RF pools | `figure3/0.5deg/SSP5-8.5_RF__pools_2091-2100.npz` | `b17b2ae550b623e56522e42db83e5d38` |
+| 603012 | SSP5-8.5 | 4 km RF tree fraction 2060 | `figure4/4km/SSP5-8.5_RF__treefrac_2060.npz` | `2e49892d1316ba732eb8876cef7ee980` |
+| 603013 | SSP5-8.5 | 0.5° RF tree fraction 2060 | `figure5/0.5deg/SSP5-8.5_RF__treefrac_2060.npz` | `3066ad25202563b21f47341291fb9e37` |
+| 603014 | SSP5-8.5 | 4 km RF annual maps | `figure5/4km/SSP5-8.5_RF__annual_2091-2100.npz` | `702493b5ec3bda1b06d3b1cfc585868c` |
+| 603015 | SSP5-8.5 | 0.5° RF annual maps | `figure5/0.5deg/SSP5-8.5_RF__annual_2091-2100.npz` | `c2e027729ff70a0023de0b3dfc53d774` |
+| 603016 | SSP5-8.5 | 4 km Default cumulative fire | `figure5/4km/SSP5-8.5__firecum_2024-2100.npz` | `4a05f45a2d37b6cd405d225e3b975248` |
+| 603017 | SSP5-8.5 | 4 km RF cumulative fire | `figure5/4km/SSP5-8.5_RF__firecum_2024-2100.npz` | `ea100539efaf1cd3926342736fb6e160` |
+
+Plots: `code/figure5/plot_priority_maps.py` (refactored into `compute`/`draw`, new `--thresholds`, `--threshold-label`, `--vmax`; md5
+`826e46b215e61530509eff8729857761`; with its defaults it reproduces every SSP3-7.0 number of §3.20), `code/figure5/plot_priority_selection.py`
+(new `--thresholds`, `--threshold-label`; the `--sens` percentiles stay each SSP's own; md5 `03cc3aeec79a5e6d6e0c6f06191c7f06`) and the new driver
+`code/figure5/plot_priority_ssps.py` (md5 `b4ca16031161b7c9827e84cf50b691ed`) → `figures/figure5/fig5_priority_maps_<SSP>_2091-2100.png` (four SSPs),
+`fig5_ssp_summary_2091-2100.{png,csv}`; `plot_priority_selection.py --thresholds 0.588914738305283 0.10368282569248412 --threshold-label "SSP3-7.0 p80"`
+→ `fig5_priority_<SSP>_2091-2100.png` and CSVs for SSP1-1.9, SSP2-4.5, SSP5-8.5 (the SSP3-7.0 one is unchanged: fixed = own p80).
+
+Results (4 km, 20 % budget, eligible land 946.9 ×10³ km² in every SSP):
+
+| SSP | benefit w/o fire loss on eligible land (PgC) | fire-loss diff. added back | eligible land above fire / water threshold | captured unscreened → screened (PgC) | screen cost | loss at 0.5°, no screen / fire + water (net benefit) |
+|---|---:|---:|---:|---:|---:|---:|
+| SSP1-1.9 | 4.30 | +0.69 | 0.8 / 2.9 % | 1.733 → 1.711 | 1.3 % | 22.4 / 21.6 % |
+| SSP2-4.5 | 4.94 | +0.71 | 15.4 / 17.3 % | 1.895 → 1.806 | 4.7 % | 17.7 / 15.9 % |
+| SSP3-7.0 | 6.16 | +1.19 | 20.0 / 20.0 % | 2.533 → 2.400 | 5.3 % | 16.2 / 14.8 % |
+| SSP5-8.5 | 6.25 | +1.21 | 23.6 / 25.6 % | 2.416 → 2.242 | 7.2 % | 18.5 / 16.8 % |
+
+- Risk rises with forcing under the fixed thresholds: SSP1-1.9 has almost no land above them, so its screen removes little.
+- **Robustness of the siting**: of the eligible land, 7.8 % is selected (screened) in all four SSPs, 6.3 % in three, 8.3 % in two, 13.4 % in one,
+  64.2 % in none; of the land selected in any SSP, 22 % is selected in all four. Pairwise overlap of the screened selections 56-69 % (SSP3-7.0 with
+  SSP1-1.9 56 %, SSP2-4.5 56 %, SSP5-8.5 69 %; SSP1-1.9 with SSP2-4.5 67 %).
+- The 4 km advantage holds in every SSP: the native 0.5° map captures 15-22 % less of the 4 km benefit (net benefit, screened), largest in SSP1-1.9.
+- Domain cumulative fire 2024-2100 (4 km, RF / Default): SSP1-1.9 5.34 / 4.61, SSP2-4.5 6.21 / 5.40, SSP3-7.0 7.17 / 5.84 (§3.20 printed 5.85;
+  the script prints 5.84), SSP5-8.5 8.06 / 6.75 PgC.
+- Caveats as in §3.20 (fire loss added back is an approximation; fire has ~0.5° effective resolution). Eligibility uses each SSP's own RF 2060
+  tree fraction; the eligible area is identical across SSPs (RF holds its land cover fixed, §3.9).
+
 ## 4. Script and product locations
 
 Since 2026-10-01 `code/` and `figures/` are organized by manuscript figure

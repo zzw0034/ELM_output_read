@@ -10,7 +10,8 @@ for every SSP, so that differences between the SSP maps come from the scenarios 
 Writes, for each SSP, the four-panel figure of plot_priority_maps.py (fig5_priority_maps_<SSP>_<window>.png, the
 SSP3-7.0 one included, so the main figure carries the shared scale), and one cross-SSP map (user decision
 2026-10-02: only this map, the bar panels were dropped as too busy): how many of the four SSPs select each 4 km cell
-(screened 4 km siting, top BUDGET % by the benefit without fire loss), four ordinal greens for 1-4 SSPs, grey =
+(screened 4 km siting, top BUDGET % by the benefit without fire loss), four distinct hues for 1-4 SSPs (yellow, aqua,
+blue, violet; user request 2026-10-02, light to dark like viridis so the order still reads), grey =
 eligible but never selected. fig5_ssp_summary_<window>.png plus a CSV with the per-SSP numbers (captured benefit, land
 above the thresholds, screen cost, loss at 0.5 deg) and the pairwise overlap of the screened selections.
 The 4 km vs 0.5 deg supplement figure per SSP is plot_priority_selection.py with --thresholds (run separately).
@@ -37,7 +38,7 @@ import plot_priority_selection as ps  # noqa: E402
 SSPS = ["SSP1-1.9", "SSP2-4.5", "SSP3-7.0", "SSP5-8.5"]
 REF = "SSP3-7.0"
 NEVER = "#e1e0dc"                                                       # eligible, selected in no SSP
-COUNT_COLS = ["#78c294", "#36935f", "#1a6441", "#0a3420"]                # selected in 1..4 SSPs (ordinal, validated)
+COUNT_COLS = ["#eda100", "#1baf7a", "#2a78d6", "#4a3aa7"]    # selected in 1..4 SSPs: yellow, aqua, blue, violet (validated)
 
 
 def main():

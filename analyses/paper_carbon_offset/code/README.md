@@ -64,6 +64,7 @@ risk thresholds = area-weighted p80 of the 4 km component over eligible land; th
 | `plot_priority_ssps.py` | All four SSPs (notes §3.22): fixed SSP3-7.0 p80 thresholds and shared colour scales, redraws `fig5_priority_maps_<SSP>` for each SSP and the cross-SSP map `fig5_ssp_summary` (how many SSPs select each 4 km cell; per-SSP numbers in its CSV) | Locally |
 | `plot_priority_selection.py` | Supplement: 4 km vs native 0.5° equal-area selection, budget curve, benefit and exposure before/after screens, scatter; selection CSVs | Locally; `--ssp`, `--thresholds FIRE WATER` for the other SSPs |
 | `plot_priority_ab.py` | Supplement variant: only the 4 km vs 0.5° agreement map and the budget curve (no screen) | Locally |
+| `plot_priority_ab_ssps.py` | The same for all four SSPs in one figure: 2 × 2 agreement maps, captured-benefit and loss curves per SSP (notes §3.22) | Locally |
 | `plot_risk_maps.py` | Supplement: fire and water-stress maps at 4 km and 0.5° with the thresholds | Locally |
 | `plot_selection_noscreen.py` | Supplement: siting by the benefit without fire loss with and without the screen (what the screen removes and adds) | Locally |
 | `plot_selection_zoom.py` | Zoom on one region (default East Tennessee) showing why a 4 km high-benefit band is missed at 0.5° | Locally; `--bbox --name` |

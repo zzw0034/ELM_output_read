@@ -1072,8 +1072,10 @@ User decisions 2026-10-02: Figure 5 is drawn for SSP1-1.9, SSP2-4.5 and SSP5-8.5
 thresholds, the SSP3-7.0 p80** (fire 0.5889 %/yr, water stress 0.1037), so that differences between SSPs come from the scenarios and
 not from re-ranking; the maps of all four SSPs share **one colour scale** per panel (p98 of the eligible cells of the four SSPs pooled:
 benefit 160.3 MgC/ha, fire 1.047 %/yr, water stress 0.152). The SSP3-7.0 main figure was redrawn with the shared scale (its numbers are
-unchanged). Main text keeps SSP3-7.0; the cross-SSP summary is proposed as the robustness evidence (panel a as Figure 5e or a supplement figure,
-layout not decided).
+unchanged). Main text keeps SSP3-7.0; the change of the siting across SSPs is shown by **one map only** (user decision 2026-10-02: the bar
+panels on captured benefit, threshold exceedance and 0.5° loss were dropped as too busy; their numbers stay in the CSV and below): how many of
+the four SSPs select each 4 km cell, four ordinal greens for 1–4 SSPs (validated ordinal ramp), grey = eligible but never selected. Figure 5e or a
+supplement figure, layout not decided.
 
 Extraction: the same scripts and versions as §3.10, §3.18 and §3.20 (remote md5s identical to the recorded ones), cases from `common.py`
 (4 km Default `20260917_seus_4km_fut_<tag>`, RF `20260915_seus_4km_fut_<tag>_RF`; 0.5° Default `20260911_seus_halfdeg_future_<tag>_dt3600`,
@@ -1118,8 +1120,8 @@ the remote root, copied to the same local paths, md5 identical:
 Plots: `code/figure5/plot_priority_maps.py` (refactored into `compute`/`draw`, new `--thresholds`, `--threshold-label`, `--vmax`; md5
 `826e46b215e61530509eff8729857761`; with its defaults it reproduces every SSP3-7.0 number of §3.20), `code/figure5/plot_priority_selection.py`
 (new `--thresholds`, `--threshold-label`; the `--sens` percentiles stay each SSP's own; md5 `03cc3aeec79a5e6d6e0c6f06191c7f06`) and the new driver
-`code/figure5/plot_priority_ssps.py` (md5 `b4ca16031161b7c9827e84cf50b691ed`) → `figures/figure5/fig5_priority_maps_<SSP>_2091-2100.png` (four SSPs),
-`fig5_ssp_summary_2091-2100.{png,csv}`; `plot_priority_selection.py --thresholds 0.588914738305283 0.10368282569248412 --threshold-label "SSP3-7.0 p80"`
+`code/figure5/plot_priority_ssps.py` (md5 `f86f2c044f24a6b75b45073a586fbaa8`) → `figures/figure5/fig5_priority_maps_<SSP>_2091-2100.png` (four SSPs),
+`fig5_ssp_summary_2091-2100.{png,csv}` (map only); `plot_priority_selection.py --thresholds 0.588914738305283 0.10368282569248412 --threshold-label "SSP3-7.0 p80"`
 → `fig5_priority_<SSP>_2091-2100.png` and CSVs for SSP1-1.9, SSP2-4.5, SSP5-8.5 (the SSP3-7.0 one is unchanged: fixed = own p80).
 
 Results (4 km, 20 % budget, eligible land 946.9 ×10³ km² in every SSP):

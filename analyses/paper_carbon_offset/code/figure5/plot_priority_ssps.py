@@ -8,14 +8,11 @@ for every SSP, so that differences between the SSP maps come from the scenarios 
               all four SSPs pooled
 
 Writes, for each SSP, the four-panel figure of plot_priority_maps.py (fig5_priority_maps_<SSP>_<window>.png, the
-SSP3-7.0 one included, so the main figure carries the shared scale), and one cross-SSP summary:
-  a  how many of the four SSPs select each 4 km cell (screened 4 km siting, top BUDGET % by the benefit without
-     fire loss) -- the robust priority land is selected in all four
-  b  benefit without fire loss captured by the unscreened and the screened selection (PgC), screen cost in %
-  c  share of eligible land above each fixed threshold (20 % in SSP3-7.0 by construction)
-  d  loss of captured benefit when the native 0.5 deg map chooses the land instead of the 4 km map (net benefit,
-     the supplement convention of plot_priority_selection.py), without screen and with the fire + water screen
-fig5_ssp_summary_<window>.png plus a CSV of the numbers and of the pairwise overlap of the screened selections.
+SSP3-7.0 one included, so the main figure carries the shared scale), and one cross-SSP map (user decision
+2026-10-02: only this map, the bar panels were dropped as too busy): how many of the four SSPs select each 4 km cell
+(screened 4 km siting, top BUDGET % by the benefit without fire loss), four ordinal greens for 1-4 SSPs, grey =
+eligible but never selected. fig5_ssp_summary_<window>.png plus a CSV with the per-SSP numbers (captured benefit, land
+above the thresholds, screen cost, loss at 0.5 deg) and the pairwise overlap of the screened selections.
 The 4 km vs 0.5 deg supplement figure per SSP is plot_priority_selection.py with --thresholds (run separately).
 
 Runs locally (cartopy venv), from the analysis root:
@@ -39,8 +36,8 @@ import plot_priority_selection as ps  # noqa: E402
 
 SSPS = ["SSP1-1.9", "SSP2-4.5", "SSP3-7.0", "SSP5-8.5"]
 REF = "SSP3-7.0"
-COUNT_COLS = ["#e1e0dc", "#cfe8d8", "#8fcfa8", "#3fa874", "#0b6e4a"]     # selected in 0..4 SSPs
-SSP_COL = {"SSP1-1.9": "#3987e5", "SSP2-4.5": "#1baf7a", "SSP3-7.0": "#eb6834", "SSP5-8.5": "#7a2a0c"}
+NEVER = "#e1e0dc"                                                       # eligible, selected in no SSP
+COUNT_COLS = ["#78c294", "#36935f", "#1a6441", "#0a3420"]                # selected in 1..4 SSPs (ordinal, validated)
 
 
 def main():
@@ -126,89 +123,29 @@ def main():
                         + [f"{v:.4f}" if k < 2 else f"{v:.2f}" for k, v in enumerate(loss[(s, 'all')])]
                         + [f"{ov[(s, j)]:.1f}" for j in SSPS])
 
-    # ---- summary figure
+    # ---- cross-SSP map
     import cartopy.crs as ccrs
     m = ref_c["m"]
     lon4, lat4 = m["lon4"], m["lat4"]
     land4 = np.isfinite(m["g4"]) & np.isfinite(m["R4"]["water"])
     inel = np.where(land4 & ~ok_any, 1.0, np.nan)
-    fig = plt.figure(figsize=(16.5, 8.6), facecolor=ps.SURFACE)
-    gs = fig.add_gridspec(3, 2, width_ratios=[1.25, 1], hspace=0.55, wspace=0.16, left=0.04, right=0.985, top=0.9, bottom=0.17)
-
-    ax = fig.add_subplot(gs[:, 0], projection=ccrs.PlateCarree())
+    fig = plt.figure(figsize=(11.5, 8.4), facecolor=ps.SURFACE)
+    ax = fig.add_axes([0.06, 0.15, 0.92, 0.76], projection=ccrs.PlateCarree())
     pm.base_map(ax, lon4, lat4)
     pm.mesh(ax, lon4, lat4, inel, ListedColormap([pm.INELIGIBLE]), Normalize(0, 1))
-    pm.mesh(ax, lon4, lat4, count, ListedColormap(COUNT_COLS), Normalize(-0.5, 4.5))
-    pm.title(ax, "a", f"Robust priority land: selected in how many SSPs (top {base.budget:g}%, screened)")
-    handles = [plt.Rectangle((0, 0), 1, 1, color=COUNT_COLS[k]) for k in (4, 3, 2, 1, 0)]
-    labels = [f"{k} of 4 SSPs ({cshare[k]:.0f}%)" if k else f"none ({cshare[0]:.0f}%)" for k in (4, 3, 2, 1, 0)]
-    ax.legend(handles, labels, loc="lower left", fontsize=8.6, framealpha=0.93, edgecolor="none",
-              title="share of eligible land", title_fontsize=8)
-    others = [s for s in SSPS if s != REF]
-    ax.text(0.98, 0.03, f"overlap with the {REF} selection:\n" + "\n".join(f"{s}  {ov[(REF, s)]:.0f}%" for s in others),
-            transform=ax.transAxes, ha="right", va="bottom", fontsize=9, color=ps.INK,
-            bbox=dict(facecolor=ps.SURFACE, edgecolor="none", alpha=0.9, pad=3))
-
-    x = np.arange(len(SSPS))
-    axb = fig.add_subplot(gs[0, 1])
-    wd = 0.38
-    for k, (key, lab, hatch) in enumerate((("G_unscreened", "unscreened", None), ("G_screened", "screened (fire + water)", "//"))):
-        vals = [C[s][key] for s in SSPS]
-        axb.bar(x + (k - 0.5) * wd, vals, wd, color=[SSP_COL[s] if hatch is None else ps.SURFACE for s in SSPS],
-                edgecolor=[SSP_COL[s] for s in SSPS], hatch=hatch, linewidth=1.4, zorder=3, label=lab)
-    for xi, s in zip(x, SSPS):
-        c = C[s]
-        axb.text(xi + 0.5 * wd, c["G_screened"], f"−{100 * (1 - c['G_screened'] / c['G_unscreened']):.1f}%",
-                 ha="center", va="bottom", fontsize=8, color=ps.INK2)
-    axb.set_xticks(x)
-    axb.set_xticklabels(SSPS, fontsize=9)
-    ps.style(axb, "PgC")
-    axb.set_ylim(0, axb.get_ylim()[1] * 1.18)
-    leg = axb.legend(frameon=False, fontsize=8.4, loc="upper left", ncol=2)
-    for h in leg.legend_handles:
-        h.set_facecolor("#bbbbbb" if h.get_hatch() is None else ps.SURFACE)
-        h.set_edgecolor("#777777")
-    ps.ptitle(axb, "b", f"Benefit without fire loss captured by the top {base.budget:g}%")
-
-    axc = fig.add_subplot(gs[1, 1])
-    wd = 0.36
-    for k, (key, lab, col) in enumerate((("fire", "fire", pm.FIRE_CMAP(0.6)), ("water", "water stress", pm.WATER_CMAP(0.6)))):
-        vals = [C[s]["above"][key] for s in SSPS]
-        axc.bar(x + (k - 0.5) * wd, vals, wd, color=col, edgecolor=ps.SURFACE, linewidth=1.2, zorder=3, label=lab)
-        for xi, v in zip(x, vals):
-            axc.text(xi + (k - 0.5) * wd, v, f"{v:.0f}", ha="center", va="bottom", fontsize=7.8, color=ps.INK2)
-    axc.axhline(100 - base.pct, color=ps.INK, lw=0.9, ls="--")
-    axc.set_xticks(x)
-    axc.set_xticklabels(SSPS, fontsize=9)
-    ps.style(axc, "% of eligible land")
-    axc.set_ylim(0, axc.get_ylim()[1] * 1.2)
-    axc.legend(frameon=False, fontsize=8.4, loc="upper left", ncol=2)
-    ps.ptitle(axc, "c", f"Eligible land above the fixed {tlab} thresholds")
-
-    axd = fig.add_subplot(gs[2, 1])
-    for k, (scr, lab, hatch) in enumerate((("none", "no screen", None), ("all", "fire + water screen", "//"))):
-        vals = [loss[(s, scr)][2] for s in SSPS]
-        axd.bar(x + (k - 0.5) * wd, vals, wd, color=ps.RES_COL["0.5deg"] if hatch is None else ps.SURFACE,
-                edgecolor=ps.RES_COL["0.5deg"], hatch=hatch, linewidth=1.4, zorder=3, label=lab)
-        for xi, v in zip(x, vals):
-            axd.text(xi + (k - 0.5) * wd, v, f"{v:.1f}", ha="center", va="bottom", fontsize=7.8, color=ps.INK2)
-    axd.set_xticks(x)
-    axd.set_xticklabels(SSPS, fontsize=9)
-    ps.style(axd, "% of the 4 km benefit")
-    axd.set_ylim(0, axd.get_ylim()[1] * 1.2)
-    axd.legend(frameon=False, fontsize=8.4, loc="upper left", ncol=2)
-    ps.ptitle(axd, "d", "Benefit lost when the 0.5° map chooses the land")
-
-    fig.suptitle(f"Is the 4 km siting robust across scenarios? SEUS, RF, {win}, four SSPs", fontsize=13.5, color=ps.INK,
-                 x=0.04, ha="left", y=0.975)
-    fig.text(0.04, 0.012,
-             f"Every SSP uses the same absolute thresholds, the {tlab} (fire {T['fire']:.3g} %/yr, water stress {T['water']:.3g}), so (c) shows how much "
-             "land each scenario puts at risk.\nSelection (a, b) = top {0:g}% of eligible land by the benefit without fire loss after removing land above "
-             "either threshold; percentages in (b) = benefit given up by the screen.\n(d) uses the net benefit (fire loss not added back) and the native "
-             "0.5° run's own benefit and risk to choose the same area, scored on the 4 km field (supplement convention).\nEligible land = each SSP's RF "
-             "2060 forest fraction (cells ≥ {1:g}). Adding the fire loss back is an approximation; fire has ~0.5° effective resolution at 4 km. "
-             "RF is restoration plus a region-wide harvest ban.".format(base.budget, base.floor),
-             fontsize=8.4, color=ps.INK2, va="bottom", ha="left")
+    pm.mesh(ax, lon4, lat4, count, ListedColormap([NEVER] + COUNT_COLS), Normalize(-0.5, 4.5))
+    handles = [plt.Rectangle((0, 0), 1, 1, color=COUNT_COLS[k - 1]) for k in (4, 3, 2, 1)]
+    ax.legend(handles, [f"{k} of 4 SSPs ({cshare[k]:.1f}%)" for k in (4, 3, 2, 1)], loc="lower left", fontsize=9.5,
+              framealpha=0.93, edgecolor="none", title="Selected in\n(share of eligible land)", title_fontsize=9)
+    ax.set_title(f"Where the 4 km siting holds across SSPs (RF, {win}, top {base.budget:g}% after the fire + water screen)",
+                 loc="left", fontsize=12, color=ps.INK, fontweight="bold")
+    fig.text(0.06, 0.015,
+             f"Each SSP: top {base.budget:g}% of eligible land by the RF benefit without fire loss, after removing land above the fixed {tlab} "
+             f"thresholds (fire {T['fire']:.3g} %/yr, water stress {T['water']:.3g}).\n"
+             f"Grey: eligible, selected in no SSP ({cshare[0]:.0f}%); near-white: not eligible (RF 2060 forest fraction < {base.floor:g}). "
+             f"\nPairwise overlap of the selections {min(v for (i_, j_), v in ov.items() if i_ != j_):.0f}–{max(v for (i_, j_), v in ov.items() if i_ != j_):.0f}%; "
+             f"identical selections would give 20% in 4 of 4, independent ones {100 * (base.budget / 100) ** 4:.2f}%.",
+             fontsize=8.6, color=ps.INK2, va="bottom", ha="left")
     png = os.path.join(base.out_dir, f"fig5_ssp_summary_{win}.png")
     fig.savefig(png, dpi=170, facecolor=ps.SURFACE)
     plt.close(fig)

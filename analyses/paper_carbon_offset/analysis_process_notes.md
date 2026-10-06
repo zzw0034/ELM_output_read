@@ -1144,6 +1144,37 @@ Results (4 km, 20 % budget, eligible land 946.9 ×10³ km² in every SSP):
 - Caveats as in §3.20 (fire loss added back is an approximation; fire has ~0.5° effective resolution). Eligibility uses each SSP's own RF 2060
   tree fraction; the eligible area is identical across SSPs (RF holds its land cover fixed, §3.9).
 
+### 3.23 Figure 5 with the poster method and median splits, 4 km only (2026-10-06)
+
+User decisions 2026-10-06: draw Figure 5 with the poster method (`../carbon_offset_poster/outputs/panel4_siting_RF_4km_ABCD.png`,
+`..._E_scatter.png`) and **split at medians instead of the 20 % budget / p80 thresholds**; **4 km only** (no 0.5° comparison); the risk axis is
+the poster's **composite vulnerability** (scheme B) rebuilt from the two paper components; **each SSP uses its own medians** (the high-benefit half
+is then 50 % of eligible land in every SSP); SSP3-7.0 first, other SSPs after the figure is final.
+
+Plot `code/figure5/plot_siting_median.py` (md5 `51c13338f68e1e54e2df22ec6130eef8`; no new extraction, same inputs and benefit/risk fields as
+`plot_priority_maps.py` §3.20, which it imports) → `figures/figure5/fig5_siting_median_SSP3-7.0_2091-2100{.png,_scatter.png,.csv}`, run locally.
+Panels: a benefit without fire loss per eligible ha, b fire risk, c water stress, d composite vulnerability = mean of the percentile ranks (0-1) of
+b and c over eligible cells (unweighted ranks as on the poster; 4 km cells have nearly equal area), e quadrants at the area-weighted medians of a
+and d, f benefit vs vulnerability (also standalone). Differences from the poster: no NBP-variability component (§3.19), benefit without fire loss
+per eligible ha, ranks and medians over eligible land (RF 2060 forest fraction ≥ 0.05). The scatter x axis is clipped at the area-weighted p0.1
+(−133 MgC/ha): 253 cells, 0.19 % of eligible area, reach −887 because a small eligible fraction inflates the per-eligible-ha value.
+
+Results (SSP3-7.0, 2091-2100, eligible land 946.9 ×10³ km² in 75,425 cells, benefit without fire loss 6.163 PgC). Medians: benefit 55.47 MgC/ha,
+fire 0.1762 %/yr, water stress 0.0715, composite vulnerability 0.5103.
+
+| quadrant | share of eligible land | benefit (PgC, % of total) | mean benefit (MgC/ha) | mean fire (%/yr) | mean water stress |
+|---|---:|---:|---:|---:|---:|
+| high benefit, low risk | 29.8 % | 2.859 (46.4 %) | 101.2 | 0.086 | 0.054 |
+| high benefit, high risk | 20.2 % | 1.737 (28.2 %) | 91.0 | 0.437 | 0.100 |
+| low benefit, low risk | 20.2 % | 0.634 (10.3 %) | 33.2 | 0.076 | 0.051 |
+| low benefit, high risk | 29.8 % | 0.934 (15.2 %) | 33.1 | 0.577 | 0.101 |
+
+Reading: benefit and vulnerability are weakly anti-correlated (rank r = −0.22), so the high-benefit half falls 60/40 into low/high risk rather
+than 50/50. Of the high-benefit land, 41.5 % is above the fire median and 41.5 % above the water median (41.47 vs 41.55 %, a coincidence);
+fire and water ranks correlate at 0.53. Caveats: the composite is rank-based, so half the eligible land is high risk by construction and its
+values have no physical units; fire has ~0.5° effective resolution and its 2091-2100 mean is dominated by 2094-2096 (§3.19, §3.20). For
+comparison, the composite with fire and water both required below their own medians (scheme A, not adopted) gives 19.9 % high benefit / low risk.
+
 ## 4. Script and product locations
 
 Since 2026-10-01 `code/` and `figures/` are organized by manuscript figure

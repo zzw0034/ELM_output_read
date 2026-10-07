@@ -94,12 +94,10 @@ def main():
 
     fig.legend(handles=[Line2D([0], [0], color=HIST_DARK, lw=3, label="historical")] +
                        [Line2D([0], [0], color=COLORS[s], lw=3, label=s) for s in SSPS],
-               loc="upper left", ncol=5, frameon=False, fontsize=12, labelcolor=INK2, bbox_to_anchor=(0.03, 0.935), columnspacing=2.2)
+               loc="lower center", ncol=5, frameon=False, fontsize=13, labelcolor=INK2, bbox_to_anchor=(0.5, 0.0), columnspacing=2.2)
     fig.suptitle("Default runs of the four SSPs, ELM 4 km", x=0.04, y=0.995, ha="left", fontsize=17, fontweight="semibold")
-    fig.text(0.04, 0.003, f"Forest area: tree-PFT area minus its 2023 value ({ref:.0f} ×10³ km²). NBP: annual regional NBP summed from {cstart}; the 2024–2100 "
-             f"projections continue from the 2023 value ({chist[-1]:+.2f} PgC).\nSSP runs use crit_dayl_stress = 36000 s. NBP includes fire, land use and harvest.",
-             fontsize=10, color=INK2, va="bottom", linespacing=1.5)
-    fig.tight_layout(rect=(0, 0.06, 1, 0.89), w_pad=3.0)
+    # notes removed and legend moved below the panels (user request 2026-10-07)
+    fig.tight_layout(rect=(0, 0.08, 1, 0.985), w_pad=3.0)
     out = os.path.join(OUT_DIR, f"ssp_forest_and_cumulative_nbp_{cstart}-2100_4km.png")
     fig.savefig(out, dpi=200, facecolor="white", bbox_inches="tight")
     plt.close(fig)

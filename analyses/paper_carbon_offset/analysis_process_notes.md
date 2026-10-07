@@ -1151,7 +1151,7 @@ User decisions 2026-10-06: draw Figure 5 with the poster method (`../carbon_offs
 the poster's **composite vulnerability** (scheme B) rebuilt from the two paper components; **each SSP uses its own medians** (the high-benefit half
 is then 50 % of eligible land in every SSP); SSP3-7.0 first, other SSPs after the figure is final.
 
-Plot `code/figure5/plot_siting_median.py` (md5 `72c924afc776ca7b124d0ecc10379cde`; no new extraction, same inputs and benefit/risk fields as
+Plot `code/figure5/plot_siting_median.py` (md5 `53c0a6660f5e209b4ad1371b5b146cbb`; no new extraction, same inputs and benefit/risk fields as
 `plot_priority_maps.py` §3.20, which it imports) → `figures/figure5/fig5_siting_median_SSP3-7.0_2091-2100{.png,_scatter.png,.csv}`, run locally.
 Panels: a benefit without fire loss per eligible ha, b fire risk, c water stress, d composite vulnerability = mean of the percentile ranks (0-1) of
 b and c over eligible cells, e quadrants at the area-weighted medians of a and d, f benefit vs vulnerability (also standalone). **Ranks are
@@ -1204,7 +1204,8 @@ high-benefit land 30.3 % is above the fire median (41.5 % without fire loss) and
 
 **Layout (user decisions 2026-10-06, same day):** the fire and water-stress maps are dropped from the main figure, and the scatter
 becomes an inset of the quadrant map: a carbon benefit and b composite vulnerability stacked on the left, c quadrants (enlarged) on the right
-with the scatter over the Gulf of Mexico and the legend over the Atlantic; the clipped-axis note moves to the footnote. The letters d-f used
+with the scatter as a physically square inset over the Gulf of Mexico (lat ~25.5-29.1, below the Louisiana coast; user request) and the
+legend over the Atlantic; the clipped-axis note moves to the footnote. The letters d-f used
 above refer to the earlier 2 × 3 layout. Both risk components are still computed and defined in the footnote; numbers unchanged.
 
 **Water-stress caveat found 2026-10-06 (not yet quantified).** BTRAN in h0 is the patch → gridcell area average (`EnergyFluxType.F90:306`,

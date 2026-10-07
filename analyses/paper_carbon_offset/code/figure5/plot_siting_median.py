@@ -136,8 +136,12 @@ def scatter(ax, c, a, small=False, note=True):
     txt = f"{out:.1f}% of eligible area left of the axis (down to {x.min():.0f})"
     if note:
         ax.text(0.01, 0.01, txt, transform=ax.transAxes, fontsize=7 if small else 8.5, color=ps.INK2, ha="left", va="bottom")
-    ax.set_xlabel(f"RF {BEN[a.benefit][0]} (MgC/ha per eligible ha)", fontsize=9 if small else 11)
-    ax.set_ylabel("Composite vulnerability (0–1)", fontsize=9 if small else 11)
+    if small:   # inset: short labels
+        ax.set_xlabel(f"{BEN[a.benefit][0].capitalize()} (MgC/ha)", fontsize=8.5, labelpad=1)
+        ax.set_ylabel("Vulnerability (0–1)", fontsize=8.5, labelpad=1)
+    else:
+        ax.set_xlabel(f"RF {BEN[a.benefit][0]} (MgC/ha per eligible ha)", fontsize=11)
+        ax.set_ylabel("Composite vulnerability (0–1)", fontsize=11)
     ax.set_ylim(-0.03, 1.03)
     ax.grid(alpha=0.3)
     ax.tick_params(labelsize=8 if small else 10)
@@ -175,7 +179,12 @@ def draw(a, c):
     ax.legend(handles, [f"{Q_NAMES[q]} ({share[Q_NAMES[q]]:.0f}%)" for q in (3, 2, 1, 0)], loc="lower right", fontsize=9.5,
               framealpha=0.93, edgecolor="none", title="share of eligible land", title_fontsize=9)
     # scatter as an inset over the open Gulf of Mexico (lower left of the map); the legend sits over the Atlantic
-    axi = ax.inset_axes([0.065, 0.105, 0.43, 0.235])
+    # square in physical units: as tall as the open Gulf allows (lat ~25.5-29.1, below the Louisiana coast), width from the map aspect
+    fig.canvas.draw()
+    bb = ax.get_position()
+    W, H = bb.width * fig.get_figwidth(), bb.height * fig.get_figheight()
+    hi = 0.275
+    axi = ax.inset_axes([0.07, 0.10, hi * H / W, hi])
     axi.set_facecolor("white")
     clip_note = scatter(axi, c, a, small=True, note=False)
     fig.suptitle(f"Where to restore and protect forest for carbon (SEUS, {a.ssp}, RF, {a.years}, 4 km)", fontsize=13.5, color=ps.INK,

@@ -16,7 +16,7 @@ run holds more carbon or forest than its counterfactual. DF is an idealized avoi
 The benefit curves are built by plot_scenario_management_benefits.benefits() from the extracts in
 `_cache/figure2/future_4km/` (see notes section 3.6).
 
-Colours: categorical slots 1-3 of the dataviz reference palette (blue RF, orange RH, aqua DF); black axes.
+Colours: categorical slots 1-3 of the dataviz reference palette (blue RF, orange RH, deep red DF since 2026-10-07); black axes.
 
 Runs locally, from the analysis root:
     /Users/zw5/ORNL_workplace/ELM_output_read/.venv/bin/python code/figure2/plot_management_summary_across_ssps.py

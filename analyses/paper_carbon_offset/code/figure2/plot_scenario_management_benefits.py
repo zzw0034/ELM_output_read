@@ -22,7 +22,7 @@ by extract_domain_totals.py and extract_forest_area.py: <SSP>[ _RF| _RH| _cds380
 _DF_cds38000]__{totals,forest}.npz.
 
 Colours: categorical slots 1-3 of the dataviz reference palette (blue RF, orange RH,
-aqua DF), each curve directly labelled at its end; black axes; one y axis per panel.
+deep red DF since 2026-10-07), each curve directly labelled at its end; black axes; one y axis per panel.
 
 Runs locally, from the analysis root:
     /Users/zw5/ORNL_workplace/ELM_output_read/.venv/bin/python \\
@@ -41,7 +41,7 @@ CACHE = os.path.join(ROOT, "_cache/figure2/future_4km")
 OUT_DIR = os.path.join(ROOT, "figures/figure2")
 SSPS = ["SSP1-1.9", "SSP2-4.5", "SSP3-7.0", "SSP5-8.5"]
 INK, INK2, MUTED, GRID = "#0b0b0b", "#52514e", "#8a8984", "#e9e8e4"
-COLORS = {"RF": "#2a78d6", "RH": "#eb6834", "DF": "#1baf7a"}
+COLORS = {"RF": "#2a78d6", "RH": "#eb6834", "DF": "#b2182b"}
 LABELS = {"RF": "RF  restoration/protection", "RH": "RH  reduced harvest", "DF": "DF  avoided loss"}
 
 

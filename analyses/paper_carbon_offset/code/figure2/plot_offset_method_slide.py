@@ -1,7 +1,7 @@
 """
 Talk slide: how the carbon offset potential is calculated (user requests 2026-10-07), 16:9, large fonts, in the two-panel
 style of 20260910_seus_rerun/20260911_seus_halfdeg_dt3600/outputs/future_scenario_cumulative_nbp_split.png, with the
-deck's colours (IPCC AR6 SSP colours; RF blue, RH orange, DF green as in Figure 2).
+deck's colours (IPCC AR6 SSP colours; RF blue, RH orange, DF deep red as in Figure 2).
 
   One SSP (SSP2-4.5): cumulative regional NBP since 2024 of Default (solid black, the reference) and RF, RH and DF
   (dashed); the offsets by 2100 are bracketed: RF - Default, RH - Default and Default - DF. DF is paired with the

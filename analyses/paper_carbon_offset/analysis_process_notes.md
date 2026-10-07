@@ -1306,6 +1306,17 @@ figures keep the period. All three variants (own medians, `_fixedSSP370`, `_fixe
 `plot_siting_median.py` `b10e1aaabb713ddd025b489222adb792`, `plot_siting_median_ssps.py` `a1a0cea8b75632f2946fd9e9be73681d`,
 `plot_siting_median_slides.py` `1e5463d9427756d476102a1a15eba49c`.
 
+### 3.28 Figure 4 talk slide: six panels, RH soil added (2026-10-06)
+
+User request 2026-10-06 (presentation): the multi-SSP Figure 4 (§3.21) is too busy for a slide; keep a Default stock, b pool contributions,
+c RF − Default living vegetation, d RH − Default living vegetation, the RF − Default soil panel, and add RH − Default soil (whole column).
+`code/figure4/plot_pools_slide.py` (md5 `b21c562241a5494d12a5dbc70813a16f`; new file, uses the committed helpers of `plot_pool_strata.py`, not the other session's
+uncommitted `plot_pools_multi_ssp.py`) → `figures/figure4/slides/fig4_pools_slide_4km.png`, 16:9, large fonts; RF and RH soil share one y axis.
+Numbers (2091-2100 mean, PgC) equal §3.21: RF total +3.62/+4.23/+4.97/+5.04, RH total +0.94/+1.35/+0.96/+1.16 (SSP1-1.9 … SSP5-8.5).
+Soil (whole column), RF − Default: +0.009, +0.053, −0.133, −0.052; **RH − Default: +0.034, +0.026, +0.028, +0.026** — RH soil is a small,
+steady gain that is nearly the same in every SSP (a dip of about −0.01 PgC to ~2060, then rising), while RF soil dips to −0.09 to −0.18 PgC
+around 2050-2075 and recovers by 2100 only in SSP1-1.9 and SSP2-4.5.
+
 ## 4. Script and product locations
 
 Since 2026-10-01 `code/` and `figures/` are organized by manuscript figure

@@ -50,6 +50,7 @@ f850ac1). The script keeps its old name.
 | `extract_tree_fraction.py` | Per-gridcell tree/shrub/grass/crop fraction of one run-year from h1 (`pfts1d_wtgcell` by itype) → `transient__treefrac_2023.npz` and `<SSP>_RF__treefrac_2060.npz` | Slurm; reads only the 1-D PFT arrays |
 | `check_increment_dose_response.py` | Benefit, SOC and Default harvest by bins of RF's land-cover increment (notes §3.11) | Locally |
 | `plot_pool_strata.py` | Figure 4 panels a–f as above, pool CSV (four pools plus aboveground vegetation and SOC 0–100 cm as “of which” rows) and trajectory CSV; prints the three-boundary numbers. Asserts pool closure to TOTECOSYSC, Default products ≥ 0, maps = annual totals | Locally (cartopy venv) from the analysis root; `--res 4km\|0.5deg --ssp --years` |
+| `plot_pools_slide.py` | Talk slide of Figure 4 (notes §3.28): Default stock, pool contributions, RF and RH living vegetation, RF and RH soil (one y axis), 16:9 large fonts → `figures/figure4/slides/` | Locally |
 
 ## figure5/ — consequences for prioritization (Results 3.4)
 

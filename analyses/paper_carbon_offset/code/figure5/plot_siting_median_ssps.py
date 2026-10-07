@@ -18,8 +18,10 @@ Runs locally (cartopy venv), from the analysis root:
     /Users/zw5/ORNL_workplace/ELM_output_read/.venv/bin/python code/figure5/plot_siting_median_ssps.py
 Inputs: those of plot_siting_median.py for SSP1-1.9, SSP2-4.5, SSP3-7.0 and SSP5-8.5.
 """
+import contextlib
 import copy
 import csv
+import io
 import os
 import sys
 
@@ -71,12 +73,12 @@ def half(sf, a, c, vmax):
 
     ax = map_ax(gs[0, 0], "a", "Carbon benefit of RF", 8)
     mm = pm.mesh(ax, lon4, lat4, np.where(keep, c["b"], np.nan), pm.BENEFIT_CMAP, Normalize(0, vmax))
-    cbar(mm, ax, f"MgC/ha; median {med['benefit']:.1f}", med["benefit"], "both")
+    cbar(mm, ax, f"MgC/ha; {c['thr_label']} {c['thr']['benefit']:.1f}", c["thr"]["benefit"], "both")
     ax = map_ax(gs[0, 1], "b", "Vulnerability", 8)
     mm = pm.mesh(ax, lon4, lat4, c["vuln"], sm.VULN_CMAP, Normalize(0, 1))
-    cbar(mm, ax, f"Mean rank; median {med['vuln']:.3f}", med["vuln"], "neither")
+    cbar(mm, ax, f"Mean rank; {c['thr_label']} {c['thr']['vuln']:.3f}", c["thr"]["vuln"], "neither")
 
-    ax = map_ax(gs[1, :], "c", "Siting quadrants (split at medians)", 4)
+    ax = map_ax(gs[1, :], "c", f"Siting quadrants (split at {c['thr_label']}s)", 4)
     pm.mesh(ax, lon4, lat4, c["quad"], ListedColormap(sm.Q_COLS), Normalize(-0.5, 3.5))
     share = {r["quadrant"]: r["share_pct"] for r in c["rows"]}
     handles = [plt.Rectangle((0, 0), 1, 1, color=sm.Q_COLS[q]) for q in (3, 2, 1, 0)]
@@ -110,7 +112,7 @@ def draw_pair(args, cs, pair, vmax):
     fig.canvas.draw()
     for ax, a, c in axes:
         inset(fig, ax, a, c)
-    out = os.path.join(args[pair[0]].out_dir, f"fig5_siting_median_pair_{pair[0]}_{pair[1]}_{args[pair[0]].years}_ppt.png")
+    out = os.path.join(args[pair[0]].out_dir, f"fig5_siting_median_pair_{pair[0]}_{pair[1]}_{args[pair[0]].years}{args[pair[0]].suffix}_ppt.png")
     fig.savefig(out, dpi=200, facecolor=ps.SURFACE)
     plt.close(fig)
     print(f"wrote {out}")
@@ -120,12 +122,21 @@ def main():
     ap = pm.parser()
     ap.add_argument("--benefit", choices=("net", "nofire"), default="net")
     ap.add_argument("--rank", choices=("area", "count"), default="area")
+    ap.add_argument("--fixed-ref", choices=SSPS, default=None,
+                    help="split every SSP at this SSP's medians, with risk ranks read off its distributions (suffix _fixed<SSP>)")
     base = ap.parse_args()
+    base.suffix = f"_fixed{base.fixed_ref.replace('-', '').replace('.', '')}" if base.fixed_ref else ""
+    ref = None
+    if base.fixed_ref:
+        a = copy.copy(base)
+        a.ssp = base.fixed_ref
+        with contextlib.redirect_stdout(io.StringIO()):
+            ref = sm.compute(a)["ref"]
     args, cs = {}, {}
     for ssp in SSPS:
         a = copy.copy(base)
         a.ssp = ssp
-        cs[ssp] = sm.compute(a)
+        cs[ssp] = sm.compute(a, ref)
         args[ssp] = a
     vmax = float(np.nanpercentile(np.concatenate([cs[s]["b"][cs[s]["keep"]] for s in SSPS]), 98))
     print(f"shared benefit colour scale: 0-{vmax:.1f} MgC/ha (p98 of eligible cells, four SSPs pooled)")
@@ -136,15 +147,15 @@ def main():
     for pair in PAIRS:
         draw_pair(args, cs, pair, vmax)
 
-    out = os.path.join(base.out_dir, f"fig5_siting_median_ssps_{base.years}.csv")
+    out = os.path.join(base.out_dir, f"fig5_siting_median_ssps_{base.years}{base.suffix}.csv")
     with open(out, "w", newline="") as fh:
         wr = csv.writer(fh)
-        wr.writerow(["ssp", "median_benefit_MgCha", "median_vuln", "total_benefit_PgC", "quadrant", "share_pct", "benefit_PgC",
+        wr.writerow(["ssp", "threshold_benefit_MgCha", "threshold_vuln", "threshold_source", "total_benefit_PgC", "quadrant", "share_pct", "benefit_PgC",
                      "mean_benefit_MgCha", "mean_fire_pctyr", "mean_water"])
         for ssp in SSPS:
             c = cs[ssp]
             for r in c["rows"]:
-                wr.writerow([ssp, f"{c['med']['benefit']:.4g}", f"{c['med']['vuln']:.4g}", f"{c['total']:.4f}", r["quadrant"],
+                wr.writerow([ssp, f"{c['thr']['benefit']:.4g}", f"{c['thr']['vuln']:.4g}", c["thr_label"], f"{c['total']:.4f}", r["quadrant"],
                              f"{r['share_pct']:.2f}", f"{r['benefit_PgC']:.4f}", f"{r['mean_benefit_MgCha']:.2f}",
                              f"{r['mean_fire_pctyr']:.4f}", f"{r['mean_water']:.4f}"])
     print(f"wrote {out}")

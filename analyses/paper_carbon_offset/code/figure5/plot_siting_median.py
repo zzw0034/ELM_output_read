@@ -73,7 +73,17 @@ def rank01(x, keep, w=None):
     return out
 
 
-def compute(a):
+def wcdf(x, w):
+    """Area-weighted reference distribution: sorted values and midpoint cumulative weight (the wquantile convention)."""
+    o = np.argsort(x, kind="stable")
+    xs, ws = x[o], w[o]
+    return xs, (np.cumsum(ws) - 0.5 * ws) / ws.sum()
+
+
+def compute(a, ref=None):
+    """ref=None: every split at this SSP's own area-weighted medians. ref = the "ref" entry returned for another SSP
+    (user decision 2026-10-06, SSP3-7.0): fire and water ranks are read off that SSP's area-weighted distributions, and
+    benefit and composite vulnerability are split at that SSP's medians, so thresholds are the same absolute values."""
     with contextlib.redirect_stdout(io.StringIO()):
         c = pm.compute(a)
     m, ok, a4, E = c["m"], c["ok"], c["a4"], c["E"]
@@ -82,10 +92,17 @@ def compute(a):
     keep = ok & np.isfinite(b) & np.isfinite(fire) & np.isfinite(water)
     assert keep.sum() == ok.sum(), f"{ok.sum() - keep.sum()} eligible cells lack a benefit or risk value"
     rw = a4 if a.rank == "area" else None
-    vuln = (rank01(fire, keep, rw) + rank01(water, keep, rw)) / 2
+    if ref is None:
+        vuln = (rank01(fire, keep, rw) + rank01(water, keep, rw)) / 2
+    else:
+        assert a.rank == "area", "a fixed reference needs area-weighted ranks"
+        vuln = np.full(b.shape, np.nan)
+        vuln[keep] = (np.interp(fire[keep], *ref["fire"]) + np.interp(water[keep], *ref["water"])) / 2
     wmed = lambda x: ps.wquantile(x[keep], a4[keep], 0.5)
     med = dict(benefit=wmed(b), fire=wmed(fire), water=wmed(water), vuln=wmed(vuln))
-    hi_b, lo_v = b >= med["benefit"], vuln < med["vuln"]
+    thr = dict(benefit=med["benefit"], vuln=med["vuln"]) if ref is None else dict(benefit=ref["benefit"], vuln=ref["vuln"])
+    thr_label = "median" if ref is None else f"{ref['ssp']} median"
+    hi_b, lo_v = b >= thr["benefit"], vuln < thr["vuln"]
     quad = np.select([hi_b & lo_v, hi_b & ~lo_v, ~hi_b & lo_v], [3, 2, 1], 0).astype("f8")
     quad = np.where(keep, quad, np.nan)
     rows = []
@@ -99,8 +116,11 @@ def compute(a):
                          mean_water=float((a4[s] * water[s]).sum() / area) if area else np.nan))
     total = float((a4[keep] * b[keep]).sum()) * 100 / 1e9
     print(f"[{a.ssp}] eligible 4 km land {E / 1e3:.1f} x10^3 km2 in {keep.sum()} cells; {BEN[a.benefit][0]} {total:.3f} PgC")
-    print(f"medians (area-weighted, eligible land): benefit {med['benefit']:.2f} MgC/ha, fire {med['fire']:.4f} %/yr, "
+    print(f"own medians (area-weighted, eligible land): benefit {med['benefit']:.2f} MgC/ha, fire {med['fire']:.4f} %/yr, "
           f"water {med['water']:.4f}, composite vulnerability {med['vuln']:.4f}")
+    if ref is not None:
+        print(f"fixed thresholds ({thr_label}): benefit {thr['benefit']:.2f} MgC/ha, vulnerability {thr['vuln']:.4f}; "
+              f"high benefit {100 * a4[keep & hi_b].sum() / E:.1f}%, low risk {100 * a4[keep & lo_v].sum() / E:.1f}% of eligible land")
     for r in rows:
         print(f"  {r['quadrant']:24s} {r['share_pct']:5.1f}%  {r['benefit_PgC']:6.3f} PgC ({100 * r['benefit_PgC'] / total:4.1f}%)  "
               f"mean {r['mean_benefit_MgCha']:6.1f} MgC/ha, fire {r['mean_fire_pctyr']:.3f} %/yr, water {r['mean_water']:.4f}")
@@ -109,7 +129,9 @@ def compute(a):
           f"{100 * a4[hb & (fire > med['fire'])].sum() / a4[hb].sum():.1f}%, above the water median {100 * a4[hb & (water > med['water'])].sum() / a4[hb].sum():.1f}%")
     rk = lambda x: rank01(x, keep)[keep]
     print(f"rank correlations: fire-water {np.corrcoef(rk(fire), rk(water))[0, 1]:.2f}, benefit-vulnerability {np.corrcoef(rk(b), rk(vuln))[0, 1]:.2f}")
-    return dict(m=m, keep=keep, a4=a4, E=E, b=b, fire=fire, water=water, vuln=vuln, med=med, quad=quad, rows=rows, total=total)
+    own_ref = dict(ssp=a.ssp, fire=wcdf(fire[keep], a4[keep]), water=wcdf(water[keep], a4[keep]), benefit=med["benefit"], vuln=med["vuln"])
+    return dict(m=m, keep=keep, a4=a4, E=E, b=b, fire=fire, water=water, vuln=vuln, med=med, thr=thr, thr_label=thr_label,
+                fixed=ref is not None, ref=own_ref, quad=quad, rows=rows, total=total)
 
 
 def colorbar(fig, mm, ax, label, line, extend):
@@ -126,8 +148,8 @@ def scatter(ax, c, a, small=False, note=True):
     x, y, w, q = c["b"][k], c["vuln"][k], a4[k], c["quad"][k].astype(int)
     sz = np.clip(w / w.max() * (5 if small else 12), 0.5, None)
     ax.scatter(x, y, s=sz, c=np.array(Q_COLS)[q], alpha=0.6, linewidths=0, rasterized=True)
-    ax.axvline(c["med"]["benefit"], color="k", lw=0.9, ls="--")
-    ax.axhline(c["med"]["vuln"], color="k", lw=0.9, ls="--")
+    ax.axvline(c["thr"]["benefit"], color="k", lw=0.9, ls="--")
+    ax.axhline(c["thr"]["vuln"], color="k", lw=0.9, ls="--")
     # a few cells with a small eligible fraction have large negative values per eligible ha; clip the axis at the area-weighted p0.1
     xlo = ps.wquantile(x, w, 0.001)
     span = x.max() - xlo
@@ -167,12 +189,12 @@ def draw(a, c):
 
     ax = map_ax(gs[0, 0], "a", BEN[a.benefit][1])
     mm = pm.mesh(ax, lon4, lat4, np.where(keep, c["b"], np.nan), pm.BENEFIT_CMAP, Normalize(0, vmax))
-    colorbar(fig, mm, ax, f"{BEN[a.benefit][2]}; black line = median {med['benefit']:.1f}", med["benefit"], "both")
+    colorbar(fig, mm, ax, f"{BEN[a.benefit][2]}; black line = {c['thr_label']} {c['thr']['benefit']:.1f}", c["thr"]["benefit"], "both")
     ax = map_ax(gs[1, 0], "b", "Composite vulnerability (fire + water stress)")
     mm = pm.mesh(ax, lon4, lat4, c["vuln"], VULN_CMAP, Normalize(0, 1))
     rdesc = "area-weighted percentile ranks" if a.rank == "area" else "percentile ranks (by cell count)"
-    colorbar(fig, mm, ax, f"Mean of the {rdesc} of fire risk and water stress; black line = median {med['vuln']:.3f}", med["vuln"], "neither")
-    ax = map_ax(gs[:, 1], "c", "Siting quadrants (split at medians), with benefit vs vulnerability")
+    colorbar(fig, mm, ax, f"Mean of the {rdesc} of fire risk and water stress; black line = {c['thr_label']} {c['thr']['vuln']:.3f}", c["thr"]["vuln"], "neither")
+    ax = map_ax(gs[:, 1], "c", f"Siting quadrants (split at {c['thr_label']}s), with benefit vs vulnerability")
     pm.mesh(ax, lon4, lat4, c["quad"], ListedColormap(Q_COLS), Normalize(-0.5, 3.5))
     share = {r["quadrant"]: r["share_pct"] for r in c["rows"]}
     handles = [plt.Rectangle((0, 0), 1, 1, color=Q_COLS[q]) for q in (3, 2, 1, 0)]
@@ -189,17 +211,22 @@ def draw(a, c):
     clip_note = scatter(axi, c, a, small=True, note=False)
     fig.suptitle(f"Where to restore and protect forest for carbon (SEUS, {a.ssp}, RF, {a.years}, 4 km)", fontsize=13.5, color=ps.INK,
                  x=0.04, ha="left", y=0.975)
+    rank_txt = (f"ranks are {rdesc} over eligible land, so half of the eligible land is high risk by construction. " if not c["fixed"] else
+                f"ranks are read off the area-weighted {c['thr_label'].split()[0]} distributions of fire risk and water stress, "
+                f"and both splits are fixed at the {c['thr_label']}s. ")
+    split_txt = "All medians are area-weighted over eligible land of this SSP.\n" if not c["fixed"] else "Class shares therefore differ between SSPs.\n"
+    scale_txt = "98th percentile of the four SSPs pooled" if getattr(a, "vmax_b", None) else "98th percentile"
     fig.text(0.04, 0.012,
              BEN[a.benefit][3] + "\n"
              "Vulnerability (b) = mean of the percentile ranks of fire risk (fire carbon loss NEP − LAND_USE_FLUX − NBP over ecosystem carbon, %/yr) and "
              "water stress (1 − BTRAN, April–October), both 2091–2100 means of the RF run;\n"
-             f"ranks are {rdesc} over eligible land, so half of the eligible land is high risk by construction. "
-             f"Eligible land = RF's 2060 forest fraction ≥ {a.floor:g} (near-white: not eligible). All medians are area-weighted over eligible land of this SSP.\n"
+             + rank_txt + f"Eligible land = RF's 2060 forest fraction ≥ {a.floor:g} (near-white: not eligible). " + split_txt +
              "Fire has ~0.5° effective resolution at 4 km (population-density input interpolated from 0.5°). RF is restoration plus a region-wide harvest ban. "
-             f"Colour scale a: 0 to {vmax:.3g} (" + ("98th percentile of the four SSPs pooled" if getattr(a, "vmax_b", None) else "98th percentile") + "). Inset in c: each point = one eligible 4 km cell, size = its eligible area, dashed = the two medians; " + clip_note + ".",
+             f"Colour scale a: 0 to {vmax:.3g} ({scale_txt}). Inset in c: each point = one eligible 4 km cell, size = its eligible area, "
+             f"dashed = the two splits; " + clip_note + ".",
              fontsize=8.4, color=ps.INK2, va="bottom", ha="left")
     os.makedirs(a.out_dir, exist_ok=True)
-    stem = os.path.join(a.out_dir, f"fig5_siting_median_{a.ssp}_{a.years}" + ("_countrank" if a.rank == "count" else "") + ("_nofire" if a.benefit == "nofire" else ""))
+    stem = os.path.join(a.out_dir, f"fig5_siting_median_{a.ssp}_{a.years}" + ("_countrank" if a.rank == "count" else "") + ("_nofire" if a.benefit == "nofire" else "") + getattr(a, "suffix", ""))
     fig.savefig(stem + ".png", dpi=170, facecolor=ps.SURFACE)
     plt.close(fig)
 
@@ -262,12 +289,12 @@ def draw_ppt(a, c):
 
     ax = map_ax(gs[0, 0], "a", "Carbon benefit of RF" + ("" if a.benefit == "net" else " w/o fire loss"))
     mm = pm.mesh(ax, lon4, lat4, np.where(keep, c["b"], np.nan), pm.BENEFIT_CMAP, Normalize(0, vmax))
-    cbar(mm, ax, f"MgC/ha of eligible land; median {med['benefit']:.1f}", med["benefit"], "both")
+    cbar(mm, ax, f"MgC/ha of eligible land; {c['thr_label']} {c['thr']['benefit']:.1f}", c["thr"]["benefit"], "both")
     ax = map_ax(gs[1, 0], "b", "Vulnerability (fire + water)")
     mm = pm.mesh(ax, lon4, lat4, c["vuln"], VULN_CMAP, Normalize(0, 1))
-    cbar(mm, ax, f"Mean area-weighted rank; median {med['vuln']:.3f}", med["vuln"], "neither")
+    cbar(mm, ax, f"Mean area-weighted rank; {c['thr_label']} {c['thr']['vuln']:.3f}", c["thr"]["vuln"], "neither")
 
-    ax = map_ax(gs[:, 1], "c", "Siting quadrants (split at medians)")
+    ax = map_ax(gs[:, 1], "c", f"Siting quadrants (split at {c['thr_label']}s)")
     pm.mesh(ax, lon4, lat4, c["quad"], ListedColormap(Q_COLS), Normalize(-0.5, 3.5))
     share = {r["quadrant"]: r["share_pct"] for r in c["rows"]}
     handles = [plt.Rectangle((0, 0), 1, 1, color=Q_COLS[q]) for q in (3, 2, 1, 0)]
@@ -290,7 +317,7 @@ def draw_ppt(a, c):
                  color=ps.INK, x=0.035, ha="left", y=0.975)
     os.makedirs(a.out_dir, exist_ok=True)
     stem = os.path.join(a.out_dir, f"fig5_siting_median_{a.ssp}_{a.years}" + ("_countrank" if a.rank == "count" else "")
-                        + ("_nofire" if a.benefit == "nofire" else "") + "_ppt")
+                        + ("_nofire" if a.benefit == "nofire" else "") + getattr(a, "suffix", "") + "_ppt")
     fig.savefig(stem + ".png", dpi=200, facecolor=ps.SURFACE)
     plt.close(fig)
     print(f"wrote {stem}.png")

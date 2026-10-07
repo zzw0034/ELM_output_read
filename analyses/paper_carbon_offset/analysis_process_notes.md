@@ -1244,6 +1244,32 @@ medians, the quadrant shares are nearly identical across SSPs (35/15/15/35 %); t
 the carbon they hold, not in the shares. Risk medians: fire 0.051, 0.194, 0.176, 0.210 %/yr and water stress 0.051, 0.078, 0.072, 0.083
 (SSP1-1.9, SSP2-4.5, SSP3-7.0, SSP5-8.5).
 
+### 3.25 Figure 5 median variant with the SSP3-7.0 medians as fixed thresholds (2026-10-06)
+
+User request 2026-10-06: draw the other SSPs with the SSP3-7.0 medians as fixed thresholds, to see the effect (the own-median version of
+§3.24 is kept). Benefit is split at 42.29 MgC/ha in every SSP. For vulnerability a fixed number alone would not work, because the composite is
+re-ranked inside each SSP (its median is ~0.5 in every SSP); instead each SSP's fire risk and water stress are ranked **against the SSP3-7.0
+area-weighted distributions** (`np.interp` on the SSP3-7.0 midpoint CDF, clamped to 0-1 outside its range), averaged, and split at the
+SSP3-7.0 composite median 0.5009. SSP3-7.0 itself reproduces §3.23/3.24 exactly (34.9/15.1/15.1/34.9 %, 2.834 PgC).
+
+Code: `plot_siting_median.py` `compute(a, ref)` (md5 `ec0166720b8411686b3ddb4deefd9500`), driver `plot_siting_median_ssps.py --fixed-ref SSP3-7.0` (md5 `23cc3edbfe822f3393f43e58d8d72729`) →
+files with the suffix `_fixedSSP370`: per-SSP figures, `fig5_siting_median_ssps_2091-2100_fixedSSP370.csv`, and the slides
+`fig5_siting_median_pair_SSP1-1.9_SSP2-4.5_2091-2100_fixedSSP370_ppt.png`, `fig5_siting_median_pair_SSP3-7.0_SSP5-8.5_2091-2100_fixedSSP370_ppt.png`.
+Benefit colour scale shared as in §3.24 (0-141.1).
+
+| SSP | high benefit | low risk | high benefit / low risk: share, PgC (% of total) | high / high | low / low | low benefit / high risk |
+|---|---:|---:|---:|---:|---:|---:|
+| SSP1-1.9 | 34.9 % | 82.9 % | 33.2 %, 2.099 (58.0 %) | 1.6 % | 49.7 % | 15.4 % |
+| SSP2-4.5 | 48.5 % | 45.7 % | 32.1 %, 2.120 (50.1 %) | 16.4 % | 13.6 % | 37.9 % |
+| SSP3-7.0 | 50.0 % | 50.0 % | 34.9 %, 2.834 (57.0 %) | 15.1 % | 15.1 % | 34.9 % |
+| SSP5-8.5 | 55.9 % | 39.5 % | 30.1 %, 2.337 (46.4 %) | 25.8 % | 9.5 % | 34.6 % |
+
+Reading: with fixed thresholds the shares carry the scenario signal. SSP1-1.9 has lower benefit (own median 34.6) and much lower fire risk
+(own fire median 0.051 vs 0.176 %/yr), so most land is low risk (83 %) and almost no high-benefit land is high risk (1.6 %). SSP5-8.5 has more
+high-benefit land (56 %) but more of it is high risk (26 % of eligible land), so the high benefit / low risk class shrinks to 30 % and holds
+2.34 PgC, less than SSP3-7.0 (2.83) despite a larger total benefit. HDM and lightning are the same in every SSP (A3), so the fire differences
+come from climate and fuel only.
+
 ## 4. Script and product locations
 
 Since 2026-10-01 `code/` and `figures/` are organized by manuscript figure

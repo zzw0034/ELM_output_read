@@ -119,11 +119,10 @@ def main():
     lo = min(C[s]["DF"].min() for s in SSPS)
     hi = max(C[s]["RF"].max() for s in SSPS)
     fig = plt.figure(figsize=(16, 9), facecolor="white")
-    fig.text(0.05, 0.95, "Cumulative NBP of the management runs under the four SSPs (4 km)", fontsize=26, fontweight="bold",
-             color=INK, va="center")
-    pos = [(0.08, 0.565), (0.55, 0.565), (0.08, 0.16), (0.55, 0.16)]
+    # no figure title (user request 2026-10-07)
+    pos = [(0.08, 0.6), (0.55, 0.6), (0.08, 0.16), (0.55, 0.16)]
     for (x0, y0), ssp in zip(pos, SSPS):
-        ax = fig.add_axes([x0, y0, 0.31, 0.3])
+        ax = fig.add_axes([x0, y0, 0.31, 0.34])
         c = C[ssp]
         ax.plot(xs, c["Default"], color="black", lw=2.8, label="Default (reference)")
         names = {"RF": "RF  restoration and protection", "RH": "RH  reduced harvest", "DF": "DF  deforestation counterfactual"}
@@ -144,7 +143,7 @@ def main():
         ax.tick_params(labelsize=14)
         ax.yaxis.label.set_size(15)
         ax.margins(y=0)
-    fig.text(0.025, 0.51, "Cumulative regional NBP since 2024 (PgC)", rotation=90, fontsize=16, color=INK, ha="center", va="center")
+    fig.text(0.025, 0.55, "Cumulative regional NBP since 2024 (PgC)", rotation=90, fontsize=16, color=INK, ha="center", va="center")
     h_, l_ = ax.get_legend_handles_labels()
     fig.legend(h_, l_, loc="lower center", bbox_to_anchor=(0.5, 0.01), ncol=4, fontsize=15, frameon=False, handlelength=2.4,
                columnspacing=2.0)

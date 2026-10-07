@@ -3,14 +3,16 @@ Figure 5, poster method with median splits (user decisions 2026-10-06): 4 km onl
 poster (carbon_offset_poster/outputs/panel4_siting_RF_4km_ABCD.png, ..._E_scatter.png) rebuilt from the two paper risk
 components, and every split at this SSP's own area-weighted median over eligible land. RF, end state = mean of the window.
 
-  a  RF benefit without fire loss per eligible ha (as plot_priority_maps.py panel a); black line = median
+  a  RF carbon benefit per eligible ha: window-mean TOTECOSYSC RF - Default (net of fire, user decision 2026-10-06;
+     --benefit nofire adds the cumulative fire-loss difference back as in plot_priority_maps.py panel a, suffix _nofire);
+     black line = median. The same benefit sets the quadrant split (e) and the scatter x axis (f).
   b  fire risk: (NEP - LAND_USE_FLUX - NBP) / TOTECOSYSC, RF run (%/yr)
   c  water stress: 1 - BTRAN, April-October, RF run
   d  composite vulnerability = mean of the percentile ranks (0-1) of b and c over eligible cells; black line = median
   e  siting quadrants: benefit >= its median x vulnerability < its median
   f  benefit vs composite vulnerability (also written as a standalone scatter, as on the poster)
-Differences from the poster: two components instead of three (NBP variability dropped, notes 3.19), benefit without
-fire loss per eligible ha instead of the net stock difference per m2 of land, ranks and medians over eligible land
+Differences from the poster: two components instead of three (NBP variability dropped, notes 3.19), benefit per eligible
+ha (MgC/ha) instead of per m2 of land (gC/m2), ranks and medians over eligible land
 (RF 2060 forest fraction >= --floor) instead of all land, and (user decision 2026-10-06) ranks weighted by eligible area
 (--rank area, default: a cell's rank is the share of eligible AREA with lower risk) instead of cell counts (--rank count, the
 poster's way; outputs get the suffix _countrank). Medians are area-weighted in both cases. No 0.5 deg comparison.
@@ -37,6 +39,16 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import plot_priority_maps as pm  # noqa: E402
 
 ps = pm.ps
+BEN = {   # benefit choice -> (short name, panel a title, colour-bar label, footnote)
+    "net": ("carbon benefit", "Carbon benefit of RF",
+            "RF − Default, ecosystem carbon per eligible ha (MgC/ha), 2091–2100",
+            "Benefit (a) = 2091–2100 mean TOTECOSYSC (total ecosystem carbon incl. wood products) of RF minus Default, per eligible hectare; "
+            "it is net of fire (fire losses are not added back)."),
+    "nofire": ("benefit without fire loss", "Carbon benefit of RF without fire loss",
+               "RF − Default, MgC per eligible ha, fire loss added back",
+               "Benefit (a) = TOTECOSYSC stock difference RF − Default plus the cumulative fire carbon loss difference since 2024 "
+               "(fire = NEP − LAND_USE_FLUX − NBP), per eligible hectare; adding the fire loss back is an approximation."),
+}
 Q_COLS = ["#d9d9d9", "#9ecae1", "#fdae6b", "#238b45"]      # poster colours, quadrant codes 0-3
 Q_NAMES = ["low benefit, high risk", "low benefit, low risk", "high benefit, high risk", "HIGH benefit, LOW risk"]
 VULN_CMAP = LinearSegmentedColormap.from_list("vul", ["#fcfdbf", "#fc8961", "#b73779", "#51127c", "#000004"])
@@ -62,7 +74,8 @@ def rank01(x, keep, w=None):
 def compute(a):
     with contextlib.redirect_stdout(io.StringIO()):
         c = pm.compute(a)
-    m, ok, a4, E, b = c["m"], c["ok"], c["a4"], c["E"], c["b_nf"]
+    m, ok, a4, E = c["m"], c["ok"], c["a4"], c["E"]
+    b = c["b_net"] if a.benefit == "net" else c["b_nf"]
     fire, water = m["R4"]["fire"], m["R4"]["water"]
     keep = ok & np.isfinite(b) & np.isfinite(fire) & np.isfinite(water)
     assert keep.sum() == ok.sum(), f"{ok.sum() - keep.sum()} eligible cells lack a benefit or risk value"
@@ -83,7 +96,7 @@ def compute(a):
                          mean_fire_pctyr=float((a4[s] * fire[s]).sum() / area) if area else np.nan,
                          mean_water=float((a4[s] * water[s]).sum() / area) if area else np.nan))
     total = float((a4[keep] * b[keep]).sum()) * 100 / 1e9
-    print(f"[{a.ssp}] eligible 4 km land {E / 1e3:.1f} x10^3 km2 in {keep.sum()} cells; benefit without fire loss {total:.3f} PgC")
+    print(f"[{a.ssp}] eligible 4 km land {E / 1e3:.1f} x10^3 km2 in {keep.sum()} cells; {BEN[a.benefit][0]} {total:.3f} PgC")
     print(f"medians (area-weighted, eligible land): benefit {med['benefit']:.2f} MgC/ha, fire {med['fire']:.4f} %/yr, "
           f"water {med['water']:.4f}, composite vulnerability {med['vuln']:.4f}")
     for r in rows:
@@ -104,7 +117,7 @@ def colorbar(fig, mm, ax, label, line, extend):
     cb.ax.tick_params(labelsize=8)
 
 
-def scatter(ax, c, small=False):
+def scatter(ax, c, a, small=False):
     k, a4 = c["keep"], c["a4"]
     x, y, w, q = c["b"][k], c["vuln"][k], a4[k], c["quad"][k].astype(int)
     sz = np.clip(w / w.max() * (5 if small else 12), 0.5, None)
@@ -118,7 +131,7 @@ def scatter(ax, c, small=False):
     out = 100 * w[x < xlo].sum() / w.sum()
     ax.text(0.01, 0.01, f"{out:.1f}% of eligible area left of the axis (down to {x.min():.0f})", transform=ax.transAxes,
             fontsize=7 if small else 8.5, color=ps.INK2, ha="left", va="bottom")
-    ax.set_xlabel("RF benefit without fire loss (MgC/ha per eligible ha)", fontsize=9 if small else 11)
+    ax.set_xlabel(f"RF {BEN[a.benefit][0]} (MgC/ha per eligible ha)", fontsize=9 if small else 11)
     ax.set_ylabel("Composite vulnerability (0–1)", fontsize=9 if small else 11)
     ax.set_ylim(-0.03, 1.03)
     ax.grid(alpha=0.3)
@@ -142,9 +155,9 @@ def draw(a, c):
         pm.title(ax, letter, ttl)
         return ax
 
-    ax = map_ax(gs[0, 0], "a", "Carbon benefit of RF without fire loss")
+    ax = map_ax(gs[0, 0], "a", BEN[a.benefit][1])
     mm = pm.mesh(ax, lon4, lat4, np.where(keep, c["b"], np.nan), pm.BENEFIT_CMAP, Normalize(0, vmax[0]))
-    colorbar(fig, mm, ax, f"RF − Default, MgC per eligible ha, fire loss added back; black line = median {med['benefit']:.1f}", med["benefit"], "both")
+    colorbar(fig, mm, ax, f"{BEN[a.benefit][2]}; black line = median {med['benefit']:.1f}", med["benefit"], "both")
     for pos, key, cmap, letter, ttl, lab, vm in (
             (gs[0, 1], "fire", pm.FIRE_CMAP, "b", "Fire risk", "Fire carbon loss / ecosystem carbon (%/yr)", vmax[1]),
             (gs[0, 2], "water", pm.WATER_CMAP, "c", "Water stress risk", "1 − BTRAN, April–October", vmax[2])):
@@ -163,26 +176,25 @@ def draw(a, c):
               framealpha=0.93, edgecolor="none", title="share of eligible land", title_fontsize=8)
     axf = fig.add_subplot(gs[1, 2])
     axf.set_facecolor(ps.SURFACE)
-    scatter(axf, c, small=True)
+    scatter(axf, c, a, small=True)
     pm.title(axf, "f", "Benefit vs vulnerability")
     fig.suptitle(f"Where to restore and protect forest for carbon (SEUS, {a.ssp}, RF, {a.years}, 4 km)", fontsize=14, color=ps.INK,
                  x=0.03, ha="left", y=0.975)
     fig.text(0.03, 0.012,
-             "Benefit (a) = TOTECOSYSC stock difference RF − Default plus the cumulative fire carbon loss difference since 2024 (fire = NEP − LAND_USE_FLUX − NBP), "
-             "per eligible hectare; adding the fire loss back is an approximation.\n"
+             BEN[a.benefit][3] + "\n"
              f"Eligible land = RF's 2060 forest fraction ≥ {a.floor:g} (near-white: not eligible). All medians are area-weighted over eligible land of this SSP. "
              f"Vulnerability (d) is rank-based ({rdesc}), so half of the eligible land is high risk by construction.\n"
              "Fire has ~0.5° effective resolution at 4 km (population-density input interpolated from 0.5°). RF is restoration plus a region-wide harvest ban. "
              f"Colour scales a–c: 0 to the 98th percentile ({vmax[0]:.3g}, {vmax[1]:.3g}, {vmax[2]:.3g}). Point size in f = cell eligible area.",
              fontsize=8.4, color=ps.INK2, va="bottom", ha="left")
     os.makedirs(a.out_dir, exist_ok=True)
-    stem = os.path.join(a.out_dir, f"fig5_siting_median_{a.ssp}_{a.years}" + ("_countrank" if a.rank == "count" else ""))
+    stem = os.path.join(a.out_dir, f"fig5_siting_median_{a.ssp}_{a.years}" + ("_countrank" if a.rank == "count" else "") + ("_nofire" if a.benefit == "nofire" else ""))
     fig.savefig(stem + ".png", dpi=170, facecolor=ps.SURFACE)
     plt.close(fig)
 
     fs, ax = plt.subplots(figsize=(8, 7), facecolor=ps.SURFACE)
     ax.set_facecolor(ps.SURFACE)
-    scatter(ax, c)
+    scatter(ax, c, a)
     ax.set_title(f"Benefit vs composite vulnerability ({a.ssp}, {a.years}, 4 km)\npoint size = eligible area; dashed = medians", fontsize=12)
     ax.legend([plt.Rectangle((0, 0), 1, 1, color=Q_COLS[q]) for q in (3, 2, 1, 0)],
               [f"{Q_NAMES[q]} ({share[Q_NAMES[q]]:.0f}%)" for q in (3, 2, 1, 0)], loc="upper right", fontsize=8.5, framealpha=0.93)
@@ -204,6 +216,8 @@ def draw(a, c):
 
 def main():
     ap = pm.parser()
+    ap.add_argument("--benefit", choices=("net", "nofire"), default="net",
+                    help="net stock difference (default) or with the cumulative fire-loss difference added back")
     ap.add_argument("--rank", choices=("area", "count"), default="area",
                     help="percentile ranks of the risk components by eligible area (default) or by cell count (poster)")
     a = ap.parse_args()

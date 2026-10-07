@@ -1151,7 +1151,7 @@ User decisions 2026-10-06: draw Figure 5 with the poster method (`../carbon_offs
 the poster's **composite vulnerability** (scheme B) rebuilt from the two paper components; **each SSP uses its own medians** (the high-benefit half
 is then 50 % of eligible land in every SSP); SSP3-7.0 first, other SSPs after the figure is final.
 
-Plot `code/figure5/plot_siting_median.py` (md5 `bcae3a3b322ea6b9038dfbb1667121c7`; no new extraction, same inputs and benefit/risk fields as
+Plot `code/figure5/plot_siting_median.py` (md5 `6879884a46c4d8dd0fce1e35539a0e26`; no new extraction, same inputs and benefit/risk fields as
 `plot_priority_maps.py` §3.20, which it imports) → `figures/figure5/fig5_siting_median_SSP3-7.0_2091-2100{.png,_scatter.png,.csv}`, run locally.
 Panels: a benefit without fire loss per eligible ha, b fire risk, c water stress, d composite vulnerability = mean of the percentile ranks (0-1) of
 b and c over eligible cells, e quadrants at the area-weighted medians of a and d, f benefit vs vulnerability (also standalone). **Ranks are
@@ -1183,6 +1183,24 @@ than 50/50. Of the high-benefit land, 41.5 % is above the fire median and 41.5 %
 fire and water ranks correlate at 0.53. Caveats: the composite is rank-based, so half the eligible land is high risk by construction and its
 values have no physical units; fire has ~0.5° effective resolution and its 2091-2100 mean is dominated by 2094-2096 (§3.19, §3.20). For
 comparison, the composite with fire and water both required below their own medians (scheme A, not adopted) gives 19.9 % high benefit / low risk.
+
+**Panel a switched to the net carbon benefit (user decision 2026-10-06, same day).** The default benefit is now the 2091-2100 mean
+TOTECOSYSC RF − Default per eligible ha, without adding the fire-loss difference back; it also sets the quadrant split and the scatter x axis
+(`--benefit nofire` reproduces the numbers above with the suffix `_nofire`). Area-weighted ranks as above. Net carbon benefit on eligible land
+4.974 PgC (as §3.18/3.20); median 42.29 MgC/ha; 1.42 % of eligible area has a negative benefit; risk medians unchanged.
+
+| quadrant (net benefit) | share of eligible land | benefit (PgC, % of total) | mean benefit (MgC/ha) | mean fire (%/yr) | mean water stress |
+|---|---:|---:|---:|---:|---:|
+| high benefit, low risk | 34.9 % | 2.834 (57.0 %) | 85.9 | 0.080 | 0.053 |
+| high benefit, high risk | 15.1 % | 1.010 (20.3 %) | 70.5 | 0.309 | 0.098 |
+| low benefit, low risk | 15.1 % | 0.376 (7.6 %) | 26.2 | 0.091 | 0.050 |
+| low benefit, high risk | 34.9 % | 0.754 (15.2 %) | 22.8 | 0.611 | 0.101 |
+
+Benefit and vulnerability are now more strongly anti-correlated (rank r = −0.48 vs −0.22 without fire loss), so the high-benefit half falls
+70/30 into low/high risk and the green class grows from 29.8 to 34.9 %. Reason: the net benefit already has the fire loss subtracted, so
+high-fire cells have a lower benefit and fire enters the figure twice, once through the benefit and once through the risk axis. Of the
+high-benefit land 30.3 % is above the fire median (41.5 % without fire loss) and 36.4 % above the water median. (30.29 % high risk vs
+30.28 % above the fire median is a coincidence: different cells, overlap 20.2 %.)
 
 **Water-stress caveat found 2026-10-06 (not yet quantified).** BTRAN in h0 is the patch → gridcell area average (`EnergyFluxType.F90:306`,
 `ptr_patch`, lake/urban spval), and ELM sets `btran(p) = 0` for any patch with `frac_veg_nosno == 0` (`CanopyFluxesMod.F90:484-485`, our

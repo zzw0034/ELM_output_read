@@ -111,10 +111,10 @@ exposure), the risk maps and the screen comparison go to the supplement. **Other
 SSP3-7.0 p80 thresholds (absolute, not each SSP's own percentile) and one shared colour scale per map panel; main text keeps SSP3-7.0, and the
 cross-SSP change of the siting is shown by one map only (how many of the four SSPs select each 4 km cell, four distinct hues;
 user decisions 2026-10-02), as Figure 5e or a supplement figure (layout open). Details: [analysis_process_notes.md](analysis_process_notes.md) §3.18–3.20, §3.22.
-**Median variant (2026-10-06, under review):** Figure 5 redrawn with the poster method, 4 km only: benefit split at its median (not a 20 %
-budget), risk = composite vulnerability (mean area-weighted percentile rank of fire and water stress) split at its median, each SSP its own area-weighted
+**Median variant (2026-10-06, under review):** Figure 5 redrawn with the poster method, 4 km only: benefit = net carbon benefit (RF − Default
+TOTECOSYSC, fire loss not added back; user decision 2026-10-06) split at its median (not a 20 % budget), risk = composite vulnerability (mean area-weighted percentile rank of fire and water stress) split at its median, each SSP its own area-weighted
 medians over eligible land; panels a benefit, b fire, c water, d composite, e quadrants, f scatter. SSP3-7.0 drawn first (high benefit / low
-risk 29.8 % of eligible land, 46 % of the benefit); other SSPs once the figure is final. This reintroduces the composite and the median split
+risk 34.9 % of eligible land, 57 % of the benefit); other SSPs once the figure is final. This reintroduces the composite and the median split
 that E5 had dropped; whether it replaces the 20 %/p80 main figure is open. Details: notes §3.23.
 
 ---

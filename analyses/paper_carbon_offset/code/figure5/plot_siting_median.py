@@ -11,8 +11,9 @@ components, and every split at this SSP's own area-weighted median over eligible
   f  benefit vs composite vulnerability (also written as a standalone scatter, as on the poster)
 Differences from the poster: two components instead of three (NBP variability dropped, notes 3.19), benefit without
 fire loss per eligible ha instead of the net stock difference per m2 of land, ranks and medians over eligible land
-(RF 2060 forest fraction >= --floor) instead of all land. Ranks are unweighted (4 km cells have nearly equal area,
-as on the poster); medians are area-weighted. No 0.5 deg comparison.
+(RF 2060 forest fraction >= --floor) instead of all land, and (user decision 2026-10-06) ranks weighted by eligible area
+(--rank area, default: a cell's rank is the share of eligible AREA with lower risk) instead of cell counts (--rank count, the
+poster's way; outputs get the suffix _countrank). Medians are area-weighted in both cases. No 0.5 deg comparison.
 
 Runs locally (cartopy venv), from the analysis root:
     /Users/zw5/ORNL_workplace/ELM_output_read/.venv/bin/python code/figure5/plot_siting_median.py [--ssp SSP3-7.0]
@@ -41,12 +42,18 @@ Q_NAMES = ["low benefit, high risk", "low benefit, low risk", "high benefit, hig
 VULN_CMAP = LinearSegmentedColormap.from_list("vul", ["#fcfdbf", "#fc8961", "#b73779", "#51127c", "#000004"])
 
 
-def rank01(x, keep):
-    """Percentile rank in [0, 1] over the `keep` cells (unweighted, ties by order), NaN elsewhere."""
+def rank01(x, keep, w=None):
+    """Percentile rank in [0, 1] over the `keep` cells, NaN elsewhere (ties by order). w=None: share of cells below
+    (poster); w = cell weights: share of the total weight below, each cell at the midpoint of its own weight
+    (the convention of plot_priority_selection.wquantile)."""
     v = x[keep]
     order = np.argsort(v, kind="stable")
     r = np.empty(v.size)
-    r[order] = np.arange(v.size) / max(v.size - 1, 1)
+    if w is None:
+        r[order] = np.arange(v.size) / max(v.size - 1, 1)
+    else:
+        ws = w[keep][order]
+        r[order] = (np.cumsum(ws) - 0.5 * ws) / ws.sum()
     out = np.full(x.shape, np.nan)
     out[keep] = r
     return out
@@ -59,7 +66,8 @@ def compute(a):
     fire, water = m["R4"]["fire"], m["R4"]["water"]
     keep = ok & np.isfinite(b) & np.isfinite(fire) & np.isfinite(water)
     assert keep.sum() == ok.sum(), f"{ok.sum() - keep.sum()} eligible cells lack a benefit or risk value"
-    vuln = (rank01(fire, keep) + rank01(water, keep)) / 2
+    rw = a4 if a.rank == "area" else None
+    vuln = (rank01(fire, keep, rw) + rank01(water, keep, rw)) / 2
     wmed = lambda x: ps.wquantile(x[keep], a4[keep], 0.5)
     med = dict(benefit=wmed(b), fire=wmed(fire), water=wmed(water), vuln=wmed(vuln))
     hi_b, lo_v = b >= med["benefit"], vuln < med["vuln"]
@@ -145,7 +153,8 @@ def draw(a, c):
         colorbar(fig, mm, ax, f"{lab}; black line = median {med[key]:.3g}", med[key], "max")
     ax = map_ax(gs[1, 0], "d", "Composite vulnerability (fire + water stress)")
     mm = pm.mesh(ax, lon4, lat4, c["vuln"], VULN_CMAP, Normalize(0, 1))
-    colorbar(fig, mm, ax, f"Mean of the percentile ranks of b and c; black line = median {med['vuln']:.3f}", med["vuln"], "neither")
+    rdesc = "area-weighted percentile ranks" if a.rank == "area" else "percentile ranks (by cell count)"
+    colorbar(fig, mm, ax, f"Mean of the {rdesc} of b and c; black line = median {med['vuln']:.3f}", med["vuln"], "neither")
     ax = map_ax(gs[1, 1], "e", "Siting quadrants (split at medians)")
     pm.mesh(ax, lon4, lat4, c["quad"], ListedColormap(Q_COLS), Normalize(-0.5, 3.5))
     share = {r["quadrant"]: r["share_pct"] for r in c["rows"]}
@@ -162,12 +171,12 @@ def draw(a, c):
              "Benefit (a) = TOTECOSYSC stock difference RF − Default plus the cumulative fire carbon loss difference since 2024 (fire = NEP − LAND_USE_FLUX − NBP), "
              "per eligible hectare; adding the fire loss back is an approximation.\n"
              f"Eligible land = RF's 2060 forest fraction ≥ {a.floor:g} (near-white: not eligible). All medians are area-weighted over eligible land of this SSP. "
-             "Vulnerability (d) is rank-based, so half of the eligible land is high risk by construction.\n"
+             f"Vulnerability (d) is rank-based ({rdesc}), so half of the eligible land is high risk by construction.\n"
              "Fire has ~0.5° effective resolution at 4 km (population-density input interpolated from 0.5°). RF is restoration plus a region-wide harvest ban. "
              f"Colour scales a–c: 0 to the 98th percentile ({vmax[0]:.3g}, {vmax[1]:.3g}, {vmax[2]:.3g}). Point size in f = cell eligible area.",
              fontsize=8.4, color=ps.INK2, va="bottom", ha="left")
     os.makedirs(a.out_dir, exist_ok=True)
-    stem = os.path.join(a.out_dir, f"fig5_siting_median_{a.ssp}_{a.years}")
+    stem = os.path.join(a.out_dir, f"fig5_siting_median_{a.ssp}_{a.years}" + ("_countrank" if a.rank == "count" else ""))
     fig.savefig(stem + ".png", dpi=170, facecolor=ps.SURFACE)
     plt.close(fig)
 
@@ -194,7 +203,10 @@ def draw(a, c):
 
 
 def main():
-    a = pm.parser().parse_args()
+    ap = pm.parser()
+    ap.add_argument("--rank", choices=("area", "count"), default="area",
+                    help="percentile ranks of the risk components by eligible area (default) or by cell count (poster)")
+    a = ap.parse_args()
     draw(a, compute(a))
 
 

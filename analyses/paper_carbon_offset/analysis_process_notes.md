@@ -1151,29 +1151,44 @@ User decisions 2026-10-06: draw Figure 5 with the poster method (`../carbon_offs
 the poster's **composite vulnerability** (scheme B) rebuilt from the two paper components; **each SSP uses its own medians** (the high-benefit half
 is then 50 % of eligible land in every SSP); SSP3-7.0 first, other SSPs after the figure is final.
 
-Plot `code/figure5/plot_siting_median.py` (md5 `51c13338f68e1e54e2df22ec6130eef8`; no new extraction, same inputs and benefit/risk fields as
+Plot `code/figure5/plot_siting_median.py` (md5 `bcae3a3b322ea6b9038dfbb1667121c7`; no new extraction, same inputs and benefit/risk fields as
 `plot_priority_maps.py` §3.20, which it imports) → `figures/figure5/fig5_siting_median_SSP3-7.0_2091-2100{.png,_scatter.png,.csv}`, run locally.
 Panels: a benefit without fire loss per eligible ha, b fire risk, c water stress, d composite vulnerability = mean of the percentile ranks (0-1) of
-b and c over eligible cells (unweighted ranks as on the poster; 4 km cells have nearly equal area), e quadrants at the area-weighted medians of a
-and d, f benefit vs vulnerability (also standalone). Differences from the poster: no NBP-variability component (§3.19), benefit without fire loss
-per eligible ha, ranks and medians over eligible land (RF 2060 forest fraction ≥ 0.05). The scatter x axis is clipped at the area-weighted p0.1
-(−133 MgC/ha): 253 cells, 0.19 % of eligible area, reach −887 because a small eligible fraction inflates the per-eligible-ha value.
+b and c over eligible cells, e quadrants at the area-weighted medians of a and d, f benefit vs vulnerability (also standalone). **Ranks are
+weighted by eligible area** (user decision 2026-10-06, same day): a cell's rank is the share of eligible area with lower risk, each cell at the
+midpoint of its own area (the `wquantile` convention), so every step of the figure is area-based. `--rank count` reproduces the first version
+(ranks by cell count, as on the poster) with the suffix `_countrank`. Differences from the poster: no NBP-variability component (§3.19), benefit
+without fire loss per eligible ha, ranks and medians over eligible land (RF 2060 forest fraction ≥ 0.05; the eligibility mask of `build()` also
+requires a valid parent 0.5° land cell). The scatter x axis is clipped at the area-weighted p0.1 (−133 MgC/ha): 253 cells, 0.19 % of eligible
+area, reach −887 because a small eligible fraction inflates the per-eligible-ha value.
 
 Results (SSP3-7.0, 2091-2100, eligible land 946.9 ×10³ km² in 75,425 cells, benefit without fire loss 6.163 PgC). Medians: benefit 55.47 MgC/ha,
-fire 0.1762 %/yr, water stress 0.0715, composite vulnerability 0.5103.
+fire 0.1762 %/yr, water stress 0.0715, composite vulnerability 0.5009 (0.5103 with count ranks).
 
 | quadrant | share of eligible land | benefit (PgC, % of total) | mean benefit (MgC/ha) | mean fire (%/yr) | mean water stress |
 |---|---:|---:|---:|---:|---:|
-| high benefit, low risk | 29.8 % | 2.859 (46.4 %) | 101.2 | 0.086 | 0.054 |
-| high benefit, high risk | 20.2 % | 1.737 (28.2 %) | 91.0 | 0.437 | 0.100 |
-| low benefit, low risk | 20.2 % | 0.634 (10.3 %) | 33.2 | 0.076 | 0.051 |
-| low benefit, high risk | 29.8 % | 0.934 (15.2 %) | 33.1 | 0.577 | 0.101 |
+| high benefit, low risk | 29.8 % | 2.854 (46.3 %) | 101.1 | 0.087 | 0.053 |
+| high benefit, high risk | 20.2 % | 1.741 (28.3 %) | 91.1 | 0.435 | 0.100 |
+| low benefit, low risk | 20.2 % | 0.634 (10.3 %) | 33.2 | 0.077 | 0.051 |
+| low benefit, high risk | 29.8 % | 0.934 (15.1 %) | 33.1 | 0.577 | 0.101 |
+
+Count ranks → area ranks: 339 cells (0.43 % of eligible land) change quadrant, in both directions (high benefit: 0.14 % low → high risk,
+0.11 % high → low; low benefit: 0.07 % and 0.10 %); quadrant shares unchanged to 0.1 %, high benefit / low risk 2.859 → 2.854 PgC. The
+composite shifts almost uniformly (area − count: mean −0.007, |Δ| p99 0.016), mostly from the fire ranks (|Δ| p50 0.017; the area-weighted
+median of the count rank of fire is 0.530, i.e. cells with a small eligible fraction lean to low fire risk), water ranks barely move (|Δ| p50
+0.004). The weighting is a matter of consistency, not of the result.
 
 Reading: benefit and vulnerability are weakly anti-correlated (rank r = −0.22), so the high-benefit half falls 60/40 into low/high risk rather
 than 50/50. Of the high-benefit land, 41.5 % is above the fire median and 41.5 % above the water median (41.47 vs 41.55 %, a coincidence);
 fire and water ranks correlate at 0.53. Caveats: the composite is rank-based, so half the eligible land is high risk by construction and its
 values have no physical units; fire has ~0.5° effective resolution and its 2091-2100 mean is dominated by 2094-2096 (§3.19, §3.20). For
 comparison, the composite with fire and water both required below their own medians (scheme A, not adopted) gives 19.9 % high benefit / low risk.
+
+**Water-stress caveat found 2026-10-06 (not yet quantified).** BTRAN in h0 is the patch → gridcell area average (`EnergyFluxType.F90:306`,
+`ptr_patch`, lake/urban spval), and ELM sets `btran(p) = 0` for any patch with `frac_veg_nosno == 0` (`CanopyFluxesMod.F90:484-485`, our
+E3SM checkout): bare ground always, deciduous or dormant patches in leafless months. The gridcell 1 − BTRAN_GS therefore mixes root-zone water
+deficit with the bare/leafless area share. Possible checks: its correlation with bare-ground and deciduous fractions; BTRAN over leafed or tree
+patches only from PFT-level output (whether h1 has BTRAN is not checked).
 
 ## 4. Script and product locations
 

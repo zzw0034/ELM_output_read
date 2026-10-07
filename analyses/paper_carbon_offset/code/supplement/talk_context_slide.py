@@ -112,10 +112,10 @@ def main():
     prs = Presentation()
     prs.slide_width, prs.slide_height = Inches(13.333), Inches(7.5)
     s = prs.slides.add_slide(prs.slide_layouts[6])
-    text(s, 0.6, 0.35, 12.2, 0.9, "Putting 3.7–5.3 PgC in context", 36, bold=True)
+    text(s, 0.5, 0.35, 12.5, 0.9, "Southeast restoration ≈ 3–4 % of U.S. emissions every year to 2100", 28, bold=True)
     s.shapes.add_picture(png, Inches(0.4), Inches(1.35), width=Inches(8.4))
     text(s, 9.1, 1.3, 3.9, 0.9, "≈ 2–3 years", 40, color="2A78D6", bold=True)
-    text(s, 9.1, 2.05, 3.9, 1.2, f"of total U.S. greenhouse-gas emissions\n({lo:.1f}–{hi:.1f} Gt CO₂ by 2100)", 17, color="52514E")
+    text(s, 9.1, 2.05, 3.9, 1.2, f"of total U.S. greenhouse-gas emissions\n({lo:.1f}–{hi:.1f} Gt CO₂ by 2100;\nU.S. total 6.3 Gt CO₂e/yr, EPA 2022)", 17, color="52514E")
     text(s, 9.1, 3.05, 3.9, 0.9, "≈ 3–4 % per year", 30, color="2A78D6", bold=True)
     text(s, 9.1, 3.7, 3.9, 0.9, "of annual U.S. emissions, on average to 2100", 17, color="52514E")
     text(s, 9.1, 4.5, 3.9, 0.9, "≈ 1/3", 30, color="2A78D6", bold=True)
@@ -125,7 +125,7 @@ def main():
          "Our numbers: cumulative NBP 2024–2100 averaged over 77 years (1 PgC = 3.664 Pg CO₂). Published values are maximum potentials "
          "or inventory estimates with different scopes: compare orders of magnitude only. Fargione rates: reforestation 63 Mha, "
          "sustained >90 yr; harvest pause on 123 Mha, 2025–2050 only, then saturates (their Table S1). "
-         "Sources: EPA GHG Inventory 2024; Fargione et al. 2018, Sci. Adv.; Domke et al. 2020, PNAS; USDA Forest Service (Southern forests 2007–2012).",
+         "Sources: EPA Inventory of U.S. GHG Emissions and Sinks 1990–2022 (gross total 6,343 Mt CO₂e in 2022); Fargione et al. 2018, Sci. Adv.; Domke et al. 2020, PNAS; USDA Forest Service (Southern forests 2007–2012).",
          10.5, color="52514E")
     p = os.path.join(OUT, "context_comparison.pptx")
     prs.save(p)

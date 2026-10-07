@@ -71,13 +71,10 @@ def main():
     extent = [float(b["lon4"].min()), float(b["lon4"].max()), float(b["lat4"].min()), float(b["lat4"].max())]
 
     fig = plt.figure(figsize=(16, 9), facecolor="white")
-    fig.text(0.04, 0.95, "A 0.5° model averages away the hotspots", fontsize=F["sup"] + 4, fontweight="bold", color=fh.INK,
-             va="center")
-    fig.text(0.04, 0.895, f"RF − Default, ecosystem carbon stock, {a.ssp}, {a.years} mean", fontsize=F["note"], color=fh.INK2,
-             va="center")
+    # no slide title or subtitle (user request 2026-10-07); the PPT title carries the message
     PC = ccrs.PlateCarree()
-    axa = fig.add_axes([0.035, 0.42, 0.29, 0.39], projection=PC)
-    axb = fig.add_axes([0.36, 0.42, 0.29, 0.39], projection=PC)
+    axa = fig.add_axes([0.035, 0.53, 0.29, 0.44], projection=PC)
+    axb = fig.add_axes([0.36, 0.53, 0.29, 0.44], projection=PC)
     for ax, lon, lat, fld, lt, tt in ((axa, b["lon4"], b["lat4"], c_map, "a", "4 km run"),
                                       (axb, b["lon5"], b["lat5"], a_map, "b", "0.5° run")):
         base(ax, extent)
@@ -91,7 +88,7 @@ def main():
     for ax in (axa, axb):
         ax.add_patch(Rectangle((b["lon5"][i0] - 0.25, b["lat5"][j0] - 0.25), 0.5 * (i1 - i0), 0.5 * (j1 - j0), fill=False,
                                edgecolor="black", lw=2, transform=PC, zorder=5))
-    cax = fig.add_axes([0.09, 0.345, 0.5, 0.022])
+    cax = fig.add_axes([0.09, 0.44, 0.5, 0.022])
     cb = fig.colorbar(mm, cax=cax, orientation="horizontal", extend="both")
     cb.set_label("MgC per ha of land", fontsize=F["cbar"])
     cb.ax.tick_params(labelsize=F["tick"])
@@ -102,7 +99,7 @@ def main():
     lat_e = np.append(b["lat5"][j0:j1] - 0.25, b["lat5"][j1 - 1] + 0.25)
     for k, (x0, lon, lat, fld, lab) in enumerate(((0.07, b["lon4"][q0:q1], b["lat4"][r0:r1], c_map[r0:r1, q0:q1], "4 km run"),
                                                   (0.255, b["lon5"][i0:i1], b["lat5"][j0:j1], a_map[j0:j1, i0:i1], "0.5° run"))):
-        ax = fig.add_axes([x0, 0.03, 0.17, 0.215])
+        ax = fig.add_axes([x0, 0.04, 0.22, 0.3])
         ax.pcolormesh(lon, lat, np.ma.masked_invalid(fld), cmap=GREEN, norm=norm, shading="auto", rasterized=True)
         for xx in lon_e:
             ax.axvline(xx, color="black", lw=0.8, alpha=0.6)
@@ -118,7 +115,7 @@ def main():
                 bbox=dict(facecolor="white", edgecolor="none", alpha=0.85, pad=2))
         if k == 0:
             title(ax, "c", "Zoom (black box in a, b)")
-    fig.text(0.46, 0.2, f"Inside one 0.5° cell the 4 km gain\nvaries by ±{b['within_sd'][j, i]:.0f} MgC/ha (SD);\na 0.5° model sees one value.",
+    fig.text(0.49, 0.27, f"Inside one 0.5° cell the 4 km gain\nvaries by ±{b['within_sd'][j, i]:.0f} MgC/ha (SD);\na 0.5° model sees one value.",
              fontsize=F["note"] + 1, color=fh.INK, va="center", linespacing=1.4)
 
     # d: top 10 % overlap
@@ -128,12 +125,12 @@ def main():
     cls = np.where(topc & topa, 3, np.where(topc, 1, np.where(topa, 2, 0))).astype("f8")
     cls = np.where(b["common"], cls, np.nan)
     ov = st["top10_overlap"]
-    axd = fig.add_axes([0.685, 0.42, 0.29, 0.39], projection=PC)
+    axd = fig.add_axes([0.685, 0.53, 0.29, 0.44], projection=PC)
     base(axd, extent)
     axd.pcolormesh(b["lon4"], b["lat4"], np.ma.masked_invalid(cls), cmap=ListedColormap(CLS_COLS), norm=Normalize(-0.5, 3.5),
                    shading="auto", transform=PC, rasterized=True)
     title(axd, "d", "Top 10 % of the gain")
-    fig.text(0.83, 0.17, f"0.5° finds only {100 * ov:.0f} % of the\n4 km top-10 % land", ha="center",
+    fig.text(0.83, 0.13, f"0.5° finds only {100 * ov:.0f} % of the\n4 km top-10 % land", ha="center",
              va="center", fontsize=F["title"] + 1, color=fh.INK, fontweight="bold")
     handles = [plt.Rectangle((0, 0), 1, 1, color=CLS_COLS[k]) for k in (3, 1, 2, 0)]
     axd.legend(handles, [CLS_NAMES[k] for k in (3, 1, 2, 0)], loc="upper center", bbox_to_anchor=(0.5, -0.12), ncol=2,

@@ -1151,7 +1151,7 @@ User decisions 2026-10-06: draw Figure 5 with the poster method (`../carbon_offs
 the poster's **composite vulnerability** (scheme B) rebuilt from the two paper components; **each SSP uses its own medians** (the high-benefit half
 is then 50 % of eligible land in every SSP); SSP3-7.0 first, other SSPs after the figure is final.
 
-Plot `code/figure5/plot_siting_median.py` (md5 `3b977ef6b90878939a92996573acb424`; no new extraction, same inputs and benefit/risk fields as
+Plot `code/figure5/plot_siting_median.py` (md5 `4650e6566eb3b80966752382826e35e5`; no new extraction, same inputs and benefit/risk fields as
 `plot_priority_maps.py` §3.20, which it imports) → `figures/figure5/fig5_siting_median_SSP3-7.0_2091-2100{.png,_scatter.png,.csv}`, run locally.
 Panels: a benefit without fire loss per eligible ha, b fire risk, c water stress, d composite vulnerability = mean of the percentile ranks (0-1) of
 b and c over eligible cells, e quadrants at the area-weighted medians of a and d, f benefit vs vulnerability (also standalone). **Ranks are
@@ -1210,7 +1210,7 @@ above refer to the earlier 2 × 3 layout. Both risk components are still compute
 
 **Slide version (user request 2026-10-06):** `--ppt` also writes `fig5_siting_median_<SSP>_<window>_ppt.png`, 16 × 9 in at 200 dpi
 (3200 × 1800 px), fonts 11-20 pt so they stay legible when the PNG fills a 16:9 slide (~0.83×), short colour-bar labels, legend under map c,
-two-line footnote; same panels and numbers as the paper-style figure.
+no footnote (user request; the definitions belong in the slide notes); same panels and numbers as the paper-style figure.
 
 **Water-stress caveat found 2026-10-06 (not yet quantified).** BTRAN in h0 is the patch → gridcell area average (`EnergyFluxType.F90:306`,
 `ptr_patch`, lake/urban spval), and ELM sets `btran(p) = 0` for any patch with `frac_veg_nosno == 0` (`CanopyFluxesMod.F90:484-485`, our

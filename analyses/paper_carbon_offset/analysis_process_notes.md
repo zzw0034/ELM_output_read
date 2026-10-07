@@ -1291,6 +1291,16 @@ Reading: the ordering is the same as with the SSP3-7.0 reference (§3.25); becau
 more low-risk land (52.7 %) and the largest high benefit / low risk class (37.1 %, 2.98 PgC); SSP5-8.5 again has the most high-benefit land
 (57 %) but the most high-benefit land at high risk (24 %), and SSP1-1.9 is almost all low risk (86 %).
 
+### 3.27 Presentation slides for the SSP2-4.5 fixed-threshold version (2026-10-06)
+
+Group-meeting talk (English, 16:9, figures only; user request 2026-10-06). `code/figure5/plot_siting_median_slides.py`
+(md5 `b3a1bab6761e7af036ebf719ed4bf9f6`; same compute and shared benefit scale as §3.26) → `figures/figure5/slides/`:
+`fig5_slide_benefit_fixedSSP245.png` (SSP2-4.5 benefit, one large map, median 41.4), `fig5_slide_vulnerability_fixedSSP245.png`
+(fire risk and water stress with their medians → rank + average → composite, median 0.49) and `fig5_slide_summary_fixedSSP245.png`
+(four SSPs: 100 % stacked class shares of forest land, and PgC held per class stacked to the SSP total; numbers as in §3.26).
+The class colours are the poster's; the dataviz validator fails them (grey vs light blue ΔE 9 < 15, both low chroma), so the bars carry
+direct value labels and white gaps; a recolour of all Figure 5 maps and bars is open.
+
 ## 4. Script and product locations
 
 Since 2026-10-01 `code/` and `figures/` are organized by manuscript figure

@@ -63,9 +63,7 @@ def main():
     fig.text(0.045, 0.94, "How the carbon offset potential is calculated", fontsize=30, fontweight="bold", color=INK, va="center")
     fig.text(0.045, 0.865, r"Offset potential $=\sum_{2024}^{t}\,(\mathrm{NBP}_{\mathrm{management}}-\mathrm{NBP}_{\mathrm{counterfactual}})$",
              fontsize=18, color=INK, va="center")
-    fig.text(0.58, 0.865, "NBP includes photosynthesis, respiration, fire,\nland use and harvest (via wood products)",
-             fontsize=15, color=INK2, va="center", linespacing=1.3)
-    axB = fig.add_axes([0.08, 0.13, 0.66, 0.61])
+    axB = fig.add_axes([0.08, 0.1, 0.66, 0.64])
 
     # B: one SSP with the management runs
     yr, vD = nbp(SHOW)
@@ -84,7 +82,7 @@ def main():
     # offsets by 2100, as brackets just outside the plot (clip_on off)
     for xb, y1, txt, k in ((2103, runs["RF"].sum(), f"RF − Default\n+{runs['RF'].sum() - eD:.1f}", "RF"),
                            (2110, runs["RH"].sum(), f"RH − Default\n+{runs['RH'].sum() - eD:.1f}", "RH"),
-                           (2103, runs["DF"].sum(), f"Default − DF\n+{d38 - runs['DF'].sum():.1f}*", "DF")):
+                           (2103, runs["DF"].sum(), f"Default − DF\n+{d38 - runs['DF'].sum():.1f}", "DF")):
         axB.annotate("", xy=(xb, y1), xytext=(xb, eD), annotation_clip=False,
                      arrowprops=dict(arrowstyle="<->", color=COLORS[k], lw=2.2, shrinkA=0, shrinkB=0))
         ty = (eD + y1) / 2 + (1.0 if k == "RF" else 0.0)
@@ -94,7 +92,7 @@ def main():
     axB.legend(h_, ["Default (reference)", "RF  restoration and protection", "RH  reduced harvest", "DF  deforestation counterfactual"],
                loc="center", bbox_to_anchor=(0.62, 0.42), fontsize=15, frameon=False)
     axB.set_title(f"{SHOW}: management runs vs Default (4 km)", fontsize=19, color=INK, pad=12, loc="left")
-    fig.text(0.08, 0.03, "* DF is paired with its own Default (crit_dayl_stress = 38000 s).", fontsize=12.5, color=INK2)
+    # notes removed (user request 2026-10-07); DF is still paired with its own 38000 s Default
     os.makedirs(OUT, exist_ok=True)
     p = os.path.join(OUT, "offset_potential_method.png")
     fig.savefig(p, dpi=200, facecolor="white")

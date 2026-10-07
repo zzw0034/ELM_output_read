@@ -6,7 +6,8 @@ rates in Tg CO2 per year.
 This study (4 km, cumulative NBP 2024-2100 over 77 years, 1 PgC = 3.664 Pg CO2): RF - Default 3.7-5.3 PgC ->
 176-252 Tg CO2/yr; RH - Default 1.0-1.5 PgC -> 48-71 Tg CO2/yr. References (as retrieved 2026-10-07; check before citing):
   Fargione et al. 2018 Sci. Adv. 4: eaat1869, U.S. maximum potentials: reforestation 307, natural forest management
-    (extended harvest cycles) 267 Tg CO2e/yr
+    (extended harvest cycles) 267 Tg CO2e/yr, shown stacked (574); RF is compared with the sum because RF includes a harvest
+    ban (176-252 / 574 = 31-44 %, "about a third"; user decision 2026-10-07)
   Domke et al. 2020 PNAS 117: 24649, fully stocking understocked U.S. forestland 187.7 Tg CO2/yr
   USDA Forest Service (Treesearch 52758): Southern forests net accumulation ~75 TgC/yr in 2007-2012 (= 275 Tg CO2/yr)
   EPA GHG Inventory 2024: U.S. gross emissions 2022 6,343 Mt CO2e; LULUCF net removals 922 Mt CO2e
@@ -39,8 +40,7 @@ ROWS = [
     ("This study: restoration + protection (RF)\nSoutheast, 2024–2100 mean", 3.7, 5.3, RF, "PgC"),
     ("This study: reduced harvest (RH)\nSoutheast, 2024–2100 mean", 1.0, 1.5, RH, "PgC"),
     ("Southeast forests' current net sink\nUSDA Forest Service, 2007–2012", 275, 275, REF, "Tg"),
-    ("U.S. reforestation, max. potential\nFargione et al. 2018", 307, 307, REF, "Tg"),
-    ("U.S. longer harvest cycles, max. potential\nFargione et al. 2018", 267, 267, REF, "Tg"),
+    ("U.S. reforestation + longer harvest cycles,\nmax. potential, Fargione et al. 2018", 307, 267, REF, "stack"),
     ("U.S. restocking understocked forests\nDomke et al. 2020", 188, 188, REF, "Tg"),
 ]
 
@@ -48,7 +48,7 @@ ROWS = [
 def rate(lo, hi, unit):
     if unit == "PgC":
         return lo * 1000 * C_PER_CO2 / YEARS, hi * 1000 * C_PER_CO2 / YEARS
-    return lo, hi
+    return lo, hi                                   # "stack": two components (reforestation, harvest cycles)
 
 
 def chart(path):
@@ -56,6 +56,14 @@ def chart(path):
     y = list(range(len(ROWS)))[::-1]
     for yi, (lab, lo, hi, col, unit) in zip(y, ROWS):
         a, b = rate(lo, hi, unit)
+        if unit == "stack":                         # Fargione: reforestation (solid) + longer harvest cycles (hatched)
+            ax.barh(yi, a, height=0.55, color=col)
+            ax.barh(yi, b, left=a, height=0.55, color="white", edgecolor=col, hatch="//", lw=1.2)
+            ax.text(a / 2, yi, f"reforestation\n{a:.0f}", ha="center", va="center", fontsize=11.5, color="white", fontweight="bold")
+            ax.text(a + b / 2, yi, f"harvest cycles\n{b:.0f}", ha="center", va="center", fontsize=11.5, color=INK,
+                    bbox=dict(facecolor="white", edgecolor="none", pad=1))
+            ax.text(a + b + 6, yi, f"{a + b:.0f}", va="center", fontsize=14, color=INK)
+            continue
         if a == b:
             ax.barh(yi, a, height=0.55, color=col)
             ax.text(a + 5, yi, f"{a:.0f}", va="center", fontsize=14, color=INK)
@@ -65,7 +73,7 @@ def chart(path):
             ax.text(b + 5, yi, f"{a:.0f}–{b:.0f}", va="center", fontsize=14, color=INK, fontweight="bold")
     ax.set_yticks(y, [r[0] for r in ROWS], fontsize=12.5)
     ax.set_xlabel("Tg CO₂ per year", fontsize=14, color=INK)
-    ax.set_xlim(0, 360)
+    ax.set_xlim(0, 640)
     ax.tick_params(axis="x", labelsize=13)
     for sp in ("top", "right"):
         ax.spines[sp].set_visible(False)
@@ -105,10 +113,12 @@ def main():
     s = prs.slides.add_slide(prs.slide_layouts[6])
     text(s, 0.6, 0.35, 12.2, 0.9, "Putting 3.7–5.3 PgC in context", 36, bold=True)
     s.shapes.add_picture(png, Inches(0.4), Inches(1.35), width=Inches(8.4))
-    text(s, 9.1, 1.6, 3.9, 0.9, "≈ 2–3 years", 40, color="2A78D6", bold=True)
-    text(s, 9.1, 2.45, 3.9, 1.2, f"of total U.S. greenhouse-gas emissions\n({lo:.1f}–{hi:.1f} Gt CO₂ by 2100)", 17, color="52514E")
-    text(s, 9.1, 3.75, 3.9, 0.9, "≈ 3–4 % per year", 30, color="2A78D6", bold=True)
-    text(s, 9.1, 4.45, 3.9, 1.3, "of annual U.S. emissions, every year until 2100;\ncomparable to the U.S.-wide reforestation potential",
+    text(s, 9.1, 1.3, 3.9, 0.9, "≈ 2–3 years", 40, color="2A78D6", bold=True)
+    text(s, 9.1, 2.05, 3.9, 1.2, f"of total U.S. greenhouse-gas emissions\n({lo:.1f}–{hi:.1f} Gt CO₂ by 2100)", 17, color="52514E")
+    text(s, 9.1, 3.05, 3.9, 0.9, "≈ 3–4 % per year", 30, color="2A78D6", bold=True)
+    text(s, 9.1, 3.7, 3.9, 0.9, "of annual U.S. emissions, on average to 2100", 17, color="52514E")
+    text(s, 9.1, 4.5, 3.9, 0.9, "≈ 1/3", 30, color="2A78D6", bold=True)
+    text(s, 9.1, 5.15, 3.9, 1.0, "of the U.S.-wide potential for reforestation + longer harvest cycles (Fargione et al. 2018)",
          17, color="52514E")
     text(s, 0.6, 6.75, 12.2, 0.5,
          "Our numbers: cumulative NBP 2024–2100 averaged over 77 years (1 PgC = 3.664 Pg CO₂). Published values are maximum potentials "

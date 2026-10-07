@@ -5,8 +5,9 @@ rates in Tg CO2 per year.
 
 This study (4 km, cumulative NBP 2024-2100 over 77 years, 1 PgC = 3.664 Pg CO2): RF - Default 3.7-5.3 PgC ->
 176-252 Tg CO2/yr; RH - Default 1.0-1.5 PgC -> 48-71 Tg CO2/yr. References (as retrieved 2026-10-07; check before citing):
-  Fargione et al. 2018 Sci. Adv. 4: eaat1869, U.S. maximum potentials: reforestation 307, natural forest management
-    (extended harvest cycles) 267 Tg CO2e/yr, shown stacked (574); RF is compared with the sum because RF includes a harvest
+  Fargione et al. 2018 Sci. Adv. 4: eaat1869, U.S. maximum potentials (Table S1 of their supplement): reforestation
+    307 (90-777) Tg CO2e/yr on 63 Mha, saturation >90 yr; natural forest management 267 (232-302) on 123 Mha of private
+    natural forest = harvest stopped entirely 2025-2050, saturating after 25 yr (supplement text); shown stacked (574); RF is compared with the sum because RF includes a harvest
     ban (176-252 / 574 = 31-44 %, "about a third"; user decision 2026-10-07)
   Domke et al. 2020 PNAS 117: 24649, fully stocking understocked U.S. forestland 187.7 Tg CO2/yr
   USDA Forest Service (Treesearch 52758): Southern forests net accumulation ~75 TgC/yr in 2007-2012 (= 275 Tg CO2/yr)
@@ -40,7 +41,7 @@ ROWS = [
     ("This study: restoration + protection (RF)\nSoutheast, 2024–2100 mean", 3.7, 5.3, RF, "PgC"),
     ("This study: reduced harvest (RH)\nSoutheast, 2024–2100 mean", 1.0, 1.5, RH, "PgC"),
     ("Southeast forests' current net sink\nUSDA Forest Service, 2007–2012", 275, 275, REF, "Tg"),
-    ("U.S. reforestation + longer harvest cycles,\nmax. potential, Fargione et al. 2018", 307, 267, REF, "stack"),
+    ("U.S. reforestation + 25-yr harvest pause\non private natural forests, Fargione et al. 2018", 307, 267, REF, "stack"),
     ("U.S. restocking understocked forests\nDomke et al. 2020", 188, 188, REF, "Tg"),
 ]
 
@@ -60,7 +61,7 @@ def chart(path):
             ax.barh(yi, a, height=0.55, color=col)
             ax.barh(yi, b, left=a, height=0.55, color="white", edgecolor=col, hatch="//", lw=1.2)
             ax.text(a / 2, yi, f"reforestation\n{a:.0f}", ha="center", va="center", fontsize=11.5, color="white", fontweight="bold")
-            ax.text(a + b / 2, yi, f"harvest cycles\n{b:.0f}", ha="center", va="center", fontsize=11.5, color=INK,
+            ax.text(a + b / 2, yi, f"harvest pause\n{b:.0f}", ha="center", va="center", fontsize=11.5, color=INK,
                     bbox=dict(facecolor="white", edgecolor="none", pad=1))
             ax.text(a + b + 6, yi, f"{a + b:.0f}", va="center", fontsize=14, color=INK)
             continue
@@ -118,11 +119,12 @@ def main():
     text(s, 9.1, 3.05, 3.9, 0.9, "≈ 3–4 % per year", 30, color="2A78D6", bold=True)
     text(s, 9.1, 3.7, 3.9, 0.9, "of annual U.S. emissions, on average to 2100", 17, color="52514E")
     text(s, 9.1, 4.5, 3.9, 0.9, "≈ 1/3", 30, color="2A78D6", bold=True)
-    text(s, 9.1, 5.15, 3.9, 1.0, "of the U.S.-wide potential for reforestation + longer harvest cycles (Fargione et al. 2018)",
+    text(s, 9.1, 5.15, 3.9, 1.0, "of the U.S.-wide annual potential for reforestation + forest management (Fargione et al. 2018)",
          17, color="52514E")
     text(s, 0.6, 6.75, 12.2, 0.5,
          "Our numbers: cumulative NBP 2024–2100 averaged over 77 years (1 PgC = 3.664 Pg CO₂). Published values are maximum potentials "
-         "or inventory estimates with different scopes: compare orders of magnitude only. "
+         "or inventory estimates with different scopes: compare orders of magnitude only. Fargione rates: reforestation 63 Mha, "
+         "sustained >90 yr; harvest pause on 123 Mha, 2025–2050 only, then saturates (their Table S1). "
          "Sources: EPA GHG Inventory 2024; Fargione et al. 2018, Sci. Adv.; Domke et al. 2020, PNAS; USDA Forest Service (Southern forests 2007–2012).",
          10.5, color="52514E")
     p = os.path.join(OUT, "context_comparison.pptx")

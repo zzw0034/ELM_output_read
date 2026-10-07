@@ -63,7 +63,7 @@ def main():
     fig.text(0.045, 0.94, "How the carbon offset potential is calculated", fontsize=30, fontweight="bold", color=INK, va="center")
     fig.text(0.045, 0.865, r"Offset potential $=\sum_{2024}^{t}\,(\mathrm{NBP}_{\mathrm{management}}-\mathrm{NBP}_{\mathrm{counterfactual}})$",
              fontsize=18, color=INK, va="center")
-    axB = fig.add_axes([0.08, 0.1, 0.66, 0.64])
+    axB = fig.add_axes([0.08, 0.1, 0.53, 0.64])
 
     # B: one SSP with the management runs
     yr, vD = nbp(SHOW)
@@ -89,8 +89,8 @@ def main():
         axB.text(xb + 1.2, ty, txt, fontsize=14.5, color=COLORS[k], fontweight="bold", va="center", clip_on=False)
     axB.plot([2100, 2111], [eD, eD], color=INK, lw=1, ls=":", clip_on=False)
     h_, l_ = axB.get_legend_handles_labels()
-    axB.legend(h_, ["Default (reference)", "RF  restoration and protection", "RH  reduced harvest", "DF  deforestation counterfactual"],
-               loc="center", bbox_to_anchor=(0.62, 0.42), fontsize=15, frameon=False)
+    fig.legend(h_, ["Default\n(reference)", "RF  restoration\nand protection", "RH  reduced\nharvest", "DF  deforestation\ncounterfactual"],
+               loc="center left", bbox_to_anchor=(0.79, 0.42), fontsize=15, frameon=False, labelspacing=1.3, handlelength=2.4)
     axB.set_title(f"{SHOW}: management runs vs Default (4 km)", fontsize=19, color=INK, pad=12, loc="left")
     # notes removed (user request 2026-10-07); DF is still paired with its own 38000 s Default
     os.makedirs(OUT, exist_ok=True)

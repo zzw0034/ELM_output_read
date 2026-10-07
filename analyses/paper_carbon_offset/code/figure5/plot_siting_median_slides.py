@@ -80,6 +80,28 @@ def slide_benefit(c, vmax, out):
     plt.close(fig)
 
 
+def slide_benefit_4ssp(cs, vmax, out):
+    """2 x 2 maps of the RF carbon benefit (net, per ha of forest land, 2091-2100) for the four SSPs, one shared colour
+    scale (pooled p98) and one colour bar (user request 2026-10-07)."""
+    fig = plt.figure(figsize=(16, 9), facecolor=ps.SURFACE)
+    gs = fig.add_gridspec(2, 2, left=0.05, right=0.86, top=0.86, bottom=0.04, hspace=0.2, wspace=0.12)
+    for i, s in enumerate(SSPS):
+        c = cs[s]
+        ax = map_ax(fig, gs[i // 2, i % 2], c, "", step=8)
+        mm = pm.mesh(ax, c["m"]["lon4"], c["m"]["lat4"], np.where(c["keep"], c["b"], np.nan), pm.BENEFIT_CMAP, Normalize(0, vmax))
+        ax.set_title(s, loc="left", fontsize=F["title"], color=ps.INK, fontweight="bold")
+        ax.set_title(f"total {c['total']:.1f} PgC, median {c['med']['benefit']:.0f} MgC/ha", loc="right", fontsize=F["tick"],
+                     color=ps.INK2)
+    cax = fig.add_axes([0.89, 0.12, 0.018, 0.66])
+    cb = fig.colorbar(mm, cax=cax, extend="both")
+    cb.set_label("RF − Default, MgC per ha of forest land", fontsize=F["cbar"])
+    cb.ax.tick_params(labelsize=F["tick"])
+    fig.suptitle("Carbon benefit of RF under the four SSPs (2091–2100 mean, 4 km)", fontsize=F["sup"], color=ps.INK,
+                 x=0.05, ha="left", y=0.965, fontweight="bold")
+    fig.savefig(out, dpi=200, facecolor=ps.SURFACE)
+    plt.close(fig)
+
+
 def slide_vulnerability(c, out):
     fig = plt.figure(figsize=(16, 9), facecolor=ps.SURFACE)
     gs = fig.add_gridspec(2, 2, width_ratios=[1, 1.75], hspace=0.38, wspace=0.24, left=0.04, right=0.97, top=0.86, bottom=0.07)
@@ -177,6 +199,8 @@ def main():
     slide_benefit(cs[REF], vmax, paths[0])
     slide_vulnerability(cs[REF], paths[1])
     slide_summary(cs, paths[2])
+    paths.append(os.path.join(out_dir, "fig5_slide_benefit_4ssp.png"))
+    slide_benefit_4ssp(cs, vmax, paths[3])
     for s in SSPS:
         r = {row["quadrant"]: row for row in cs[s]["rows"]}
         print(f"{s}: green {r[sm.Q_NAMES[3]]['share_pct']:.1f}% {r[sm.Q_NAMES[3]]['benefit_PgC']:.3f} PgC; total {cs[s]['total']:.3f} PgC")

@@ -3,16 +3,16 @@ Figure 5, poster method with median splits (user decisions 2026-10-06): 4 km onl
 poster (carbon_offset_poster/outputs/panel4_siting_RF_4km_ABCD.png, ..._E_scatter.png) rebuilt from the two paper risk
 components, and every split at this SSP's own area-weighted median over eligible land. RF, end state = mean of the window.
 
-Main figure, 2 x 2 (user decision 2026-10-06: the fire and water-stress maps are dropped from it; both components are
-still computed and defined in the footnote):
+Main figure, three panels (user decisions 2026-10-06: the fire and water-stress maps are dropped; both components are
+still computed and defined in the footnote; the scatter is an inset of the quadrant map): a and b on the left, c on the right:
   a  RF carbon benefit per eligible ha: window-mean TOTECOSYSC RF - Default (net of fire, user decision 2026-10-06;
      --benefit nofire adds the cumulative fire-loss difference back as in plot_priority_maps.py panel a, suffix _nofire);
-     black line = median. The same benefit sets the quadrant split (c) and the scatter x axis (d).
+     black line = median. The same benefit sets the quadrant split (c) and the scatter x axis (inset of c).
   b  composite vulnerability = mean of the percentile ranks (0-1) over eligible cells of
      fire risk  = (NEP - LAND_USE_FLUX - NBP) / TOTECOSYSC, RF run (%/yr), and
      water stress = 1 - BTRAN, April-October, RF run; black line = median
-  c  siting quadrants: benefit >= its median x vulnerability < its median
-  d  benefit vs composite vulnerability (also written as a standalone scatter, as on the poster)
+  c  siting quadrants: benefit >= its median x vulnerability < its median; inset: benefit vs composite vulnerability
+     (also written as a standalone scatter, as on the poster)
 Differences from the poster: two components instead of three (NBP variability dropped, notes 3.19), benefit per eligible
 ha (MgC/ha) instead of per m2 of land (gC/m2), ranks and medians over eligible land
 (RF 2060 forest fraction >= --floor) instead of all land, and (user decision 2026-10-06) ranks weighted by eligible area
@@ -120,7 +120,8 @@ def colorbar(fig, mm, ax, label, line, extend):
     return cb
 
 
-def scatter(ax, c, a, small=False):
+def scatter(ax, c, a, small=False, note=True):
+    """Benefit vs composite vulnerability; returns the note on the clipped x axis (drawn inside the axes when note=True)."""
     k, a4 = c["keep"], c["a4"]
     x, y, w, q = c["b"][k], c["vuln"][k], a4[k], c["quad"][k].astype(int)
     sz = np.clip(w / w.max() * (5 if small else 12), 0.5, None)
@@ -132,13 +133,15 @@ def scatter(ax, c, a, small=False):
     span = x.max() - xlo
     ax.set_xlim(xlo - 0.03 * span, x.max() + 0.03 * span)
     out = 100 * w[x < xlo].sum() / w.sum()
-    ax.text(0.01, 0.01, f"{out:.1f}% of eligible area left of the axis (down to {x.min():.0f})", transform=ax.transAxes,
-            fontsize=7 if small else 8.5, color=ps.INK2, ha="left", va="bottom")
+    txt = f"{out:.1f}% of eligible area left of the axis (down to {x.min():.0f})"
+    if note:
+        ax.text(0.01, 0.01, txt, transform=ax.transAxes, fontsize=7 if small else 8.5, color=ps.INK2, ha="left", va="bottom")
     ax.set_xlabel(f"RF {BEN[a.benefit][0]} (MgC/ha per eligible ha)", fontsize=9 if small else 11)
     ax.set_ylabel("Composite vulnerability (0–1)", fontsize=9 if small else 11)
     ax.set_ylim(-0.03, 1.03)
     ax.grid(alpha=0.3)
     ax.tick_params(labelsize=8 if small else 10)
+    return txt
 
 
 def draw(a, c):
@@ -148,8 +151,8 @@ def draw(a, c):
     land4 = np.isfinite(m["g4"]) & np.isfinite(m["R4"]["water"])
     inel = np.where(land4 & ~keep, 1.0, np.nan)
     vmax = float(np.nanpercentile(c["b"][keep], 98))
-    fig = plt.figure(figsize=(15.5, 13.6), facecolor=ps.SURFACE)
-    gs = fig.add_gridspec(2, 2, hspace=0.24, wspace=0.12, left=0.04, right=0.985, top=0.93, bottom=0.13)
+    fig = plt.figure(figsize=(21, 12.4), facecolor=ps.SURFACE)
+    gs = fig.add_gridspec(2, 2, width_ratios=[1, 1.9], hspace=0.28, wspace=0.08, left=0.03, right=0.99, top=0.93, bottom=0.11)
 
     def map_ax(pos, letter, ttl):
         ax = fig.add_subplot(pos, projection=ccrs.PlateCarree())
@@ -161,24 +164,20 @@ def draw(a, c):
     ax = map_ax(gs[0, 0], "a", BEN[a.benefit][1])
     mm = pm.mesh(ax, lon4, lat4, np.where(keep, c["b"], np.nan), pm.BENEFIT_CMAP, Normalize(0, vmax))
     colorbar(fig, mm, ax, f"{BEN[a.benefit][2]}; black line = median {med['benefit']:.1f}", med["benefit"], "both")
-    ax = map_ax(gs[0, 1], "b", "Composite vulnerability (fire + water stress)")
+    ax = map_ax(gs[1, 0], "b", "Composite vulnerability (fire + water stress)")
     mm = pm.mesh(ax, lon4, lat4, c["vuln"], VULN_CMAP, Normalize(0, 1))
     rdesc = "area-weighted percentile ranks" if a.rank == "area" else "percentile ranks (by cell count)"
     colorbar(fig, mm, ax, f"Mean of the {rdesc} of fire risk and water stress; black line = median {med['vuln']:.3f}", med["vuln"], "neither")
-    ax = axc = map_ax(gs[1, 0], "c", "Siting quadrants (split at medians)")
-    mm = pm.mesh(ax, lon4, lat4, c["quad"], ListedColormap(Q_COLS), Normalize(-0.5, 3.5))
-    colorbar(fig, mm, ax, " ", 0, "neither").ax.set_visible(False)      # same space as a and b, so the maps match in size
+    ax = map_ax(gs[:, 1], "c", "Siting quadrants (split at medians), with benefit vs vulnerability")
+    pm.mesh(ax, lon4, lat4, c["quad"], ListedColormap(Q_COLS), Normalize(-0.5, 3.5))
     share = {r["quadrant"]: r["share_pct"] for r in c["rows"]}
     handles = [plt.Rectangle((0, 0), 1, 1, color=Q_COLS[q]) for q in (3, 2, 1, 0)]
-    ax.legend(handles, [f"{Q_NAMES[q]} ({share[Q_NAMES[q]]:.0f}%)" for q in (3, 2, 1, 0)], loc="lower left", fontsize=8.4,
-              framealpha=0.93, edgecolor="none", title="share of eligible land", title_fontsize=8)
-    axd = fig.add_subplot(gs[1, 1])
-    axd.set_facecolor(ps.SURFACE)
-    scatter(axd, c, a, small=True)
-    pm.title(axd, "d", "Benefit vs vulnerability")
-    fig.canvas.draw()                                                   # fixes the map aspect, then align d with map c
-    pc, pd = axc.get_position(), axd.get_position()
-    axd.set_position([pd.x0 + 0.04, pc.y0, pd.width - 0.04, pc.height])
+    ax.legend(handles, [f"{Q_NAMES[q]} ({share[Q_NAMES[q]]:.0f}%)" for q in (3, 2, 1, 0)], loc="lower right", fontsize=9.5,
+              framealpha=0.93, edgecolor="none", title="share of eligible land", title_fontsize=9)
+    # scatter as an inset over the open Gulf of Mexico (lower left of the map); the legend sits over the Atlantic
+    axi = ax.inset_axes([0.065, 0.105, 0.43, 0.235])
+    axi.set_facecolor("white")
+    clip_note = scatter(axi, c, a, small=True, note=False)
     fig.suptitle(f"Where to restore and protect forest for carbon (SEUS, {a.ssp}, RF, {a.years}, 4 km)", fontsize=13.5, color=ps.INK,
                  x=0.04, ha="left", y=0.975)
     fig.text(0.04, 0.012,
@@ -188,7 +187,7 @@ def draw(a, c):
              f"ranks are {rdesc} over eligible land, so half of the eligible land is high risk by construction. "
              f"Eligible land = RF's 2060 forest fraction ≥ {a.floor:g} (near-white: not eligible). All medians are area-weighted over eligible land of this SSP.\n"
              "Fire has ~0.5° effective resolution at 4 km (population-density input interpolated from 0.5°). RF is restoration plus a region-wide harvest ban. "
-             f"Colour scale a: 0 to the 98th percentile ({vmax:.3g}). Point size in d = cell eligible area.",
+             f"Colour scale a: 0 to the 98th percentile ({vmax:.3g}). Inset in c: each point = one eligible 4 km cell, size = its eligible area, dashed = the two medians; " + clip_note + ".",
              fontsize=8.4, color=ps.INK2, va="bottom", ha="left")
     os.makedirs(a.out_dir, exist_ok=True)
     stem = os.path.join(a.out_dir, f"fig5_siting_median_{a.ssp}_{a.years}" + ("_countrank" if a.rank == "count" else "") + ("_nofire" if a.benefit == "nofire" else ""))

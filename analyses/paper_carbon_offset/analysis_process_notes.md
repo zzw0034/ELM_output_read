@@ -1317,6 +1317,15 @@ Soil (whole column), RF − Default: +0.009, +0.053, −0.133, −0.052; **RH �
 steady gain that is nearly the same in every SSP (a dip of about −0.01 PgC to ~2060, then rising), while RF soil dips to −0.09 to −0.18 PgC
 around 2050-2075 and recovers by 2100 only in SSP1-1.9 and SSP2-4.5.
 
+### 3.29 Talk slide on the offset-potential definition and the static-baseline over-credit (2026-10-07)
+
+`code/figure2/plot_offset_method_slide.py` (md5 `b981db28a41e5ec5da29cbb61df68b36`) → `figures/figure2/slides/offset_potential_method.png`: SSP2-4.5 cumulative regional
+NBP since 2024 of Default and RF (offset = the gap), a static 2024 baseline, and the definition OP(t) = Σ_2024^t (NBP_mgmt − NBP_cf).
+On this cumulative-NBP basis (the Figure 2 benefits), crediting RF against a static 2024 baseline instead of the dynamic Default would
+over-credit it by Default's own cumulative NBP: SSP1-1.9 +0.49/3.73 = **13 %**, SSP2-4.5 +2.33/4.46 = **52 %**, SSP3-7.0 +1.49/5.21 = **29 %**,
+SSP5-8.5 +1.45/5.31 = **27 %**. On the stock basis (2091-2100 mean TOTECOSYSC minus the 2024 annual mean) the same comparison gives 19, 51,
+29 and 34 % (first quoted to the user); the talk uses the cumulative-NBP numbers so they match the benefit bars.
+
 ## 4. Script and product locations
 
 Since 2026-10-01 `code/` and `figures/` are organized by manuscript figure

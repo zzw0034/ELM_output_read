@@ -114,7 +114,7 @@ user decisions 2026-10-02), as Figure 5e or a supplement figure (layout open). D
 **Median variant (2026-10-06, under review):** Figure 5 redrawn with the poster method, 4 km only: benefit = net carbon benefit (RF − Default
 TOTECOSYSC, fire loss not added back; user decision 2026-10-06) split at its median (not a 20 % budget), risk = composite vulnerability (mean area-weighted percentile rank of fire and water stress) split at its median, each SSP its own area-weighted
 medians over eligible land; three panels (2026-10-06): a benefit and b composite vulnerability on the left, c quadrants on the right with the benefit-vs-vulnerability scatter as an inset; the fire and water maps are not in it. SSP3-7.0 drawn first (high benefit / low
-risk 34.9 % of eligible land, 57 % of the benefit); all four SSPs drawn 2026-10-06 with each SSP's own medians and one shared benefit colour scale, plus two-SSP slides (notes §3.24); a variant with the SSP3-7.0 medians as fixed thresholds (risk ranked against the SSP3-7.0 distributions) is in notes §3.25, choice between the two open. This reintroduces the composite and the median split
+risk 34.9 % of eligible land, 57 % of the benefit); all four SSPs drawn 2026-10-06 with each SSP's own medians and one shared benefit colour scale, plus two-SSP slides (notes §3.24); a variant with the SSP3-7.0 medians as fixed thresholds (risk ranked against the SSP3-7.0 distributions) is in notes §3.25, and with the SSP2-4.5 medians (closer to current policies; preferred for talks, user decision 2026-10-06) in §3.26; the choice for the paper is open. This reintroduces the composite and the median split
 that E5 had dropped; whether it replaces the 20 %/p80 main figure is open. Details: notes §3.23.
 
 ---

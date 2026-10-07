@@ -1270,6 +1270,27 @@ high-benefit land (56 %) but more of it is high risk (26 % of eligible land), so
 2.34 PgC, less than SSP3-7.0 (2.83) despite a larger total benefit. HDM and lightning are the same in every SSP (A3), so the fire differences
 come from climate and fuel only.
 
+### 3.26 Same, with the SSP2-4.5 medians as fixed thresholds (2026-10-06)
+
+User decision 2026-10-06: the reference should be closer to current policies, so SSP2-4.5 instead of SSP3-7.0 (SSP3-7.0 is a high-emission,
+weak-mitigation scenario, ~3.6 °C in 2081-2100 in AR6; current-policy projections, ~2.6-3.1 °C, sit between SSP2-4.5 and SSP3-7.0, closer to
+SSP2-4.5). Same code as §3.25 (unchanged), `plot_siting_median_ssps.py --fixed-ref SSP2-4.5` → suffix `_fixedSSP245` (per-SSP figures,
+`fig5_siting_median_ssps_2091-2100_fixedSSP245.csv`, `fig5_siting_median_pair_SSP1-1.9_SSP2-4.5_2091-2100_fixedSSP245_ppt.png`,
+`fig5_siting_median_pair_SSP3-7.0_SSP5-8.5_2091-2100_fixedSSP245_ppt.png`). Thresholds: benefit 41.37 MgC/ha, composite vulnerability 0.4906
+(fire and water ranked against the SSP2-4.5 distributions). SSP2-4.5 reproduces its own-median result exactly (35.3/14.7/14.7/35.3 %, 2.298 PgC).
+
+| SSP | high benefit | low risk | high benefit / low risk: share, PgC (% of total) | high / high | low / low | low benefit / high risk |
+|---|---:|---:|---:|---:|---:|---:|
+| SSP1-1.9 | 36.5 % | 85.8 % | 35.2 %, 2.187 (60.4 %) | 1.3 % | 50.6 % | 12.9 % |
+| SSP2-4.5 | 50.0 % | 50.0 % | 35.3 %, 2.298 (54.3 %) | 14.7 % | 14.7 % | 35.3 % |
+| SSP3-7.0 | 51.1 % | 52.7 % | 37.1 %, 2.976 (59.8 %) | 14.1 % | 15.6 % | 33.2 % |
+| SSP5-8.5 | 57.1 % | 42.7 % | 33.0 %, 2.547 (50.5 %) | 24.1 % | 9.7 % | 33.2 % |
+
+Reading: the ordering is the same as with the SSP3-7.0 reference (§3.25); because the SSP2-4.5 thresholds are slightly lower (benefit
+41.4 vs 42.3, vulnerability 0.491 vs 0.501, and SSP2-4.5 fire/water distributions sit a little above SSP3-7.0's), SSP3-7.0 now has slightly
+more low-risk land (52.7 %) and the largest high benefit / low risk class (37.1 %, 2.98 PgC); SSP5-8.5 again has the most high-benefit land
+(57 %) but the most high-benefit land at high risk (24 %), and SSP1-1.9 is almost all low risk (86 %).
+
 ## 4. Script and product locations
 
 Since 2026-10-01 `code/` and `figures/` are organized by manuscript figure

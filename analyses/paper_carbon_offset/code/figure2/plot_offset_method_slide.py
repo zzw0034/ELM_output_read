@@ -3,14 +3,11 @@ Talk slide: how the carbon offset potential is calculated (user requests 2026-10
 style of 20260910_seus_rerun/20260911_seus_halfdeg_dt3600/outputs/future_scenario_cumulative_nbp_split.png, with the
 deck's colours (IPCC AR6 SSP colours; RF blue, RH orange, DF green as in Figure 2).
 
-  A  the four SSP baselines: cumulative regional NBP of the Default runs since 2014 (historical 2014-2023 in black,
-     projections continue from the 2023 value); dashed = a static baseline held at the 2024 level. The gap between
-     each SSP and that line by 2100 is what a static baseline would wrongly credit to a project (its share of the RF
-     offset in brackets: 13, 52, 29, 27 %).
-  B  one SSP (SSP2-4.5) with the management runs, cumulative NBP since 2024, Default as reference (solid black), RF, RH
-     and DF dashed; the offsets by 2100 are bracketed: RF - Default, RH - Default and Default - DF. DF is paired with
-     the crit_dayl_stress = 38000 s Default (blueprint A2), so its bracket value (11.8) is that pair's, while the
-     curve drawn is the 36000 s Default (2.33 vs 2.05 PgC by 2100).
+  One SSP (SSP2-4.5): cumulative regional NBP since 2024 of Default (solid black, the reference) and RF, RH and DF
+  (dashed); the offsets by 2100 are bracketed: RF - Default, RH - Default and Default - DF. DF is paired with the
+  crit_dayl_stress = 38000 s Default (blueprint A2), so its bracket value (11.8) is that pair's, while the curve drawn
+  is the 36000 s Default (2.33 vs 2.05 PgC by 2100). The four-SSP baseline panel was dropped (user request 2026-10-07);
+  the static-baseline over-credit numbers are in notes 3.29.
 
 Runs locally, from the analysis root:
     /Users/zw5/ORNL_workplace/ELM_output_read/.venv/bin/python code/figure2/plot_offset_method_slide.py
@@ -62,36 +59,13 @@ def bracket(ax, x, y0, y1, text, color):
 
 
 def main():
-    h = np.load(os.path.join(CACHE, "transient_domain_totals_4km.npz"), allow_pickle=True)
-    hm = h["year"] >= HIST0
-    hyr, hcum = h["year"][hm].astype(int), np.cumsum(h["NBP"][hm].astype("f8"))
-    start = hcum[-1]                                                     # cumulative since 2014 at the end of 2023
-
     fig = plt.figure(figsize=(16, 9), facecolor="white")
     fig.text(0.045, 0.94, "How the carbon offset potential is calculated", fontsize=30, fontweight="bold", color=INK, va="center")
     fig.text(0.045, 0.865, r"Offset potential $=\sum_{2024}^{t}\,(\mathrm{NBP}_{\mathrm{management}}-\mathrm{NBP}_{\mathrm{counterfactual}})$",
              fontsize=18, color=INK, va="center")
-    fig.text(0.53, 0.865, "NBP includes photosynthesis, respiration, fire,\nland use and harvest (via wood products)",
+    fig.text(0.58, 0.865, "NBP includes photosynthesis, respiration, fire,\nland use and harvest (via wood products)",
              fontsize=15, color=INK2, va="center", linespacing=1.3)
-    axA = fig.add_axes([0.075, 0.17, 0.38, 0.6])
-    axB = fig.add_axes([0.56, 0.17, 0.28, 0.6])
-
-    # A: four SSP baselines
-    axA.plot(hyr, hcum, color=INK, lw=3.2, label=f"Historical ({HIST0}–2023)")
-    over = {}
-    for s in SSPS:
-        yr, v = nbp(s)
-        cum = start + np.cumsum(v)
-        axA.plot(np.concatenate([[2023], yr]), np.concatenate([[start], cum]), color=SSP_COL[s], lw=2.6, label=s)
-        _, vr = nbp(s + "_RF")
-        over[s] = (cum[-1] - start, 100 * v.sum() / (vr.sum() - v.sum()))
-    axA.plot([2024, 2100], [start, start], color=INK, lw=2, ls="--", label="Static baseline (2024 level)")
-    style(axA, f"Cumulative regional NBP since {HIST0} (PgC)")
-    axA.set_xlim(HIST0 - 1, 2101)
-    axA.legend(loc="upper left", fontsize=13.5, frameon=False)
-    axA.set_title("A. Four SSP baselines (Default runs)", fontsize=19, color=INK, pad=12)
-    fig.text(0.075, 0.035, "A static baseline would also credit the baseline's own gain to RF: " +
-             ", ".join(f"{s} +{over[s][1]:.0f} %" for s in SSPS), fontsize=14, color=INK2)
+    axB = fig.add_axes([0.08, 0.13, 0.66, 0.61])
 
     # B: one SSP with the management runs
     yr, vD = nbp(SHOW)
@@ -118,15 +92,13 @@ def main():
     axB.plot([2100, 2111], [eD, eD], color=INK, lw=1, ls=":", clip_on=False)
     h_, l_ = axB.get_legend_handles_labels()
     axB.legend(h_, ["Default (reference)", "RF  restoration and protection", "RH  reduced harvest", "DF  deforestation counterfactual"],
-               loc="center", bbox_to_anchor=(0.6, 0.45), fontsize=13.5, frameon=False)
-    axB.set_title(f"B. {SHOW}: management vs Default", fontsize=19, color=INK, pad=12, loc="left")
-    fig.text(0.56, 0.085, "* DF is paired with its own Default (crit_dayl_stress = 38000 s).", fontsize=12.5, color=INK2)
+               loc="center", bbox_to_anchor=(0.62, 0.42), fontsize=15, frameon=False)
+    axB.set_title(f"{SHOW}: management runs vs Default (4 km)", fontsize=19, color=INK, pad=12, loc="left")
+    fig.text(0.08, 0.03, "* DF is paired with its own Default (crit_dayl_stress = 38000 s).", fontsize=12.5, color=INK2)
     os.makedirs(OUT, exist_ok=True)
     p = os.path.join(OUT, "offset_potential_method.png")
     fig.savefig(p, dpi=200, facecolor="white")
     plt.close(fig)
-    for s in SSPS:
-        print(f"{s}: Default cumulative NBP 2024-2100 {over[s][0]:+.2f} PgC = {over[s][1]:.0f} % of RF - Default")
     print(f"{SHOW}: RF-Def {runs['RF'].sum() - eD:+.2f}, RH-Def {runs['RH'].sum() - eD:+.2f}, Def38-DF {d38 - runs['DF'].sum():+.2f} PgC")
     print("wrote", p)
 

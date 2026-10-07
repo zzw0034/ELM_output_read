@@ -225,14 +225,95 @@ def draw(a, c):
     print(f"wrote {stem}.png, {stem}_scatter.png, {stem}.csv")
 
 
+def draw_ppt(a, c):
+    """Slide version (--ppt, user request 2026-10-06): 16 x 9 in, fonts sized to stay legible when the PNG fills a 16:9 slide
+    (about 0.83x), short labels, legend under map c, two-line footnote. Same panels and numbers as draw()."""
+    import cartopy.crs as ccrs
+    import cartopy.feature as cfeature
+    F = dict(sup=20, title=16, tick=12.5, cbar=13, legend=13, inset_lab=12.5, inset_tick=11, foot=11.5)
+    m, keep, med = c["m"], c["keep"], c["med"]
+    lon4, lat4 = m["lon4"], m["lat4"]
+    land4 = np.isfinite(m["g4"]) & np.isfinite(m["R4"]["water"])
+    inel = np.where(land4 & ~keep, 1.0, np.nan)
+    vmax = float(np.nanpercentile(c["b"][keep], 98))
+    fig = plt.figure(figsize=(16, 9), facecolor=ps.SURFACE)
+    gs = fig.add_gridspec(2, 2, width_ratios=[1, 1.75], hspace=0.42, wspace=0.07, left=0.035, right=0.99, top=0.9, bottom=0.2)
+
+    def map_ax(pos, letter, ttl):
+        ax = fig.add_subplot(pos, projection=ccrs.PlateCarree())
+        ax.set_facecolor(ps.BAD)
+        ax.coastlines(resolution="10m", linewidth=0.6, color="#555555")
+        ax.add_feature(cfeature.NaturalEarthFeature("cultural", "admin_1_states_provinces_lakes", "10m", facecolor="none",
+                                                    edgecolor="#777777", linewidth=0.35))
+        ax.set_extent([lon4.min(), lon4.max(), lat4.min(), lat4.max()], crs=ccrs.PlateCarree())
+        gl = ax.gridlines(draw_labels=True, linewidth=0.3, color="#999999", alpha=0.6, linestyle="--",
+                          xlocs=range(-93, -73, 4), ylocs=range(26, 38, 4))
+        gl.top_labels = gl.right_labels = False
+        gl.xlabel_style = gl.ylabel_style = {"size": F["tick"]}
+        pm.mesh(ax, lon4, lat4, inel, ListedColormap([pm.INELIGIBLE]), Normalize(0, 1))
+        ax.set_title(f"{letter}  {ttl}", loc="left", fontsize=F["title"], color=ps.INK, fontweight="bold")
+        return ax
+
+    def cbar(mm, ax, label, line, extend):
+        cb = fig.colorbar(mm, ax=ax, orientation="horizontal", fraction=0.06, pad=0.1, shrink=0.9, extend=extend)
+        cb.ax.axvline(line, color="black", lw=3)
+        cb.set_label(label, fontsize=F["cbar"])
+        cb.ax.tick_params(labelsize=F["tick"])
+
+    ax = map_ax(gs[0, 0], "a", "Carbon benefit of RF" + ("" if a.benefit == "net" else " w/o fire loss"))
+    mm = pm.mesh(ax, lon4, lat4, np.where(keep, c["b"], np.nan), pm.BENEFIT_CMAP, Normalize(0, vmax))
+    cbar(mm, ax, f"MgC/ha of eligible land; median {med['benefit']:.1f}", med["benefit"], "both")
+    ax = map_ax(gs[1, 0], "b", "Vulnerability (fire + water)")
+    mm = pm.mesh(ax, lon4, lat4, c["vuln"], VULN_CMAP, Normalize(0, 1))
+    cbar(mm, ax, f"Mean area-weighted rank; median {med['vuln']:.3f}", med["vuln"], "neither")
+
+    ax = map_ax(gs[:, 1], "c", "Siting quadrants (split at medians)")
+    pm.mesh(ax, lon4, lat4, c["quad"], ListedColormap(Q_COLS), Normalize(-0.5, 3.5))
+    share = {r["quadrant"]: r["share_pct"] for r in c["rows"]}
+    handles = [plt.Rectangle((0, 0), 1, 1, color=Q_COLS[q]) for q in (3, 2, 1, 0)]
+    ax.legend(handles, [f"{Q_NAMES[q]} ({share[Q_NAMES[q]]:.0f}%)" for q in (3, 2, 1, 0)], loc="upper center",
+              bbox_to_anchor=(0.5, -0.045), ncol=2, fontsize=F["legend"], frameon=False, handlelength=1.6, columnspacing=1.6,
+              title="share of eligible land", title_fontsize=F["legend"] - 1)
+    fig.canvas.draw()
+    bb = ax.get_position()
+    W, H = bb.width * fig.get_figwidth(), bb.height * fig.get_figheight()
+    hi = 0.255
+    axi = ax.inset_axes([0.085, 0.115, hi * H / W, hi])
+    axi.set_facecolor("white")
+    clip_note = scatter(axi, c, a, small=True, note=False)
+    axi.set_xlabel("Benefit (MgC/ha)", fontsize=F["inset_lab"], labelpad=1)
+    axi.set_ylabel("Vulnerability", fontsize=F["inset_lab"], labelpad=1)
+    axi.tick_params(labelsize=F["inset_tick"])
+    axi.set_yticks([0, 0.5, 1])
+
+    fig.suptitle(f"Where to restore and protect forest for carbon (SEUS, {a.ssp}, RF, {a.years}, 4 km)", fontsize=F["sup"],
+                 color=ps.INK, x=0.035, ha="left", y=0.975)
+    fig.text(0.035, 0.012,
+             "Benefit = 2091–2100 mean ecosystem carbon (TOTECOSYSC) RF − Default per ha of eligible land (RF 2060 forest fraction ≥ "
+             f"{a.floor:g}); " + ("net of fire.\n" if a.benefit == "net" else "fire loss added back.\n") +
+             "Vulnerability = mean area-weighted percentile rank of fire risk and water stress (1 − BTRAN, Apr–Oct). "
+             "Splits at area-weighted medians. Inset: one point per 4 km cell.",
+             fontsize=F["foot"], color=ps.INK2, va="bottom", ha="left")
+    os.makedirs(a.out_dir, exist_ok=True)
+    stem = os.path.join(a.out_dir, f"fig5_siting_median_{a.ssp}_{a.years}" + ("_countrank" if a.rank == "count" else "")
+                        + ("_nofire" if a.benefit == "nofire" else "") + "_ppt")
+    fig.savefig(stem + ".png", dpi=200, facecolor=ps.SURFACE)
+    plt.close(fig)
+    print(f"wrote {stem}.png")
+
+
 def main():
     ap = pm.parser()
     ap.add_argument("--benefit", choices=("net", "nofire"), default="net",
                     help="net stock difference (default) or with the cumulative fire-loss difference added back")
     ap.add_argument("--rank", choices=("area", "count"), default="area",
                     help="percentile ranks of the risk components by eligible area (default) or by cell count (poster)")
+    ap.add_argument("--ppt", action="store_true", help="also write the 16:9 slide version with large fonts (..._ppt.png)")
     a = ap.parse_args()
-    draw(a, compute(a))
+    c = compute(a)
+    draw(a, c)
+    if a.ppt:
+        draw_ppt(a, c)
 
 
 if __name__ == "__main__":

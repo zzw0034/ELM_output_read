@@ -1300,6 +1300,11 @@ Group-meeting talk (English, 16:9, figures only; user request 2026-10-06). `code
 (four SSPs: 100 % stacked class shares of forest land, and PgC held per class stacked to the SSP total; numbers as in §3.26).
 The class colours are the poster's; the dataviz validator fails them (grey vs light blue ΔE 9 < 15, both low chroma), so the bars carry
 direct value labels and white gaps; a recolour of all Figure 5 maps and bars is open.
+Same day (user request): the slide-size titles (`_ppt` single and pair figures, the three slides) no longer show "2091-2100"; every
+quantity is still the 2091-2100 mean (benefit = mean RF − Default stock difference over those years), to be said in the talk. Paper-style
+figures keep the period. All three variants (own medians, `_fixedSSP370`, `_fixedSSP245`) and the slides were regenerated; md5 now
+`plot_siting_median.py` `b10e1aaabb713ddd025b489222adb792`, `plot_siting_median_ssps.py` `a1a0cea8b75632f2946fd9e9be73681d`,
+`plot_siting_median_slides.py` `1e5463d9427756d476102a1a15eba49c`.
 
 ## 4. Script and product locations
 

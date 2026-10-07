@@ -313,7 +313,7 @@ def draw_ppt(a, c):
     axi.tick_params(labelsize=F["inset_tick"])
     axi.set_yticks([0, 0.5, 1])
 
-    fig.suptitle(f"Where to restore and protect forest for carbon (SEUS, {a.ssp}, RF, {a.years}, 4 km)", fontsize=F["sup"],
+    fig.suptitle(f"Where to restore and protect forest for carbon (SEUS, {a.ssp}, RF, 4 km)", fontsize=F["sup"],
                  color=ps.INK, x=0.035, ha="left", y=0.975)
     os.makedirs(a.out_dir, exist_ok=True)
     stem = os.path.join(a.out_dir, f"fig5_siting_median_{a.ssp}_{a.years}" + ("_countrank" if a.rank == "count" else "")

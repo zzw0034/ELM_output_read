@@ -108,7 +108,7 @@ def draw_pair(args, cs, pair, vmax):
         sf.set_facecolor(ps.SURFACE)
         a = args[ssp]
         axes.append((half(sf, a, cs[ssp], vmax), a, cs[ssp]))
-        sf.suptitle(f"{ssp}  (RF, {a.years}, 4 km)", fontsize=F["sup"], color=ps.INK, fontweight="bold", y=0.985)
+        sf.suptitle(f"{ssp}  (RF, 4 km)", fontsize=F["sup"], color=ps.INK, fontweight="bold", y=0.985)
     fig.canvas.draw()
     for ax, a, c in axes:
         inset(fig, ax, a, c)

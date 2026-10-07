@@ -72,7 +72,7 @@ def slide_benefit(c, vmax, out):
     mm = pm.mesh(ax, c["m"]["lon4"], c["m"]["lat4"], np.where(c["keep"], c["b"], np.nan), pm.BENEFIT_CMAP, Normalize(0, vmax))
     t = c["thr"]["benefit"]
     cbar(fig, mm, ax, f"MgC per ha of forest land  (black line: median {t:.1f})", t, "both", fraction=0.05, pad=0.07, shrink=0.6)
-    fig.suptitle(f"Carbon benefit of RF: extra ecosystem carbon vs Default, {REF}, 2091–2100", fontsize=F["sup"],
+    fig.suptitle(f"Carbon benefit of RF: extra ecosystem carbon vs Default, {REF}", fontsize=F["sup"],
                  color=ps.INK, x=0.05, ha="left", y=0.965)
     fig.text(0.05, 0.905, "Per hectare of forest land (RF 2060 tree fraction ≥ 5 %); net of fire.  "
              f"Half of the forest land lies above the median.", fontsize=F["note"], color=ps.INK2, ha="left")
@@ -96,7 +96,7 @@ def slide_vulnerability(c, out):
     t = c["thr"]["vuln"]
     cbar(fig, mm, ax, f"Mean rank of fire risk and water stress  (black line: median {t:.2f})", t, "neither",
          fraction=0.05, pad=0.07, shrink=0.9)
-    fig.suptitle(f"Vulnerability: fire risk + water stress, combined by rank  ({REF}, RF run, 2091–2100)", fontsize=F["sup"],
+    fig.suptitle(f"Vulnerability: fire risk + water stress, combined by rank  ({REF}, RF run)", fontsize=F["sup"],
                  color=ps.INK, x=0.04, ha="left", y=0.965)
     fig.text(0.04, 0.905, "Each component is ranked by forest area (0 = safest, 1 = most exposed); the two ranks are averaged.",
              fontsize=F["note"], color=ps.INK2, ha="left")
@@ -148,7 +148,7 @@ def slide_summary(cs, out):
         ax.set_axisbelow(True)
     h, l = axes[0].get_legend_handles_labels()
     fig.legend(h, l, loc="lower center", ncol=4, fontsize=F["bar_lab"], frameon=False, bbox_to_anchor=(0.5, 0.02))
-    fig.suptitle(f"All scenarios split at the {REF} medians (RF, 2091–2100, 4 km)", fontsize=F["sup"], color=ps.INK,
+    fig.suptitle(f"All scenarios split at the {REF} medians (RF, 4 km)", fontsize=F["sup"], color=ps.INK,
                  x=0.07, ha="left", y=0.965)
     fig.text(0.07, 0.885, "Fixed thresholds: benefit 41.4 MgC/ha, vulnerability rank 0.49 — so the shares differ between scenarios.",
              fontsize=F["note"], color=ps.INK2, ha="left")

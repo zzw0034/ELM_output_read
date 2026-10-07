@@ -8,7 +8,8 @@ Figure 2, presentation versions that put the four SSPs on one slide (ELM 4 km, r
   management_rf_rh_cumNBP_4ssp_4km.png
       one panel per SSP, cumulative NBP benefit curves of RF and RH on a shared axis.
   management_summary_carbon_2100_4km.png
-      the carbon-only version of the 2100 summary: one row, RF and RH | DF, no forest-area panel.
+      the carbon-only version of the 2100 summary: one panel, RF, RH and DF side by side for each SSP on one
+      y axis (user request 2026-10-06; it used to be two panels, RF and RH | DF), no forest-area panel.
 
 Sign convention (blueprint D4): RF - Default, RH - Default, Default - DF; positive = the management
 run holds more carbon or forest than its counterfactual. DF is an idealized avoided-loss bound.
@@ -130,22 +131,21 @@ def main():
     fig.savefig(out2, dpi=200, facecolor="white", bbox_inches="tight")
     plt.close(fig)
     print(f"Saved {out1}\nSaved {out2}")
-    # ---------------- carbon only: one row, RF and RH | DF (the 2100 summary without any forest-area panel)
-    fig, axes = plt.subplots(1, 2, figsize=(14, 5.9), gridspec_kw={"width_ratios": [1.5, 1], "wspace": 0.18})
-    bars(axes[0], data, ("RF", "RH"), 0, fc, "cumulative NBP benefit since 2024  (PgC)")
-    bars(axes[1], data, ("DF",), 0, fc, None)
-    axes[0].set_title("Forest restoration/protection (RF) and reduced harvest (RH)", loc="left", fontsize=14, fontweight="semibold", pad=10)
-    axes[1].set_title("Avoided loss (DF, upper bound)", loc="left", fontsize=14, fontweight="semibold", pad=10)
-    axes[0].legend(handles=[Patch(color=COLORS["RF"], label="RF  restoration/protection"),
-                            Patch(color=COLORS["RH"], label="RH  reduced harvest")],
-                   frameon=False, loc="upper left", fontsize=11.5, labelcolor=INK2)
+    # ---------------- carbon only: one panel, RF, RH and DF side by side per SSP (user request 2026-10-06)
+    fig, ax = plt.subplots(figsize=(13, 6.4))
+    bars(ax, data, ("RF", "RH", "DF"), 0, fc, "cumulative NBP benefit since 2024  (PgC)")
+    ax.set_ylim(0, max(data[s]["DF"][0] for s in SSPS) * 1.25)
+    ax.legend(handles=[Patch(color=COLORS["RF"], label="RF  restoration/protection"),
+                       Patch(color=COLORS["RH"], label="RH  reduced harvest"),
+                       Patch(color=COLORS["DF"], label="DF  avoided loss (upper bound)")],
+              frameon=False, loc="upper left", ncol=3, fontsize=12, labelcolor=INK2)
     fig.suptitle("Carbon benefit of forest management at 2100 under the four SSPs, ELM 4 km", x=0.045, y=1.0, ha="left",
                  fontsize=17, fontweight="semibold")
     fig.text(0.045, -0.02, "RF − Default and RH − Default (36000 s Default); Default − DF (38000 s Default). Positive = more carbon stored "
              "than the counterfactual, summed over 2024–2100.\nDF removes all forest (≈ 0.8 million km², 59 % of the region's land) in 2024 "
              "and keeps it removed: an idealized upper bound, about half of which accrues in the first year.",
              fontsize=10, color=INK2, va="top", linespacing=1.5)
-    fig.tight_layout(rect=(0, 0, 1, 0.94))
+    fig.tight_layout(rect=(0, 0, 1, 0.975))
     out3 = os.path.join(OUT_DIR, "management_summary_carbon_2100_4km.png")
     fig.savefig(out3, dpi=200, facecolor="white", bbox_inches="tight")
     plt.close(fig)

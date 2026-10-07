@@ -154,7 +154,7 @@ def draw(a, c):
     lon4, lat4 = m["lon4"], m["lat4"]
     land4 = np.isfinite(m["g4"]) & np.isfinite(m["R4"]["water"])
     inel = np.where(land4 & ~keep, 1.0, np.nan)
-    vmax = float(np.nanpercentile(c["b"][keep], 98))
+    vmax = getattr(a, "vmax_b", None) or float(np.nanpercentile(c["b"][keep], 98))   # shared across SSPs when set by the driver
     fig = plt.figure(figsize=(21, 12.4), facecolor=ps.SURFACE)
     gs = fig.add_gridspec(2, 2, width_ratios=[1, 1.9], hspace=0.28, wspace=0.08, left=0.03, right=0.99, top=0.93, bottom=0.11)
 
@@ -196,7 +196,7 @@ def draw(a, c):
              f"ranks are {rdesc} over eligible land, so half of the eligible land is high risk by construction. "
              f"Eligible land = RF's 2060 forest fraction ≥ {a.floor:g} (near-white: not eligible). All medians are area-weighted over eligible land of this SSP.\n"
              "Fire has ~0.5° effective resolution at 4 km (population-density input interpolated from 0.5°). RF is restoration plus a region-wide harvest ban. "
-             f"Colour scale a: 0 to the 98th percentile ({vmax:.3g}). Inset in c: each point = one eligible 4 km cell, size = its eligible area, dashed = the two medians; " + clip_note + ".",
+             f"Colour scale a: 0 to {vmax:.3g} (" + ("98th percentile of the four SSPs pooled" if getattr(a, "vmax_b", None) else "98th percentile") + "). Inset in c: each point = one eligible 4 km cell, size = its eligible area, dashed = the two medians; " + clip_note + ".",
              fontsize=8.4, color=ps.INK2, va="bottom", ha="left")
     os.makedirs(a.out_dir, exist_ok=True)
     stem = os.path.join(a.out_dir, f"fig5_siting_median_{a.ssp}_{a.years}" + ("_countrank" if a.rank == "count" else "") + ("_nofire" if a.benefit == "nofire" else ""))
@@ -235,7 +235,7 @@ def draw_ppt(a, c):
     lon4, lat4 = m["lon4"], m["lat4"]
     land4 = np.isfinite(m["g4"]) & np.isfinite(m["R4"]["water"])
     inel = np.where(land4 & ~keep, 1.0, np.nan)
-    vmax = float(np.nanpercentile(c["b"][keep], 98))
+    vmax = getattr(a, "vmax_b", None) or float(np.nanpercentile(c["b"][keep], 98))   # shared across SSPs when set by the driver
     fig = plt.figure(figsize=(16, 9), facecolor=ps.SURFACE)
     gs = fig.add_gridspec(2, 2, width_ratios=[1, 1.75], hspace=0.42, wspace=0.07, left=0.035, right=0.99, top=0.9, bottom=0.15)
 

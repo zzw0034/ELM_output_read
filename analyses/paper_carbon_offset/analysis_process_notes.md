@@ -1151,7 +1151,7 @@ User decisions 2026-10-06: draw Figure 5 with the poster method (`../carbon_offs
 the poster's **composite vulnerability** (scheme B) rebuilt from the two paper components; **each SSP uses its own medians** (the high-benefit half
 is then 50 % of eligible land in every SSP); SSP3-7.0 first, other SSPs after the figure is final.
 
-Plot `code/figure5/plot_siting_median.py` (md5 `4650e6566eb3b80966752382826e35e5`; no new extraction, same inputs and benefit/risk fields as
+Plot `code/figure5/plot_siting_median.py` (md5 `3e579c26f730a2d0037a6841f198e2f9`; no new extraction, same inputs and benefit/risk fields as
 `plot_priority_maps.py` §3.20, which it imports) → `figures/figure5/fig5_siting_median_SSP3-7.0_2091-2100{.png,_scatter.png,.csv}`, run locally.
 Panels: a benefit without fire loss per eligible ha, b fire risk, c water stress, d composite vulnerability = mean of the percentile ranks (0-1) of
 b and c over eligible cells, e quadrants at the area-weighted medians of a and d, f benefit vs vulnerability (also standalone). **Ranks are
@@ -1217,6 +1217,32 @@ no footnote (user request; the definitions belong in the slide notes); same pane
 E3SM checkout): bare ground always, deciduous or dormant patches in leafless months. The gridcell 1 − BTRAN_GS therefore mixes root-zone water
 deficit with the bare/leafless area share. Possible checks: its correlation with bare-ground and deciduous fractions; BTRAN over leafed or tree
 patches only from PFT-level output (whether h1 has BTRAN is not checked).
+
+### 3.24 Figure 5 median variant for all four SSPs, two-SSP slides (2026-10-06)
+
+User request 2026-10-06: draw the median variant of §3.23 (net carbon benefit, composite vulnerability from area-weighted ranks, 4 km,
+three panels) for the other SSPs too, with two SSPs per slide. Every SSP uses its **own** area-weighted medians (decision of §3.23);
+the benefit colour scale is **shared**, 0-141.1 MgC/ha = p98 of the eligible cells of the four SSPs pooled, as for the p80 figures
+(§3.22), so the two halves of a slide read the same. The SSP3-7.0 figures are redrawn with this scale (was its own p98, 159); numbers unchanged.
+No new extraction: the caches of §3.22 (all present locally).
+
+Driver `code/figure5/plot_siting_median_ssps.py` (md5 `7291c86517dca8485193af1cd95e7d9c`; `plot_siting_median.py` md5 `3e579c26f730a2d0037a6841f198e2f9`,
+which now takes the shared scale from the driver) → per SSP `figures/figure5/fig5_siting_median_<SSP>_2091-2100{.png,_ppt.png,_scatter.png,.csv}`,
+`fig5_siting_median_ssps_2091-2100.csv`, and two 16:9 slides (3200 × 1800 px; per half: a benefit and b vulnerability on top, c quadrants
+with the square scatter inset below, legend under c; fonts 10-19 pt) `fig5_siting_median_pair_SSP1-1.9_SSP2-4.5_2091-2100_ppt.png` and
+`fig5_siting_median_pair_SSP3-7.0_SSP5-8.5_2091-2100_ppt.png`.
+
+| SSP | carbon benefit (PgC) | median benefit (MgC/ha) | median vulnerability | high benefit / low risk: share, PgC (% of total) | high benefit / high risk: share, PgC |
+|---|---:|---:|---:|---:|---:|
+| SSP1-1.9 | 3.618 | 34.57 | 0.5044 | 35.0 %, 1.948 (53.8 %) | 15.0 %, 0.806 |
+| SSP2-4.5 | 4.229 | 41.37 | 0.4906 | 35.3 %, 2.298 (54.3 %) | 14.7 %, 0.858 |
+| SSP3-7.0 | 4.974 | 42.29 | 0.5009 | 34.9 %, 2.834 (57.0 %) | 15.1 %, 1.010 |
+| SSP5-8.5 | 5.041 | 46.86 | 0.5048 | 34.9 %, 2.787 (55.3 %) | 15.1 %, 1.053 |
+
+The benefit totals equal the Figure 4 RF − Default totals (§3.21: 3.62, 4.23, 4.98, 5.04 PgC). Because every split is at the SSP's own
+medians, the quadrant shares are nearly identical across SSPs (35/15/15/35 %); the SSPs differ in **where** the classes fall (maps) and in
+the carbon they hold, not in the shares. Risk medians: fire 0.051, 0.194, 0.176, 0.210 %/yr and water stress 0.051, 0.078, 0.072, 0.083
+(SSP1-1.9, SSP2-4.5, SSP3-7.0, SSP5-8.5).
 
 ## 4. Script and product locations
 

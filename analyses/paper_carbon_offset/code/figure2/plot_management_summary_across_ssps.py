@@ -6,7 +6,8 @@ Figure 2, presentation versions that put the four SSPs on one slide (ELM 4 km, r
       forest (tree-PFT) area change (10^3 km2). Left column RF and RH (paired with the 36000 s
       Default), right column DF (paired with the 38000 s Default; own axes, because DF is ~10x larger).
   management_rf_rh_cumNBP_4ssp_4km.png
-      one panel per SSP, cumulative NBP benefit curves of RF and RH on a shared axis.
+      16:9 slide, 2 x 2, one panel per SSP: cumulative regional NBP since 2024 of Default, RF, RH and DF on one shared y
+      axis, with the 2100 offsets bracketed (RF - Default, RH - Default, Default - DF with DF's 38000 s Default).
   management_summary_carbon_2100_4km.png
       the carbon-only version of the 2100 summary: one panel, RF, RH and DF side by side for each SSP on one
       y axis (user request 2026-10-06; it used to be two panels, RF and RH | DF), no forest-area panel.
@@ -31,6 +32,8 @@ import numpy as np
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from plot_scenario_management_benefits import COLORS, GRID, INK, INK2, OUT_DIR, SSPS, benefits  # noqa: E402
+
+FUT_CACHE = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))), "_cache/figure2/future_4km")
 
 
 def style(ax, ylabel=None, zero=True):
@@ -103,32 +106,50 @@ def main():
     fig.savefig(out1, dpi=200, facecolor="white", bbox_inches="tight")
     plt.close(fig)
 
-    # ---------------- 1 x 4: RF and RH cumulative NBP benefit curves
-    top = max(max(data[s][mg][3].max() for mg in ("RF", "RH")) for s in SSPS)
-    fig, axes = plt.subplots(1, 4, figsize=(17, 5.4), sharey=True)
-    for ax, ssp in zip(axes, SSPS):
-        for mg in ("RF", "RH"):
-            year, cum = data[ssp][mg][2], data[ssp][mg][3]
-            ax.plot(year, cum, color=COLORS[mg], lw=3.0, solid_capstyle="round", zorder=3)
-            ax.plot([year[-1]], [cum[-1]], "o", color=COLORS[mg], ms=7, mec="white", mew=1.5, zorder=4)
-            ax.annotate(f"{cum[-1]:+.1f}", xy=(year[-1], cum[-1]), xytext=(7, 0), textcoords="offset points", fontsize=13,
-                        color=INK, va="center", fontweight="semibold", annotation_clip=False)
-        ax.set_title(ssp, loc="left", fontsize=15, fontweight="semibold", pad=10)
-        ax.set_xlim(2022, 2112)
+    # ---------------- 2 x 2, one panel per SSP (user request 2026-10-07, in the style of slides/offset_potential_method.png):
+    # cumulative regional NBP since 2024 of Default (solid black), RF, RH and DF (dashed); the 2100 offsets bracketed.
+    # DF is paired with the crit_dayl_stress = 38000 s Default (blueprint A2), so its bracket uses that pair.
+    def cnbp(name):
+        z = np.load(os.path.join(FUT_CACHE, f"{name}__totals.npz"), allow_pickle=True)
+        assert int(z["year"][0]) == 2024 and int(z["year"][-1]) == 2100
+        return np.concatenate([[0.0], np.cumsum(z["NBP"].astype("f8"))])
+    xs = np.arange(2023, 2101)
+    C = {s: {"Default": cnbp(s), "RF": cnbp(s + "_RF"), "RH": cnbp(s + "_RH"), "DF": cnbp(s + "_DF_cds38000"),
+             "D38": cnbp(s + "_cds38000")} for s in SSPS}
+    lo = min(C[s]["DF"].min() for s in SSPS)
+    hi = max(C[s]["RF"].max() for s in SSPS)
+    fig = plt.figure(figsize=(16, 9), facecolor="white")
+    fig.text(0.05, 0.95, "Cumulative NBP of the management runs under the four SSPs (4 km)", fontsize=26, fontweight="bold",
+             color=INK, va="center")
+    pos = [(0.08, 0.565), (0.55, 0.565), (0.08, 0.16), (0.55, 0.16)]
+    for (x0, y0), ssp in zip(pos, SSPS):
+        ax = fig.add_axes([x0, y0, 0.31, 0.3])
+        c = C[ssp]
+        ax.plot(xs, c["Default"], color="black", lw=2.8, label="Default (reference)")
+        names = {"RF": "RF  restoration and protection", "RH": "RH  reduced harvest", "DF": "DF  deforestation counterfactual"}
+        for k in ("RF", "RH", "DF"):
+            ax.plot(xs, c[k], color=COLORS[k], lw=2.4, ls="--", label=names[k])
+        eD = c["Default"][-1]
+        for xb, y1, val, k in ((2103, c["RF"][-1], c["RF"][-1] - eD, "RF"), (2112, c["RH"][-1], c["RH"][-1] - eD, "RH"),
+                               (2103, c["DF"][-1], c["D38"][-1] - c["DF"][-1], "DF")):
+            ax.annotate("", xy=(xb, y1), xytext=(xb, eD), annotation_clip=False,
+                        arrowprops=dict(arrowstyle="<->", color=COLORS[k], lw=2.0, shrinkA=0, shrinkB=0))
+            ax.text(xb + 1.3, (eD + y1) / 2, f"+{val:.1f}", fontsize=15, color=COLORS[k], fontweight="bold", va="center", clip_on=False)
+        ax.plot([2100, 2113], [eD, eD], color="black", lw=0.9, ls=":", clip_on=False)
+        ax.set_xlim(2023, 2100.5)
+        ax.set_ylim(lo - 0.6, hi + 0.8)
         ax.set_xticks([2030, 2050, 2070, 2090])
-        ax.set_xlabel("year", color=INK, fontsize=12)
-        style(ax, "cumulative NBP benefit since 2024  (PgC)" if ax is axes[0] else None)
-        ax.set_ylim(-0.1, top * 1.08)
-    axes[0].legend(handles=[Patch(color=COLORS["RF"], label="RF  restoration/protection"),
-                            Patch(color=COLORS["RH"], label="RH  reduced harvest")],
-                   frameon=False, loc="upper left", fontsize=12, labelcolor=INK2)
-    fig.suptitle("Cumulative NBP benefit of forest restoration/protection (RF) and reduced harvest (RH), ELM 4 km",
-                 x=0.04, y=1.0, ha="left", fontsize=17, fontweight="semibold")
-    fig.text(0.04, -0.03, "RF − Default and RH − Default, both against the 36000 s Default; positive = more carbon stored than without the "
-             "management. The DF upper bound (≈ +11 PgC) is on the summary figure.", fontsize=10.5, color=INK2, va="top")
-    fig.tight_layout(rect=(0, 0, 1, 0.95), w_pad=2.0)
+        ax.set_title(ssp, loc="left", fontsize=18, fontweight="semibold", pad=8)
+        style(ax, None)
+        ax.tick_params(labelsize=14)
+        ax.yaxis.label.set_size(15)
+        ax.margins(y=0)
+    fig.text(0.025, 0.51, "Cumulative regional NBP since 2024 (PgC)", rotation=90, fontsize=16, color=INK, ha="center", va="center")
+    h_, l_ = ax.get_legend_handles_labels()
+    fig.legend(h_, l_, loc="lower center", bbox_to_anchor=(0.5, 0.01), ncol=4, fontsize=15, frameon=False, handlelength=2.4,
+               columnspacing=2.0)
     out2 = os.path.join(OUT_DIR, "management_rf_rh_cumNBP_4ssp_4km.png")
-    fig.savefig(out2, dpi=200, facecolor="white", bbox_inches="tight")
+    fig.savefig(out2, dpi=200, facecolor="white")
     plt.close(fig)
     print(f"Saved {out1}\nSaved {out2}")
     # ---------------- carbon only: one panel, RF, RH and DF side by side per SSP (user request 2026-10-06)
